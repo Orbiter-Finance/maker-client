@@ -74,6 +74,7 @@ export default class Sequencer {
         },
       },
     });
+    console.log('init history:', historyList.map(tx=> tx.hash));
     for (const tx of historyList) {
       const order = await this.ctx.validator.verifyFromTx(tx);
       order && this.push(order);
@@ -186,7 +187,7 @@ export default class Sequencer {
         //
         logger.info(`sequencer swap submit:`, pendingTxs, sendMainTokenValue);
         const submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
-          value: sendMainTokenValue.toString()
+          value: sendMainTokenValue.gt(0) ? sendMainTokenValue.toString() : "0x0"
         });
         await this.ctx.db.Sequencer.upsert({
           hash: submitTx.hash,

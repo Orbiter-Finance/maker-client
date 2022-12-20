@@ -62,7 +62,10 @@ export default class EVMAccount extends BaseAccount {
       RPC_NETWORK[this.rpc] = chainId;
     }
 
-    const chainConfig = chains.getChainByChainId(String(chainId));
+    const chainConfig = chains.getChainInfo(chainId.toString());
+    if (!chainConfig) {
+      throw new Error(`${chainId} chainConfig not found`)
+    }
     try {
       try {
         // nonce manager

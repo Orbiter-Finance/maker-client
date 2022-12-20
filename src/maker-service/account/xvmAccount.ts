@@ -20,7 +20,10 @@ export default class XVMAccount extends EVMAccount {
   async swapOK(calldata: string[] | string, transactionRequest: ethers.providers.TransactionRequest = {}) {
     // get chain config 
     const chainId = await await this.wallet.getChainId();
-    const chainConfig = chains.getChainByChainId(String(chainId));
+    const chainConfig = chains.getChainInfo(String(chainId));
+    if (!chainConfig) {
+      throw new Error('Swap chainConfig not found');
+    }
     let txType = 0;
     if ((chainConfig['features'] || []).includes("EIP1559")) {
       txType = 2;

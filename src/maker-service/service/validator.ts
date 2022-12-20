@@ -192,7 +192,6 @@ export default class ValidatorService {
 
     return {
       privateKey,
-      chain: toChain,
       token: toToken
     }
   }
