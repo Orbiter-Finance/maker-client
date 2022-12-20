@@ -1,0 +1,23 @@
+{
+    "apps": [
+      {
+        "name": "maker-client",
+        "instances": 4,
+        "exec_mode": "cluster",
+        "script": "index.js",
+        "cwd": "../../build/maker-service",
+        "env": {
+          "MYSQL_DB_HOST": "xxxxx",
+          "MYSQL_DB_NAME": "orbiter",
+          "MYSQL_DB_USERNAME": "orbiter",
+          "MYSQL_DB_PASSWORD": "xxxxx",
+          "NODE_ENV": "production",
+          "RABBIT_HOST":"ec2-54-238-20-18.ap-northeast-1.compute.amazonaws.com",
+          "RABBIT_USER": "consumer1",
+          "RABBIT_PASSWORD": "consumer1",
+          "ENABLE_AUTO_PAYMENT_CHAINS":""
+        }
+      }
+    ]
+  }
+  
