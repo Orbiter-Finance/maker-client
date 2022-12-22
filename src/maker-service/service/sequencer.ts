@@ -1,4 +1,3 @@
-import { BigNumber } from 'bignumber.js';
 import { isEmpty, groupBy } from 'orbiter-chaincore/src/utils/core';
 import dayjs from "dayjs";
 import { Op } from "sequelize";
@@ -8,7 +7,8 @@ import XVMAccount from '../account/xvmAccount';
 import { LoggerService } from 'orbiter-chaincore/src/utils';
 import { chains } from 'orbiter-chaincore';
 import { orderTimeoutMS } from './validator';
-const submissionInterval = 1000 * 10 * 2;
+import { ethers } from 'ethers';
+const submissionInterval = 1000 * 60 * 2;
 export interface CalldataType {
   chainId: number;
   hash: string;
@@ -74,7 +74,7 @@ export default class Sequencer {
         },
       },
     });
-    console.log('init history:', historyList.map(tx=> tx.hash));
+    this.ctx.logger.info('init history:', historyList.map(tx => tx.hash));
     for (const tx of historyList) {
       const order = await this.ctx.validator.verifyFromTx(tx);
       order && this.push(order);
@@ -102,7 +102,7 @@ export default class Sequencer {
           monitorState.locked = true;
           // filter 
           const matchOrders: SwapOrder[] = [];
-          console.log(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
+          this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
           for (let i = 0; i < pendingTxs.length; i++) {
             const order = pendingTxs[i];
             if (order.type === SwapOrderType.CrossToken) {
@@ -111,14 +111,13 @@ export default class Sequencer {
               if (value && !isEmpty(value)) {
                 order.value = String(value);
                 const spliceOrders = pendingTxs.splice(i, 1);
-                console.log(value.toString(), '=====exec', spliceOrders);
                 matchOrders.push(...spliceOrders);
               }
             } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
               matchOrders.push(...pendingTxs.splice(i, 1));
             }
           }
-          console.log(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
+          this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
           if (matchOrders.length > 0) {
             this.submit(chainId, matchOrders).then(result => {
             }).finally(() => {
@@ -176,19 +175,21 @@ export default class Sequencer {
       try {
         const xvmAccount = Factory.createMakerAccount<XVMAccount>(senderPrivateKey[sender.toLocaleLowerCase()], chainId, true);
         const encodeDatas: string[] = [];
-        let sendMainTokenValue = new BigNumber(0);
+        let sendMainTokenValue = ethers.BigNumber.from(0);
         for (const pendingTx of pendingTxs) {
-          const isMainToken = chains.inValidMainToken(pendingTx.chainId, pendingTx.token);
+          const isMainToken = chains.inValidMainToken(Number(pendingTx.chainId), pendingTx.token);
           if (isMainToken) {
-            sendMainTokenValue = sendMainTokenValue.plus(pendingTx.value);
+            sendMainTokenValue = sendMainTokenValue.add(pendingTx.value);
           }
           encodeDatas.push(xvmAccount.swapOkEncodeABI(pendingTx.calldata.hash, pendingTx.token, pendingTx.to, pendingTx.value));
         }
         //
-        logger.info(`sequencer swap submit:`, pendingTxs, sendMainTokenValue);
-        const submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
-          value: sendMainTokenValue.gt(0) ? sendMainTokenValue.toString() : "0x0"
-        });
+        const sendParams = {
+          value: sendMainTokenValue,
+          // value: sendMainTokenValue.gt(0) ?  sendMainTokenValue.toString() : "0x00"
+        }
+        logger.info(`sequencer swap submit:`, { pendingTxs, sendParams });
+        const submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, sendParams);
         await this.ctx.db.Sequencer.upsert({
           hash: submitTx.hash,
           from: submitTx.from,

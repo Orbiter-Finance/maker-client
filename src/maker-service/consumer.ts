@@ -65,6 +65,7 @@ export default class Consumer {
     const messageHandle = async (msg: ConsumeMessage | null) => {
       if (msg) {
         const tx = JSON.parse(msg.content.toString()) as Transaction;
+        this.ctx.logger.info('subscribe tx:', tx);
         if (tx) {
           const swapOrder = await this.ctx.validator.verifyFromTx(tx);
           if (swapOrder) {

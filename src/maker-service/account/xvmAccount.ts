@@ -17,7 +17,7 @@ export default class XVMAccount extends EVMAccount {
     super(privateKey, rpc);
     this.contract = new ethers.Contract(this.contractAddress, XVMAbi, this.provider);
   }
-  async swapOK(calldata: string[] | string, transactionRequest: ethers.providers.TransactionRequest = {}) {
+  async swapOK(calldata: string[] | string, transactionRequest:TransactionRequest = {}) {
     // get chain config 
     const chainId = await await this.wallet.getChainId();
     const chainConfig = chains.getChainInfo(String(chainId));
@@ -31,17 +31,18 @@ export default class XVMAccount extends EVMAccount {
     if (typeof calldata === 'string') {
       const tx = await this.sendTransaction(this.contractAddress, Object.assign({
         data: calldata,
+        gasLimit: 400000,
         type: txType,
       }, transactionRequest));
       return tx;
     } else {
       const ifa = new ethers.utils.Interface(XVMAbi);
       const data = ifa.encodeFunctionData('multicall', [calldata]);
-      const tx = await this.sendTransaction(this.contractAddress, {
+      const tx = await this.sendTransaction(this.contractAddress,Object.assign({
         data,
         gasLimit: 400000,
         type: txType
-      });
+      },transactionRequest));
       return tx;
     }
   }

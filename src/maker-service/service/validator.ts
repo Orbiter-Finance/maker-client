@@ -21,15 +21,6 @@ export default class ValidatorService {
   }
   public async verifyFromTx(fromTx: Transaction): Promise<SwapOrder | undefined> {
     const logger = LoggerService.getLogger(fromTx.chainId.toString());
-    if (fromTx.source != 'xvm') {
-      logger.error(`${fromTx.hash} not xvm tx`);
-      return undefined;
-    }
-    const side = fromTx.side;
-    if (side !== 0) {
-      logger.error(`${fromTx.hash} ${fromTx.side} tx side incorrect`);
-      return undefined;
-    }
     // is support
     if (
       !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
@@ -37,6 +28,19 @@ export default class ValidatorService {
       logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
       return undefined;
     }
+    // if (fromTx.source != 'xvm') {
+    //   if (!equals(fromTx.from, '0x8A3214F28946A797088944396c476f014F88Dd37')) {
+    //     logger.error(`${fromTx.hash} not xvm tx`);
+    //     return undefined;
+    //   }
+    //   logger.info(`${fromTx.hash} xvm tx 0x8A3214F28946A797088944396c476f014F88Dd37`);
+    // }
+    const side = fromTx.side;
+    if (side !== 0) {
+      logger.error(`${fromTx.hash} ${fromTx.side} tx side incorrect`);
+      return undefined;
+    }
+
     if (isEmpty(fromTx.tokenAddress) || !fromTx.tokenAddress) {
       logger.error(`${fromTx.hash} token address not found`);
       return undefined;
@@ -91,7 +95,7 @@ export default class ValidatorService {
       );
       return undefined;
     }
-    if (fromTx.source === 'xvm') {
+    if (fromTx.source === 'xvm' && fromTx.extra['xvm']) {
       const xvmExtra = fromTx.extra['xvm'];
       if (xvmExtra.name != 'swap') {
         logger.error('transferPayment xvm event name error');
@@ -103,7 +107,7 @@ export default class ValidatorService {
         swapOrder.value = fromTx.expectValue;
       } else if (paramsLength === 5) {
         swapOrder.type = SwapOrderType.CrossToken;
-        swapOrder.value = "0";
+        swapOrder.value = "0x00";
         swapOrder.calldata.slipPoint = new BigNumber(xvmExtra.params.data[4]).toNumber();
         swapOrder.calldata.crossTokenUserExpectValue = new BigNumber(xvmExtra.params.data[3]).toString();
         // The value should be calculated according to the current exchange rate

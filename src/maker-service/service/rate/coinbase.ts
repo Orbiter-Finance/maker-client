@@ -2,7 +2,7 @@ import Caching, { CachingType } from '../../utils/caching';
 export default class CoinbaseService {
   private cache: CachingType = Caching.getCache('rate:usd');
   public async getRates(currency: string) {
-    const url = process.env['NODE_ENV'] === 'production' ? `https://api.coinbase.com/v2/exchange-rates?currency=${currency}` : `http://coinbase.okaynode.com/v2/exchange-rates?currency=${currency}`;
+    const url = process.env['NODE_ENV'] !== 'development' ? `https://api.coinbase.com/v2/exchange-rates?currency=${currency}` : `http://coinbase.okaynode.com/v2/exchange-rates?currency=${currency}`;
     const { data } = await fetch(
       url
     ).then((res) => res.json());
