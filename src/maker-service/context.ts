@@ -1,4 +1,3 @@
-import { LoggerService } from 'orbiter-chaincore/src/utils';
 import Keyv from 'keyv';
 import { chains } from 'orbiter-chaincore';
 import winston from 'winston';
@@ -12,6 +11,7 @@ import Caching from './utils/caching';
 type NODE_ENV = 'development' | 'production' | 'test';
 import configs from './config/config';
 import chainConfigs from './config/chains.json';
+import { LoggerService } from './utils/logger';
 export default class Context {
   public config: Config = configs as any;
   public db!: Models;

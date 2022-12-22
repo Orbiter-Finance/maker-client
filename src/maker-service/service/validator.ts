@@ -1,11 +1,11 @@
 import { BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { chains } from 'orbiter-chaincore';
-import { LoggerService } from 'orbiter-chaincore/src/utils';
 import { equals, isEmpty } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
+import { LoggerService } from '../utils/logger';
 import { getQuotationPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 

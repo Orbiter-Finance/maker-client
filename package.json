@@ -37,7 +37,7 @@
     "keyv-file": "^0.2.0",
     "mochawesome": "^7.1.3",
     "mysql2": "^2.3.3",
-    "orbiter-chaincore": "1.3.9-0",
+    "orbiter-chaincore": "^1.3.9-1",
     "sequelize": "^6.27.0",
     "typescript": "^4.8.4",
     "vite": "^4.0.1",
@@ -51,7 +51,6 @@
     "cross-fetch": "^3.1.5",
     "dayjs": "^1.11.7",
     "electron-log": "^4.4.8",
-    "orbiter-chaincore": "^1.3.9-0",
     "vue": "^3.2.45"
   }
 }

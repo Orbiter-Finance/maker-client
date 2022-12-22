@@ -4,10 +4,10 @@ import { Op } from "sequelize";
 import Context from "../context";
 import { Factory } from '../account/factory';
 import XVMAccount from '../account/xvmAccount';
-import { LoggerService } from 'orbiter-chaincore/src/utils';
 import { chains } from 'orbiter-chaincore';
 import { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
+import { LoggerService } from '../utils/logger';
 const submissionInterval = 1000 * 60 * 2;
 export interface CalldataType {
   chainId: number;
