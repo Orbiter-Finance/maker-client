@@ -519,8 +519,8 @@
       "key": "",
       "intervalTime": 60000
     },
-    "chainId": "1402",
-    "networkId": "1402",
+    "chainId": "1422",
+    "networkId": "1422",
     "internalId": "517",
     "name": "Polygon EVM",
     "debug": true,
@@ -531,7 +531,8 @@
       "decimals": 18,
       "address": "0x0000000000000000000000000000000000000000"
     },
-    "rpc": ["https://public.zkevm-test.net:2083"],
+    "rpc": ["https://rpc.public.zkevm-test.net"],
+    "xvmList":[],
     "watch": ["rpc"],
     "tokens": []
   },

@@ -9,7 +9,7 @@ export async function run(): Promise<Context> {
   });
   await new Quotation().subscribe();
   await ctx.sequencer.readHistory();
-  new Consumer(ctx);
+  // new Consumer(ctx);
   return ctx;
 }
 run()

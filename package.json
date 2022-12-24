@@ -5,6 +5,7 @@
   "main": "build/main/main.js",
   "scripts": {
     "dev": "npm run build:maker && node scripts/dev-server.js",
+    "maker:start": "node ./build/maker-service/index.js",
     "dev:maker": "ts-node ./src/maker-service/",
     "build:maker": "node scripts/build.js",
     "build": "node scripts/build.js && electron-builder",

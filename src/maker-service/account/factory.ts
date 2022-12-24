@@ -50,7 +50,9 @@ export class Factory {
       case '518':
       case '519':
         if (isXVM) {
-          wallet = new XVMAccount(privateKey, chainConfig.rpc[0], chainConfig['xvmList'][0]);
+          if (chainConfig['xvmList'].length>0) {
+            wallet = new XVMAccount(privateKey, chainConfig.rpc[0], chainConfig['xvmList'][0]);
+          }
         } else {
           wallet = new EVMAccount(privateKey, chainConfig.rpc[0]);
         }

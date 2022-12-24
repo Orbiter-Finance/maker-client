@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { chains } from 'orbiter-chaincore';
-import { equals, isEmpty } from 'orbiter-chaincore/src/utils/core';
+import { isEmpty } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
@@ -25,7 +25,7 @@ export default class ValidatorService {
     if (
       !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
     ) {
-      logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
+      logger.warn(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
       return undefined;
     }
     // if (fromTx.source != 'xvm') {

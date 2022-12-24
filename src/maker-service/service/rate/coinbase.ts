@@ -1,4 +1,5 @@
 import Caching, { CachingType } from '../../utils/caching';
+import { LoggerService } from '../../utils/logger';
 export default class CoinbaseService {
   private cache: CachingType = Caching.getCache('rate:usd');
   public async getRates(currency: string) {
@@ -22,9 +23,12 @@ export default class CoinbaseService {
     }
   }
 
-  public async start() {
+  public start() {
+    const logger = LoggerService.getLogger("");
     setInterval(() => {
-      void this.refreshExchangeRate();
+      this.refreshExchangeRate().catch(error => {
+        logger.error('refreshExchangeRate error:', error);
+      });
     }, 5000);
   }
 }

@@ -5,10 +5,10 @@ import Context from "../context";
 import { Factory } from '../account/factory';
 import XVMAccount from '../account/xvmAccount';
 import { chains } from 'orbiter-chaincore';
-import { orderTimeoutMS } from './validator';
+import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
 import { LoggerService } from '../utils/logger';
-const submissionInterval = 1000 * 60 * 2;
+const submissionInterval = 1000 * 10;
 export interface CalldataType {
   chainId: number;
   hash: string;
@@ -100,11 +100,17 @@ export default class Sequencer {
         if (!monitorState.locked && Date.now() - monitorState.lastSubmit > submissionInterval) {
           // if type = 
           monitorState.locked = true;
+          console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}`);
           // filter 
           const matchOrders: SwapOrder[] = [];
           this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
           for (let i = 0; i < pendingTxs.length; i++) {
             const order = pendingTxs[i];
+            if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
+              pendingTxs.splice(i, 1);
+              console.log('remove order:', order);
+              continue;
+            }
             if (order.type === SwapOrderType.CrossToken) {
               // matchOrders.
               const value = await this.ctx.validator.verifyXVMCrossToken(order);
@@ -189,7 +195,9 @@ export default class Sequencer {
           // value: sendMainTokenValue.gt(0) ?  sendMainTokenValue.toString() : "0x00"
         }
         logger.info(`sequencer swap submit:`, { pendingTxs, sendParams });
+        console.log('sequencer swap submit:')
         const submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, sendParams);
+        console.log('sequencer swap submit ok:', submitTx.hash)
         await this.ctx.db.Sequencer.upsert({
           hash: submitTx.hash,
           from: submitTx.from,
