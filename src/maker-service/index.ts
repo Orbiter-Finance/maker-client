@@ -7,9 +7,12 @@ export async function run(): Promise<Context> {
   await ctx.init().catch((error) => {
     ctx.logger.error(`Context init error:`, error);
   });
+  console.log('init Quotation');
   await new Quotation().subscribe();
+  console.log('init Sequencer');
   await ctx.sequencer.readHistory();
-  // new Consumer(ctx);
+  console.log('init Consumer');
+  new Consumer(ctx);
   return ctx;
 }
 run()

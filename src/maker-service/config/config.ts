@@ -25,7 +25,7 @@ export default {
     username: vars['MYSQL_DB_USERNAME'] || 'root',
     password: vars['MYSQL_DB_PASSWORD'] || 'root',
     host: vars['MYSQL_DB_HOST'] || 'localhost',
-    logging: false,
+    logging: true,
     port: Number(vars['MYSQL_DB_PORT'] || '3306'),
     timezone: '+00:00',
   },

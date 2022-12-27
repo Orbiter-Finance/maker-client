@@ -31,7 +31,7 @@ export default class XVMAccount extends EVMAccount {
     if (typeof calldata === 'string') {
       const tx = await this.sendTransaction(this.contractAddress, Object.assign({
         data: calldata,
-        gasLimit: 400000,
+        gasLimit: 100000,
         type: txType,
       }, transactionRequest));
       return tx;
@@ -40,7 +40,7 @@ export default class XVMAccount extends EVMAccount {
       const data = ifa.encodeFunctionData('multicall', [calldata]);
       const tx = await this.sendTransaction(this.contractAddress,Object.assign({
         data,
-        gasLimit: 400000,
+        gasLimit: 250000,
         type: txType
       },transactionRequest));
       return tx;

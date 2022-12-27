@@ -200,7 +200,8 @@ export default class ValidatorService {
     }
   }
   public async verifyXVMCrossToken(swapOrder: SwapOrder): Promise<string | undefined> {
-    const logger = LoggerService.getLogger(swapOrder.chainId.toString());
+    // const logger = LoggerService.getLogger(swapOrder.chainId.toString());
+    const logger = this.ctx.logger;
     if (swapOrder.type != SwapOrderType.CrossToken) {
       logger.error(`verifyXVMCrossToken ${swapOrder.calldata.hash} type error`);
       return undefined;
@@ -224,10 +225,8 @@ export default class ValidatorService {
     const expectToTokenValue = new BigNumber(swapOrder.calldata.crossTokenUserExpectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
     const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
     // const expectToTokenMaxValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
-
-    console.log(`expectMinValue:${expectToTokenMinValue.toString()}, currentPriceValue:${currentPriceValue.toString()}`);
     if (currentPriceValue.lt(expectToTokenMinValue)) {
-      console.log('No collection when the exchange rate is lower than the minimum');
+      logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum`);
       return undefined;
     }
     if (currentPriceValue.gte(expectToTokenMinValue)) {
