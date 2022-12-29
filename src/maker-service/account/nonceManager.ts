@@ -41,7 +41,7 @@ export class NonceManager extends ethers.Signer {
             transaction = ethers.utils.shallowCopy(transaction);
             this._deltaCount = nonce - 1;
         }
-s        this.incrementTransactionCount();
+        this.incrementTransactionCount();
         transaction.nonce = this._deltaCount;
         try {
             const tx = await this.signer.sendTransaction(transaction);
