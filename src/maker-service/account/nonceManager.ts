@@ -5,7 +5,7 @@ import { TransactionResponse } from "./baseAccount";
 export class NonceManager extends ethers.Signer {
     readonly signer!: ethers.Signer;
     _deltaCount: number;
-
+    
     constructor(signer: ethers.Signer) {
         super();
         this._deltaCount = 0;

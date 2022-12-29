@@ -7,12 +7,10 @@ networks:
 
 services:
   maker-client:
-    build: ./src/maker-service/
-    command: node 
+    build: .
+    command: npm run maker:start
     environment:
       NODE_ENV: 'development'
-    volumes:
-      - './package.json:/home/maker-client/package.json'
-    # restart: always
+    restart: always
     networks:
       - app-network

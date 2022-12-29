@@ -1,10 +1,11 @@
 import { ethers } from 'ethers';
 import * as zksync from 'zksync';
 
-import BaseAccount from './baseAccount';
+import BaseAccount, { TransactionResponse } from './baseAccount';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends BaseAccount {
   public l1Wallet: ethers.Wallet;
+  
   constructor(
     protected privateKey: string,
     protected readonly zkSyncNetwork: zksync.types.Network
@@ -31,15 +32,12 @@ export default class zkSyncAccount extends BaseAccount {
   public getTokenBalance(token: string, to: string): Promise<ethers.BigNumber> {
     throw new Error('Method not implemented.');
   }
-  public transferToken(
+  public async transferToken(
     token: string,
     to: string,
     value: string,
     transactionRequest?: ethers.providers.TransactionRequest
-  ): Promise<ethers.providers.TransactionResponse> {
-    throw new Error('Method not implemented.');
-  }
-  async zkSyncTransfer(to: string, token: string, value: string) {
+  ): Promise<TransactionResponse> {
     const syncProvider = await zksync.getDefaultProvider(this.zkSyncNetwork);
     const syncWallet = await zksync.Wallet.fromEthSigner(
       this.l1Wallet,
@@ -52,6 +50,9 @@ export default class zkSyncAccount extends BaseAccount {
       // nonce: 307,
       amount,
     });
-    return response;
+    return {
+      hash: response.txHash,
+      from: syncWallet.address.toString(),
+    } as  any;
   }
 }
