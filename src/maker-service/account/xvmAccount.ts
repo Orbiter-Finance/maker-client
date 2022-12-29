@@ -34,6 +34,7 @@ export default class XVMAccount extends EVMAccount {
         gasLimit: 100000,
         type: txType,
       }, transactionRequest));
+      // await tx.wait();
       return tx;
     } else {
       const ifa = new ethers.utils.Interface(XVMAbi);
@@ -43,6 +44,7 @@ export default class XVMAccount extends EVMAccount {
         gasLimit: 250000,
         type: txType
       },transactionRequest));
+      // await tx.wait();
       return tx;
     }
   }

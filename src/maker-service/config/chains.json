@@ -63,7 +63,7 @@
       "address": "0x0000000000000000000000000000000000000000"
     },
     "rpc": [
-      "https://arb-goerli.g.alchemy.com/v2/KcDgh30TcYIQ5I8MkkhF2nzkYHpe7n1N"
+      "https://goerli-rollup.arbitrum.io/rpc"
     ],
     "watch": ["rpc"],
     "contracts": ["0x721fBB2C2C9cdFa5547feE6b683949c20F175457"],

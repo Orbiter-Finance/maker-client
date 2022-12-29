@@ -15,17 +15,15 @@ export async function run(): Promise<Context> {
   new Consumer(ctx);
   return ctx;
 }
-run()
-  .then((ctx) => {
-    process.on('uncaughtException', function (err) {
-      ctx.logger.error(`uncaughtException:`, err);
-    });
-
-    process.on('unhandledRejection', function (err, promise) {
-      ctx.logger.error(`unhandledRejection:`, err, promise);
-    });
-  })
-  .catch((error) => {
+run().catch((error) => {
     console.error(`main error:`, error);
+    process.setMaxListeners(20)
     process.exitCode = 1;
   });
+process.on('uncaughtException', function (err) {
+  console.error(`uncaughtException:`, err);
+});
+
+process.on('unhandledRejection', function (err, promise) {
+  console.error(`unhandledRejection:`, err, promise);
+});

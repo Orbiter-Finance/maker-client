@@ -1,10 +1,11 @@
-import { NonceManager } from '@ethersproject/experimental';
+// import { NonceManager } from '@ethersproject/experimental';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
 import { chains, logger } from 'orbiter-chaincore';
 
 import { ERC20Abi } from '../abi';
 
 import BaseAccount from './baseAccount';
+import { NonceManager } from './nonceManager';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends BaseAccount {
   protected wallet: Wallet;
@@ -127,9 +128,11 @@ export default class EVMAccount extends BaseAccount {
         // logger.error(`evm sendTransaction before error:${error.message}`, error);
         throw new Error(`=>sendTransaction before error:${message}`);
       }
+      logger.info(`${chainConfig.name} sendTransaction before nonce:`, this.nonceManager._deltaCount);
       logger.info(`${chainConfig.name} sendTransaction:`, tx);
       const response = await this.nonceManager.sendTransaction(tx);
       console.debug(`${chainConfig.name} txHash:`, response.hash);
+      logger.info(`${chainConfig.name} sendTransaction after nonce:`, this.nonceManager._deltaCount, response.nonce);
       // use nonce manager disabled
       // console.debug('Transaction Data:', JSON.stringify(tx));
       // const signedTx = await this.wallet.signTransaction(tx);
@@ -139,10 +142,8 @@ export default class EVMAccount extends BaseAccount {
       // console.debug('Precomputed txHash:', txHash);
       // console.debug('Precomputed Nonce:', tx.nonce.toString());
       return response;
-    } catch ({ message }) {
-      throw new Error(
-        `=>evm ${chainConfig.name} sendTransaction error:${message}`
-      );
+    } catch (error) {
+      throw error;
     }
   }
   public async approve(token: string, spender: string, value: string | BigNumber) {

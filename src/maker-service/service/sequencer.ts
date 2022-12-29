@@ -7,12 +7,11 @@ import XVMAccount from '../account/xvmAccount';
 import { chains } from 'orbiter-chaincore';
 import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
-import { LoggerService } from '../utils/logger';
 import { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
-const submissionInterval = 1000 * 60 * 2;
+const submissionInterval = 1000 * 10;
 export interface submitResponse {
-  chainId: string;
+  chainId: number;
   fromHash?: Array<string>
   // hashMap?: {
   //   [key: string]: Array<string>
@@ -45,13 +44,13 @@ export interface SwapOrder {
   type: SwapOrderType;
 }
 interface MonitorState {
-  [key: string]: {
+  [key: number]: {
     locked: boolean,
     lastSubmit: number
   }
 }
 export default class Sequencer {
-  private pending: { [key: string]: SwapOrder[] } = {};
+  private pending: { [key: number]: SwapOrder[] } = {};
   private monitorState: MonitorState = {}
   // 
   constructor(private readonly ctx: Context) {
@@ -135,7 +134,7 @@ export default class Sequencer {
             }
             this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
             if (matchOrders.length > 0) {
-              this.submit(chainId, matchOrders).then(result => {
+              this.submit(Number(chainId), matchOrders).then(result => {
               }).finally(() => {
                 monitorState.locked = false;
                 monitorState.lastSubmit = Date.now();
@@ -168,13 +167,14 @@ export default class Sequencer {
     return this.pending[chainId];
   }
 
-  async submit(chainId: string, pendingTxs: SwapOrder[]): Promise<submitResponse> {
+  async submit(chainId: number, pendingTxs: SwapOrder[]): Promise<submitResponse> {
     // exec send
-    const cache = Caching.getCache(chainId);
+    const cache = Caching.getCache(chainId.toString());
     if (pendingTxs.length <= 0) {
       return { chainId };
     }
-    const logger = LoggerService.getLogger(chainId);
+    const logger = this.ctx.logger;
+    // const logger = LoggerService.getLogger(chainId.toString());
 
     const InterceptTransactions: SwapOrder[] = [];
     const senderPrivateKey = {};
@@ -244,16 +244,20 @@ export default class Sequencer {
         }
         // When this step is reached, the transaction has been executed
         logger.info(`sequencer swap submit:`, { pendingTxs, sendParams });
-        console.log('sequencer swap submit:')
         for (const hash of fromHashList) {
-          await cache.set(hash, true);
+          await cache.set(hash, true, orderTimeoutMS);
         }
         let submitTx: TransactionResponse | undefined;
+        let isError = false;
+        if (encodeDatas.length<=0) {
+          continue;
+        }
         try {
           submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, sendParams);
           console.log('sequencer swap submit ok:', submitTx.hash)
         } catch (error: any) {
-          logger.error(`sequencer swap submit swapOK error:${error.message}`, error)
+          isError = true;
+          logger.error(`sequencer swap submit swapOK error:${error.message}`, error);
         }
         if (submitTx) {
           await this.ctx.db.Sequencer.upsert({
@@ -268,13 +272,15 @@ export default class Sequencer {
         }
         senderFromHashList.push(...fromHashList);
         await this.ctx.db.Transaction.update({
-          status: 97
+          status: isError ? 96 : 97
         }, {
           where: {
-            hash: fromHashList.length > 0 ? fromHashList : fromHashList[0]
+            hash: fromHashList.length > 1 ? fromHashList : fromHashList[0]
           }
         })
-        submitTx && await submitTx.wait()
+        if (submitTx) {
+          await submitTx.wait()
+        }
         // save status
       } catch (error: any) {
         logger.error(`sequencer swap submit error:${error.message}`, {
