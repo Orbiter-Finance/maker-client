@@ -9,7 +9,7 @@ import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
 import { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
-const submissionInterval = 1000 * 10;
+const submissionInterval = 1000 * 60 * 3;
 export interface submitResponse {
   chainId: number;
   fromHash?: Array<string>

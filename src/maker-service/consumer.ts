@@ -16,7 +16,7 @@ export default class Consumer {
       hostname: this.ctx.config.RABBIT_HOST || 'localhost',
       port: Number(this.ctx.config.RABBIT_PORT || 5672),
       username: this.ctx.config.RABBIT_USER,
-      password: this.ctx.config.RABBIT_PASSWORD,
+      password: this.ctx.config.RABBIT_PASSWORD
     });
     this.ctx.logger.info(
       'RabbitMQ Connection Success:',
