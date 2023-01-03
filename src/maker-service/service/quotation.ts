@@ -1,20 +1,23 @@
 import BigNumber from 'bignumber.js';
-
 import Caching from '../utils/caching';
-
-// import BinanceService from "./market/binance";
-// import CoinGeckoService from "./market/coingecko";
+import ChainLink from './rate/chainlink';
 import CoinbaseService from './rate/coinbase';
 
 export async function getQuotationPrice(
   value: string,
   fromCurrency: string,
-  toCurrency = 'usd'
+  toCurrency = 'usd',
+  isChainLink?: boolean
 ): Promise<number> {
   fromCurrency = fromCurrency.toLocaleLowerCase();
   toCurrency = toCurrency.toLocaleLowerCase();
-  const cache = Caching.getCache('rate:usd');
   const afterValue = new BigNumber(value);
+  if (isChainLink) {
+    const chainLink = new ChainLink();
+    const priceRate = await chainLink.getPriceFeed(fromCurrency, toCurrency);
+    return afterValue.multipliedBy(Number(priceRate)).toNumber();
+  }
+  const cache = await Caching.getCache(`rate:${toCurrency}`);
   let result = await cache.get(`${fromCurrency}:${toCurrency}`);
   if (result && result.rate) {
     return afterValue.multipliedBy(Number(result.rate)).toNumber();

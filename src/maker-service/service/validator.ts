@@ -169,6 +169,13 @@ export default class ValidatorService {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked`);
       return undefined;
     }
+    const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(),toToken.symbol, 'usd', true);
+    const diffPrice  = (1 - chainLinkPrice / toValue) * 100;
+    console.log(diffPrice, '==diffPrice');
+    if (diffPrice>=0.5) {
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} There is too much difference with the price of the oracle`);
+      return undefined;
+    }
     // veify 
     const sequencerExist = await this.ctx.db.Sequencer.findOne({
       attributes: ["id"],
