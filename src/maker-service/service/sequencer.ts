@@ -196,6 +196,10 @@ export default class Sequencer {
       logger.info(`${chainId} sequencer submit All InterceptTransactions pending null:`, InterceptTransactions.map(row => row.calldata.hash));
       return { chainId };
     }
+    const chainConfig = chains.getChainInfo(chainId);
+    if (!chainConfig) {
+      throw new Error(`From ChainConfig Not found`);
+    }
     const groupData = groupBy(pendingTxs, 'from');
     for (const sender in groupData) {
       const fromHashList: string[] = [];
@@ -229,21 +233,21 @@ export default class Sequencer {
         if (sendMainTokenValue.gt(0)) {
           // check mainToke balance
           const makerBalance = await xvmAccount.getBalance(sender);
-          if (makerBalance && makerBalance.lt(makerBalance)) {
-            throw new Error(`maker ${sender} Balance Insufficient`)
+          if (makerBalance && makerBalance.lt(sendMainTokenValue)) {
+            throw new Error(`${chainConfig.name}  maker ${sender} Balance Insufficient (${makerBalance.toString()}/${sendMainTokenValue.toString()})`)
           }
         }
         // check token balance
         for (const token in sendTokenCheck) {
           if (sendTokenCheck[token].gt(0)) {
             const makerBalance = await xvmAccount.getTokenBalance(token, sender);
-            if (makerBalance && makerBalance.lt(makerBalance)) {
-              throw new Error(`maker ${sender} Token ${token} Balance Insufficient`)
+            if (makerBalance && makerBalance.lt(sendTokenCheck[token])) {
+              throw new Error(`${chainConfig.name}  maker ${sender} Token ${token} Balance Insufficient(${makerBalance.toString()}/${sendTokenCheck[token].toString()})`)
             }
           }
         }
         // When this step is reached, the transaction has been executed
-        logger.info(`sequencer swap submit:`, { pendingTxs, sendParams });
+        logger.info(`${chainConfig.name} sequencer swap submit:`, { pendingTxs, sendParams });
         for (const hash of fromHashList) {
           await cache.set(hash, true, orderTimeoutMS);
         }
@@ -254,10 +258,10 @@ export default class Sequencer {
         }
         try {
           submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, sendParams);
-          console.log('sequencer swap submit ok:', submitTx.hash)
+          console.log(`${chainConfig.name}  sequencer swap submit ok:`, submitTx.hash)
         } catch (error: any) {
           isError = true;
-          logger.error(`sequencer swap submit swapOK error:${error.message}`, error);
+          logger.error(`${chainConfig.name} sequencer swap submit swapOK error:${error.message}`, error);
         }
         if (submitTx) {
           await this.ctx.db.Sequencer.upsert({
