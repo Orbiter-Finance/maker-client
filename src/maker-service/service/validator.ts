@@ -171,7 +171,6 @@ export default class ValidatorService {
     }
     const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(),toToken.symbol, 'usd', true);
     const diffPrice  = (1 - chainLinkPrice / toValue) * 100;
-    console.log(diffPrice, '==diffPrice');
     if (diffPrice>=0.5) {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} There is too much difference with the price of the oracle`);
       return undefined;
@@ -233,7 +232,7 @@ export default class ValidatorService {
     const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
     // const expectToTokenMaxValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
     if (currentPriceValue.lt(expectToTokenMinValue)) {
-      logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum`);
+      logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum(${currentPriceValue.toString()}/${expectToTokenMinValue.toString()})`);
       return undefined;
     }
     if (currentPriceValue.gte(expectToTokenMinValue)) {

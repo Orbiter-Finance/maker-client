@@ -17,7 +17,7 @@ export async function getQuotationPrice(
     const priceRate = await chainLink.getPriceFeed(fromCurrency, toCurrency);
     return afterValue.multipliedBy(Number(priceRate)).toNumber();
   }
-  const cache = await Caching.getCache(`rate:${toCurrency}`);
+  const cache = await Caching.getCache(`rate:usd`);
   let result = await cache.get(`${fromCurrency}:${toCurrency}`);
   if (result && result.rate) {
     return afterValue.multipliedBy(Number(result.rate)).toNumber();
