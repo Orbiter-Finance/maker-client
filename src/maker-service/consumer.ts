@@ -65,11 +65,11 @@ export default class Consumer {
     const messageHandle = async (msg: ConsumeMessage | null) => {
       if (msg) {
         const tx = JSON.parse(msg.content.toString()) as Transaction;
-        this.ctx.logger.info('subscribe tx:', tx);
+        this.ctx.logger.info('subscribe tx:', { tx });
         if (tx) {
           const swapOrder = await this.ctx.validator.verifyFromTx(tx);
           if (swapOrder) {
-            this.ctx.logger.info(`swapOrder:`, swapOrder)
+            this.ctx.logger.info(`swapOrder:`, { swapOrder: swapOrder })
             await this.ctx.sequencer.push(swapOrder);
           } else {
             // msg && await channel.ack(msg);

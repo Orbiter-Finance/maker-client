@@ -93,6 +93,7 @@ export default class Sequencer {
       const handle = async () => {
         for (const chainId in this.pending) {
           const pendingTxs = this.pending[chainId];
+          console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}, monitorState:`, this.monitorState[chainId]);
           if (pendingTxs.length <= 0) {
             continue;
           }
@@ -109,7 +110,6 @@ export default class Sequencer {
           if (!monitorState.locked && Date.now() - monitorState.lastSubmit > submissionInterval) {
             // if type = 
             monitorState.locked = true;
-            console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}`);
             // filter 
             const matchOrders: SwapOrder[] = [];
             this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
@@ -190,10 +190,10 @@ export default class Sequencer {
       }
     }
     if (InterceptTransactions.length > 0) {
-      logger.info(`${chainId} sequencer submit InterceptTransactions:`, InterceptTransactions);
+      logger.info(`${chainId} sequencer submit InterceptTransactions:`, { InterceptTransactions });
     }
     if (pendingTxs.length <= 0) {
-      logger.info(`${chainId} sequencer submit All InterceptTransactions pending null:`, InterceptTransactions.map(row => row.calldata.hash));
+      logger.info(`${chainId} sequencer submit All InterceptTransactions pending null:`, {InterceptTransactions:InterceptTransactions.map(row => row.calldata.hash)});
       return { chainId };
     }
     const chainConfig = chains.getChainInfo(chainId);
@@ -253,7 +253,7 @@ export default class Sequencer {
         }
         let submitTx: TransactionResponse | undefined;
         let isError = false;
-        if (encodeDatas.length<=0) {
+        if (encodeDatas.length <= 0) {
           continue;
         }
         try {

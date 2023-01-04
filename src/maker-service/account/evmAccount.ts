@@ -128,11 +128,11 @@ export default class EVMAccount extends BaseAccount {
         // logger.error(`evm sendTransaction before error:${error.message}`, error);
         throw new Error(`=>sendTransaction before error:${message}`);
       }
-      logger.info(`${chainConfig.name} sendTransaction before nonce:`, this.nonceManager._deltaCount);
+      logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
       logger.info(`${chainConfig.name} sendTransaction:`, tx);
       const response = await this.nonceManager.sendTransaction(tx);
       console.debug(`${chainConfig.name} txHash:`, response.hash);
-      logger.info(`${chainConfig.name} sendTransaction after nonce:`, this.nonceManager._deltaCount, response.nonce);
+      logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
       // use nonce manager disabled
       // console.debug('Transaction Data:', JSON.stringify(tx));
       // const signedTx = await this.wallet.signTransaction(tx);

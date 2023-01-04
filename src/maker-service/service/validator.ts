@@ -144,6 +144,12 @@ export default class ValidatorService {
       );
       return undefined;
     }
+    if (process.env['user.blacklist'] && process.env['user.blacklist'].includes(swapOrder.to.toLocaleLowerCase())) {
+      logger.error(
+        `${swapOrder.calldata.hash} The receiving address is a blacklist address`
+      );
+      return undefined;
+    }
 
     // valid from chain & from token
     const fromChainId = Number(swapOrder.calldata.chainId);
