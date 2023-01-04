@@ -9,6 +9,12 @@ export class LoggerService {
         opts = Object.assign({
             logDir: path.join('runtime', key),
             debug: true,
+            logstash: {
+                port: process.env["logstash.port"],
+                level: "info",
+                node_name: 'maker-client',
+                host: process.env["logstash.host"],
+            },
             telegram: {
                 token: process.env["TELEGRAM_TOKEN"],
                 chatId: process.env["TELEGRAM_CHATID"]
