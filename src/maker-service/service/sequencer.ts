@@ -7,15 +7,19 @@ import XVMAccount from '../account/xvmAccount';
 import { chains } from 'orbiter-chaincore';
 import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
-import { TransactionResponse } from '../account/baseAccount';
+import BaseAccount, { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
-const submissionInterval = 1000 * 60 * 3;
+const submissionInterval = 1000 * 60 * 2;
 export interface submitResponse {
   chainId: number;
-  fromHash?: Array<string>
-  // hashMap?: {
-  //   [key: string]: Array<string>
-  // }
+  error?: Error | string,
+  makerDeal?: {
+    [key: string]: Array<{
+      fromHash: string,
+      toHash?: string,
+      error?: Error | string
+    }>
+  }
 }
 export interface CalldataType {
   chainId: number;
@@ -92,11 +96,6 @@ export default class Sequencer {
     try {
       const handle = async () => {
         for (const chainId in this.pending) {
-          const pendingTxs = this.pending[chainId];
-          console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}, monitorState:`, this.monitorState[chainId]);
-          if (pendingTxs.length <= 0) {
-            continue;
-          }
           let monitorState = this.monitorState[chainId];
           if (!monitorState) {
             // init
@@ -107,13 +106,18 @@ export default class Sequencer {
             monitorState = this.monitorState[chainId];
             continue;
           }
+          const pendingTxs = this.pending[chainId];
+          if (pendingTxs.length <= 0) {
+            continue;
+          }
+          console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}, monitorState:`, this.monitorState[chainId], '===now:', dayjs().format('YYYY-MM-DD HH:mm:ss'));
           if (!monitorState.locked && Date.now() - monitorState.lastSubmit > submissionInterval) {
             // if type = 
             monitorState.locked = true;
             // filter 
             const matchOrders: SwapOrder[] = [];
             this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
-            for (let i = 0; i < pendingTxs.length; i++) {
+            for (let i = pendingTxs.length - 1; i >= 0; i--) {
               const order = pendingTxs[i];
               if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
                 pendingTxs.splice(i, 1);
@@ -135,6 +139,7 @@ export default class Sequencer {
             this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
             if (matchOrders.length > 0) {
               this.submit(Number(chainId), matchOrders).then(result => {
+                console.debug('submit result:', JSON.stringify(result));
               }).finally(() => {
                 monitorState.locked = false;
                 monitorState.lastSubmit = Date.now();
@@ -147,7 +152,7 @@ export default class Sequencer {
 
         }
       }
-      setInterval(handle, 1000);
+      setInterval(handle, 1000 * 10);
     } catch (error) {
       console.error('monitor error', error);
     }
@@ -163,136 +168,189 @@ export default class Sequencer {
       return;
     }
     this.pending[chainId].push(trx);
-    console.log('push:', trx);
+    console.log('push:', JSON.stringify(trx));
     return this.pending[chainId];
   }
 
   async submit(chainId: number, pendingTxs: SwapOrder[]): Promise<submitResponse> {
     // exec send
-    const cache = Caching.getCache(chainId.toString());
-    if (pendingTxs.length <= 0) {
-      return { chainId };
-    }
-    const logger = this.ctx.logger;
-    // const logger = LoggerService.getLogger(chainId.toString());
-
-    const InterceptTransactions: SwapOrder[] = [];
-    const senderPrivateKey = {};
-    const senderFromHashList: Array<string> = [];
-    for (let i = 0; i < pendingTxs.length; i++) {
-      const order = pendingTxs[i];
-      const validResult = await this.ctx.validator.verifyToTx(order);
-      if (validResult) {
-        senderPrivateKey[order.from.toLocaleLowerCase()] = validResult.privateKey;
-      } else {
-        InterceptTransactions.push(order);
-        pendingTxs.splice(i, 1);
-      }
-    }
-    if (InterceptTransactions.length > 0) {
-      logger.info(`${chainId} sequencer submit InterceptTransactions:`, { InterceptTransactions });
-    }
-    if (pendingTxs.length <= 0) {
-      logger.info(`${chainId} sequencer submit All InterceptTransactions pending null:`, {InterceptTransactions:InterceptTransactions.map(row => row.calldata.hash)});
-      return { chainId };
-    }
     const chainConfig = chains.getChainInfo(chainId);
     if (!chainConfig) {
       throw new Error(`From ChainConfig Not found`);
     }
-    const groupData = groupBy(pendingTxs, 'from');
-    for (const sender in groupData) {
-      const fromHashList: string[] = [];
-      try {
-        const xvmAccount = Factory.createMakerAccount<XVMAccount>(senderPrivateKey[sender.toLocaleLowerCase()], chainId, true);
-        const encodeDatas: string[] = [];
-        let sendMainTokenValue = ethers.BigNumber.from(0);
-        const sendTokenCheck: { [key: string]: ethers.BigNumber } = {}
-        for (const pendingTx of groupData[sender]) {
-          // isExists sender
-          const senderRecord = await cache.get(pendingTx.calldata.hash);
-          if (!isEmpty(senderRecord)) {
-            logger.error(`${pendingTx.calldata.hash} The sending record already exists, blocking`)
-            continue;
-          }
-          const sendToken = pendingTx.token;
-          const isMainToken = chains.inValidMainToken(Number(pendingTx.chainId), sendToken);
-          if (isMainToken) {
-            sendMainTokenValue = sendMainTokenValue.add(pendingTx.value);
-          } else {
-            sendTokenCheck[sendToken.toLowerCase()] = sendTokenCheck[sendToken] ? sendTokenCheck[sendToken].add(pendingTx.value) : ethers.BigNumber.from(pendingTx.value);
-          }
-          fromHashList.push(pendingTx.calldata.hash);
-          encodeDatas.push(xvmAccount.swapOkEncodeABI(pendingTx.calldata.hash, pendingTx.token, pendingTx.to, pendingTx.value));
+    const cache = Caching.getCache(chainId.toString());
+    if (pendingTxs.length <= 0) {
+      return { chainId, error: 'pendingTxs less 0' };
+    }
+    const logger = this.ctx.logger;
+    const senderPrivateKey = {};
+
+    const makerWaitingSending: {
+      [key: string]: Array<{
+        fromHash: string,
+        toHash?: string,
+        error?: Error | string
+      }>
+    } = {}
+
+    for (let i = 0; i < pendingTxs.length; i++) {
+      const order = pendingTxs[i];
+      const senderRecord = await cache.get(order.calldata.hash);
+      if (!isEmpty(senderRecord)) {
+        logger.error(`${order.calldata.hash} The sending record already exists, blocking`)
+        continue;
+      }
+      const validResult = await this.ctx.validator.verifyToTx(order);
+      if (!validResult) {
+        logger.error(`${order.calldata.hash} verifyToTx Fail`)
+        continue;
+      }
+      senderPrivateKey[order.from.toLocaleLowerCase()] = validResult.privateKey;
+      // save cache
+      await cache.set(order.calldata.hash, true, orderTimeoutMS);
+      if (!makerWaitingSending[order.from.toLocaleLowerCase()]) {
+        makerWaitingSending[order.from.toLocaleLowerCase()] = [];
+      }
+      makerWaitingSending[order.from.toLocaleLowerCase()].push({
+        fromHash: order.calldata.hash,
+        toHash: '',
+        error: undefined
+      })
+    }
+    if (Object.keys(makerWaitingSending).length <= 0) {
+      logger.info(`${chainId} No transaction to send after filtering`);
+    }
+    const makerBalance: {
+      [key: string]: ethers.BigNumber
+    } = {}
+    for (const makerReplyAddr in makerWaitingSending) {
+      const account: BaseAccount = Factory.createMakerAccount(senderPrivateKey[makerReplyAddr], chainId);
+      const trxList = makerWaitingSending[makerReplyAddr];
+      for (const tx of trxList) {
+        const order = pendingTxs.find(order => equals(order.calldata.hash, tx.fromHash));
+        if (!order) {
+          tx.error = 'order not found';
+          continue;
         }
-        //
-        const sendParams = {
-          value: sendMainTokenValue,
+        const sendToken = order.token.toLocaleLowerCase();
+        const sendValue = ethers.BigNumber.from(order.value);
+        if (makerBalance[sendToken] === undefined) {
+          makerBalance[sendToken] = await account.getBalance(makerReplyAddr, chains.inValidMainToken(chainId, sendToken) ? undefined : sendToken);
         }
-        // check balance
-        if (sendMainTokenValue.gt(0)) {
-          // check mainToke balance
-          const makerBalance = await xvmAccount.getBalance(sender);
-          if (makerBalance && makerBalance.lt(sendMainTokenValue)) {
-            throw new Error(`${chainConfig.name}  maker ${sender} Balance Insufficient (${makerBalance.toString()}/${sendMainTokenValue.toString()})`)
-          }
+        if (makerBalance[sendToken].lt(sendValue)) {
+          tx.error = `${chainConfig.name} - ${makerReplyAddr} Maker Insufficient funds`;
+          continue;
         }
-        // check token balance
-        for (const token in sendTokenCheck) {
-          if (sendTokenCheck[token].gt(0)) {
-            const makerBalance = await xvmAccount.getTokenBalance(token, sender);
-            if (makerBalance && makerBalance.lt(sendTokenCheck[token])) {
-              throw new Error(`${chainConfig.name}  maker ${sender} Token ${token} Balance Insufficient(${makerBalance.toString()}/${sendTokenCheck[token].toString()})`)
+        makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
+      }
+      let submitTx: TransactionResponse | undefined;
+      const passOrders: Array<SwapOrder> = [];
+      let sendMainTokenValue = ethers.BigNumber.from(0);
+      for (const row of trxList) {
+        if (isEmpty(row.error)) {
+          const order = pendingTxs.find(order => equals(order.calldata.hash, row.fromHash));
+          if (order) {
+            passOrders.push(order);
+            if (chains.inValidMainToken(chainId, order.token)) {
+              sendMainTokenValue = sendMainTokenValue.add(order.value);
             }
           }
         }
-        // When this step is reached, the transaction has been executed
-        logger.info(`${chainConfig.name} sequencer swap submit:`, { pendingTxs, sendParams });
-        for (const hash of fromHashList) {
-          await cache.set(hash, true, orderTimeoutMS);
-        }
-        let submitTx: TransactionResponse | undefined;
+      }
+      const isXVMReply = ValidatorService.isSupportXVM(chainId);
+      logger.info(`${chainConfig.name} sequencer swap submit:`, { passOrders, sendMainTokenValue });
+      if (isXVMReply) {
+        const encodeDatas = passOrders.map(order => {
+          return (<XVMAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
+        })
         let isError = false;
-        if (encodeDatas.length <= 0) {
-          continue;
-        }
         try {
-          submitTx = await xvmAccount.swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, sendParams);
-          console.log(`${chainConfig.name}  sequencer swap submit ok:`, submitTx.hash)
+          submitTx = await (<XVMAccount>account).swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
+            value: sendMainTokenValue,
+          });
         } catch (error: any) {
           isError = true;
+          // for (const order of passOrders) {
+          const tx = trxList.find(o => equals(o.fromHash, passOrders[0].calldata.hash));
+          if (tx)
+            tx.error = error;
+          // }
           logger.error(`${chainConfig.name} sequencer swap submit swapOK error:${error.message}`, error);
-        }
-        if (submitTx) {
-          await this.ctx.db.Sequencer.upsert({
-            hash: submitTx.hash,
-            from: submitTx.from,
-            to: String(submitTx.to),
-            status: 1,
-            chainId: submitTx.chainId,
-            transactions: fromHashList as any,
-            transactionCount: encodeDatas.length
+        } finally {
+          const passHashList = passOrders.map(tx => tx.calldata.hash);
+          if (submitTx) {
+            logger.info(`${chainConfig.name}  sequencer swap submit success`, {
+              toHash: submitTx.hash,
+              fromHashList: passHashList
+            })
+            for (const order of passOrders) {
+              const tx = trxList.find(o => equals(o.fromHash, order.calldata.hash));
+              if (tx)
+                tx.toHash = submitTx.hash;
+            }
+            await this.ctx.db.Sequencer.upsert({
+              hash: submitTx.hash,
+              from: submitTx.from,
+              to: String(submitTx.to),
+              status: 1,
+              chainId: submitTx.chainId,
+              transactions: passHashList as any,
+              transactionCount: encodeDatas.length
+            });
+          }
+          // change
+          await this.ctx.db.Transaction.update({
+            status: isError ? 96 : 97
+          }, {
+            where: {
+              hash: passHashList.length > 1 ? passHashList : passHashList[0]
+            }
           })
         }
-        senderFromHashList.push(...fromHashList);
-        await this.ctx.db.Transaction.update({
-          status: isError ? 96 : 97
-        }, {
-          where: {
-            hash: fromHashList.length > 1 ? fromHashList : fromHashList[0]
+      }
+      if (!isXVMReply) {
+        // ua
+        for (const order of passOrders) {
+          let isError = false;
+          try {
+            if (chains.inValidMainToken(chainId, order.token)) {
+              submitTx = await account.transfer(order.to, order.value);
+            } else {
+              submitTx = await account.transferToken(order.token, order.to, order.value);
+            }
+
+          } catch (error: any) {
+            logger.error(`${chainConfig.name} sequencer swap submit UA Transfer error:${error.message}`, error);
+            const tx = trxList.find(o => equals(o.fromHash, order.calldata.hash));
+            if (tx)
+              tx.error = error;
+          } finally {
+            if (submitTx) {
+              const tx = trxList.find(o => equals(o.fromHash, order.calldata.hash));
+              if (tx)
+                tx.toHash = submitTx.hash;
+              await this.ctx.db.Sequencer.upsert({
+                hash: submitTx.hash,
+                from: submitTx.from,
+                to: String(submitTx.to),
+                status: 1,
+                chainId: submitTx.chainId,
+                transactions: [order.hash] as any,
+                transactionCount: 1
+              });
+            }
+            // change
+            await this.ctx.db.Transaction.update({
+              status: isError ? 96 : 97
+            }, {
+              where: {
+                hash: order.calldata.hash
+              }
+            })
           }
-        })
-        if (submitTx) {
-          await submitTx.wait()
         }
-        // save status
-      } catch (error: any) {
-        logger.error(`sequencer swap submit error:${error.message}`, {
-          msg: error.message,
-          data: groupData[sender]
-        });
       }
     }
-    return { chainId, fromHash: senderFromHashList };
+    return { chainId, makerDeal: makerWaitingSending };
   }
 }

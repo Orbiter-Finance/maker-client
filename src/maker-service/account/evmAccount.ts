@@ -116,6 +116,7 @@ export default class EVMAccount extends BaseAccount {
             let gasLimit: number | BigNumber = await this.provider.estimateGas(
               tx
             );
+            console.log(`${chainConfig.name} get gasLimit ${(gasLimit).toString()}`)
             gasLimit = Number((gasLimit.toNumber() * 2).toFixed(0));
             tx.gasLimit = ethers.utils.hexlify(gasLimit);
           }
@@ -128,11 +129,11 @@ export default class EVMAccount extends BaseAccount {
         // logger.error(`evm sendTransaction before error:${error.message}`, error);
         throw new Error(`=>sendTransaction before error:${message}`);
       }
-      logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
-      logger.info(`${chainConfig.name} sendTransaction:`, tx);
+      // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
+      // logger.info(`${chainConfig.name} sendTransaction:`, tx);
       const response = await this.nonceManager.sendTransaction(tx);
-      console.debug(`${chainConfig.name} txHash:`, response.hash);
-      logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
+      // console.debug(`${chainConfig.name} txHash:`, response.hash);
+      // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
       // use nonce manager disabled
       // console.debug('Transaction Data:', JSON.stringify(tx));
       // const signedTx = await this.wallet.signTransaction(tx);
@@ -150,10 +151,17 @@ export default class EVMAccount extends BaseAccount {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
     return await erc20.approve(spender, value);
   }
-  public getBalance(to?: string): Promise<BigNumber> {
-    return this.provider.getBalance(to || this.wallet.address);
+  public async getBalance(to?: string, token?: string): Promise<BigNumber> {
+    if (token) {
+      // is native
+      // const chainId = await this.wallet.getChainId();
+      // const issMainToken = await chains.inValidMainToken(String(chainId), token);
+      return this.getTokenBalance(token, to);
+    } else {
+      return this.provider.getBalance(to || this.wallet.address);
+    }
   }
-  public getTokenBalance(token: string, to?: string): Promise<BigNumber> {
+  public async getTokenBalance(token: string, to?: string): Promise<BigNumber> {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider);
     return erc20.balanceOf(to || this.wallet.address);
   }

@@ -2,9 +2,9 @@ import { chains } from 'orbiter-chaincore/src/utils';
 import { ethers } from 'ethers';
 
 import { XVMAbi } from '../abi';
-
+import config from '../config/config'
 import EVMAccount from './evmAccount';
-import { TransactionRequest } from './baseAccount';
+import { TransactionRequest, TransactionResponse } from './baseAccount';
 
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class XVMAccount extends EVMAccount {
@@ -17,7 +17,7 @@ export default class XVMAccount extends EVMAccount {
     super(privateKey, rpc);
     this.contract = new ethers.Contract(this.contractAddress, XVMAbi, this.provider);
   }
-  async swapOK(calldata: string[] | string, transactionRequest:TransactionRequest = {}) {
+  async swapOK(calldata: string[] | string, transactionRequest: TransactionRequest = {}): Promise<TransactionResponse> {
     // get chain config 
     const chainId = await await this.wallet.getChainId();
     const chainConfig = chains.getChainInfo(String(chainId));
@@ -28,10 +28,11 @@ export default class XVMAccount extends EVMAccount {
     if ((chainConfig['features'] || []).includes("EIP1559")) {
       txType = 2;
     }
+    const gasLimit = config.xvmGas[Number(chainConfig.internalId)] || 0;
     if (typeof calldata === 'string') {
       const tx = await this.sendTransaction(this.contractAddress, Object.assign({
         data: calldata,
-        gasLimit: 100000,
+        gasLimit: ethers.BigNumber.from(gasLimit),
         type: txType,
       }, transactionRequest));
       // await tx.wait();
@@ -39,11 +40,11 @@ export default class XVMAccount extends EVMAccount {
     } else {
       const ifa = new ethers.utils.Interface(XVMAbi);
       const data = ifa.encodeFunctionData('multicall', [calldata]);
-      const tx = await this.sendTransaction(this.contractAddress,Object.assign({
+      const tx = await this.sendTransaction(this.contractAddress, Object.assign({
         data,
-        gasLimit: 250000,
+        gasLimit: ethers.BigNumber.from(gasLimit).mul(calldata.length),
         type: txType
-      },transactionRequest));
+      }, transactionRequest));
       // await tx.wait();
       return tx;
     }

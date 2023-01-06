@@ -1,6 +1,7 @@
 import { chains, logger } from 'orbiter-chaincore';
 import { equals, groupBy } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
+import ValidatorService from '../service/validator';
 
 import BaseAccount from './baseAccount';
 import EVMAccount from './evmAccount';
@@ -12,7 +13,6 @@ export class Factory {
   static createMakerAccount<T extends BaseAccount>(
     privateKey: string,
     toChainId: number,
-    isXVM?: boolean
   ): T {
     const chainConfig = chains.getChainInfo(toChainId);
     if (!chainConfig) {
@@ -49,10 +49,8 @@ export class Factory {
       case 19:
       case 518:
       case 519:
-        if (isXVM) {
-          if (chainConfig['xvmList'].length>0) {
-            wallet = new XVMAccount(privateKey, chainConfig.rpc[0], chainConfig['xvmList'][0]);
-          }
+        if (ValidatorService.isSupportXVM(toChainId)) {
+          wallet = new XVMAccount(privateKey, chainConfig.rpc[0], chainConfig['xvmList'][0]);
         } else {
           wallet = new EVMAccount(privateKey, chainConfig.rpc[0]);
         }

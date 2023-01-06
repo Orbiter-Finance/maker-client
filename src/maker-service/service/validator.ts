@@ -175,9 +175,9 @@ export default class ValidatorService {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked`);
       return undefined;
     }
-    const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(),toToken.symbol, 'usd', true);
-    const diffPrice  = (1 - chainLinkPrice / toValue) * 100;
-    if (diffPrice>=0.5) {
+    const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(), toToken.symbol, 'usd', true);
+    const diffPrice = (1 - chainLinkPrice / toValue) * 100;
+    if (diffPrice >= 0.5) {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} There is too much difference with the price of the oracle`);
       return undefined;
     }
@@ -251,5 +251,9 @@ export default class ValidatorService {
   private getSenderPrivateKey(from: string) {
     const privateKey = process.env[from.toLocaleLowerCase()] || "";
     return privateKey;
+  }
+  public static isSupportXVM(chainId: number) {
+    const chain = chains.getChainInfo(chainId);
+    return chain?.xvmList && chain?.xvmList.length > 0;
   }
 }

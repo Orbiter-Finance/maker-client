@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const msg = 'Start Maker Client';
-const innerText = `本应用正在使用 Chrome (v${versions.chrome()}), Node.js (v${versions.node()})`;
+const innerText = `Maker Application Chrome (v${versions.chrome()}), Node.js (v${versions.node()})`;
 </script>
 
 <template>

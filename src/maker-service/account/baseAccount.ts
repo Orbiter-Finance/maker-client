@@ -8,7 +8,7 @@ export default abstract class BaseAccount {
     value: string,
     transactionRequest?: TransactionRequest
   ): Promise<TransactionResponse>;
-  public abstract getBalance(to: string): Promise<ethers.BigNumber>;
+  public abstract getBalance(to: string, token?:string): Promise<ethers.BigNumber>;
   public abstract getTokenBalance(
     token: string,
     to: string

@@ -2,6 +2,13 @@ import * as dotenv from 'dotenv';
 const dotEnvs = dotenv.config().parsed;
 const vars = process.env;
 export default {
+  xvmGas: {
+    22: 600000,
+    5: 50000,
+    66: 70000,
+    77: 70000,
+    515: 60000
+  },
   sqlite: {
     dialect: 'sqlite',
     storage: './data/database.sqlite',

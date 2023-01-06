@@ -63,9 +63,11 @@ export default class Consumer {
   public async subscribe(chainId: string, queueName: string) {
     const channel = this.channels[chainId];
     const messageHandle = async (msg: ConsumeMessage | null) => {
+      let hash = '';
       if (msg) {
         const tx = JSON.parse(msg.content.toString()) as Transaction;
-        this.ctx.logger.info('subscribe tx:', { tx });
+        hash = tx.hash;
+        this.ctx.logger.info(`subscribe tx:${tx.hash}`);
         if (tx) {
           const swapOrder = await this.ctx.validator.verifyFromTx(tx);
           if (swapOrder) {
