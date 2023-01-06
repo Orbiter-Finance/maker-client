@@ -1,9 +1,10 @@
+import { LoggerService } from './../utils/logger';
 // import { NonceManager } from '@ethersproject/experimental';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
-import { chains, logger } from 'orbiter-chaincore';
+import { chains } from 'orbiter-chaincore';
 
 import { ERC20Abi } from '../abi';
-
+const logger = LoggerService.getLogger("");
 import BaseAccount from './baseAccount';
 import { NonceManager } from './nonceManager';
 export const RPC_NETWORK: { [key: string]: number } = {};
@@ -39,7 +40,7 @@ export default class EVMAccount extends BaseAccount {
       },
       transactionRequest
     );
-    params.value = '0x';
+    params.value = ethers.BigNumber.from(0);
     const response = await this.sendTransaction(token, params);
     return response;
   }
@@ -48,7 +49,7 @@ export default class EVMAccount extends BaseAccount {
     value: string,
     transactionRequest: ethers.providers.TransactionRequest = {}
   ) {
-    transactionRequest.value = value;
+    transactionRequest.value = ethers.BigNumber.from(value);
     return this.sendTransaction(to, transactionRequest);
   }
   async sendTransaction(
@@ -101,10 +102,6 @@ export default class EVMAccount extends BaseAccount {
             }
           } else {
             tx.gasPrice = tx.gasPrice || (await this.wallet.getGasPrice());
-            // if (!tx.gasPrice) {
-            //   const feeData = await this.provider.getFeeData();
-            //   tx.gasPrice = BigNumber.from(feeData.gasPrice?.toString());
-            // }
           }
         } catch ({ message }) {
           throw new Error(
@@ -144,6 +141,9 @@ export default class EVMAccount extends BaseAccount {
       // console.debug('Precomputed Nonce:', tx.nonce.toString());
       return response;
     } catch (error) {
+      logger.error(`EVM sendTransaction error`, {
+        transactionRequest: tx
+      })
       throw error;
     }
   }

@@ -257,7 +257,10 @@ export default class Sequencer {
           }
         }
       }
-      const isXVMReply = ValidatorService.isSupportXVM(chainId);
+      let isXVMReply = ValidatorService.isSupportXVM(chainId);
+      if (isXVMReply && passOrders.length === 1) {
+        isXVMReply = false;
+      }
       logger.info(`${chainConfig.name} sequencer swap submit:`, { passOrders, sendMainTokenValue });
       if (isXVMReply) {
         const encodeDatas = passOrders.map(order => {
