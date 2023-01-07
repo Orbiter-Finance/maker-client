@@ -4,7 +4,7 @@ import { BigNumber, ethers, providers, Wallet } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 
 import { ERC20Abi } from '../abi';
-const logger = LoggerService.getLogger("");
+const logger = LoggerService.getLogger("Account");
 import BaseAccount from './baseAccount';
 import { NonceManager } from './nonceManager';
 export const RPC_NETWORK: { [key: string]: number } = {};
@@ -32,11 +32,10 @@ export default class EVMAccount extends BaseAccount {
     transactionRequest: ethers.providers.TransactionRequest = {}
   ) {
     const ifa = new ethers.utils.Interface(ERC20Abi);
-    const data = ifa.encodeFunctionData('transfer', [to, value]);
+    const data = ifa.encodeFunctionData('transfer', [to, ethers.BigNumber.from(value)]);
     const params = Object.assign(
       {
         data,
-        type: 2,
       },
       transactionRequest
     );
@@ -102,6 +101,7 @@ export default class EVMAccount extends BaseAccount {
             }
           } else {
             tx.gasPrice = tx.gasPrice || (await this.wallet.getGasPrice());
+
           }
         } catch ({ message }) {
           throw new Error(
@@ -127,9 +127,9 @@ export default class EVMAccount extends BaseAccount {
         throw new Error(`=>sendTransaction before error:${message}`);
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
-      // logger.info(`${chainConfig.name} sendTransaction:`, tx);
+      logger.info(`${chainConfig.name} sendTransaction before:`, tx);
       const response = await this.nonceManager.sendTransaction(tx);
-      // console.debug(`${chainConfig.name} txHash:`, response.hash);
+      console.debug(`${chainConfig.name} sendTransaction txHash:`, response.hash);
       // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
       // use nonce manager disabled
       // console.debug('Transaction Data:', JSON.stringify(tx));
@@ -150,6 +150,10 @@ export default class EVMAccount extends BaseAccount {
   public async approve(token: string, spender: string, value: string | BigNumber) {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
     return await erc20.approve(spender, value);
+  }
+  public async allowance(token: string, spender: string) {
+    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
+    return await erc20.allowance(this.wallet.address, spender);
   }
   public async getBalance(to?: string, token?: string): Promise<BigNumber> {
     if (token) {

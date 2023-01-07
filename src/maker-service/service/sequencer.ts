@@ -139,7 +139,8 @@ export default class Sequencer {
             this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
             if (matchOrders.length > 0) {
               this.submit(Number(chainId), matchOrders).then(result => {
-                console.debug('submit result:', JSON.stringify(result));
+                console.log('submit result:', JSON.stringify(result));
+                this.ctx.logger.info('submit result:', JSON.stringify(result));
               }).finally(() => {
                 monitorState.locked = false;
                 monitorState.lastSubmit = Date.now();
@@ -313,13 +314,18 @@ export default class Sequencer {
       }
       if (!isXVMReply) {
         // ua
+        const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2: 0;
         for (const order of passOrders) {
           let isError = false;
           try {
             if (chains.inValidMainToken(chainId, order.token)) {
-              submitTx = await account.transfer(order.to, order.value);
+              submitTx = await account.transfer(order.to, order.value, {
+                type: txType
+              });
             } else {
-              submitTx = await account.transferToken(order.token, order.to, order.value);
+              submitTx = await account.transferToken(order.token, order.to, order.value, {
+                type: txType
+              });
             }
 
           } catch (error: any) {

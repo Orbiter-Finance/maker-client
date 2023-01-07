@@ -6,15 +6,16 @@ export class LoggerService {
     static services: { [key: string]: any } = {};
     static createLogger(key: string, opts?: winstonX.WinstonXOptions) {
         // const logger = LoggerService2.createLogger();
+        const logDir = path.join(process.env['logDir'] || "runtime");
         opts = Object.assign({
-            logDir: path.join('runtime', key),
+            logDir: path.join(logDir, key),
             debug: true,
-            logstash: {
-                port: process.env["logstash.port"],
-                level: "info",
-                node_name: 'maker-client',
-                host: process.env["logstash.host"],
-            },
+            // logstash: {
+            //     port: process.env["logstash.port"],
+            //     level: "info",
+            //     node_name: 'maker-client',
+            //     host: process.env["logstash.host"],
+            // },
             telegram: {
                 token: process.env["TELEGRAM_TOKEN"],
                 chatId: process.env["TELEGRAM_CHATID"]
@@ -22,7 +23,7 @@ export class LoggerService {
         }, opts)
         const logger = winstonX.createLogger(opts);
         logger.exceptions.handle(
-            new transports.File({ filename: 'runtime/exceptions.log' })
+            new transports.File({ filename: path.join(logDir, 'exceptions.log') })
         );
         LoggerService.services[key] = logger;
         return logger;
