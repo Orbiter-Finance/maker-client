@@ -11,6 +11,22 @@ services:
     command: npm run maker:start
     environment:
       NODE_ENV: 'development'
+      MYSQL_DB_NAME: '${MYSQL_DB_NAME}'
+      MYSQL_DB_HOST: '${MYSQL_DB_HOST}'
+      MYSQL_DB_USERNAME: '${MYSQL_DB_USERNAME}'
+      MYSQL_DB_PASSWORD: '${MYSQL_DB_PASSWORD}'
+      RABBIT_HOST: '${RABBIT_HOST}'
+      RABBIT_USER: '${RABBIT_USER}'
+      RABBIT_PASSWORD: '${RABBIT_PASSWORD}'
+      ENABLE_AUTO_PAYMENT_CHAINS: '${ENABLE_AUTO_PAYMENT_CHAINS}'
+      TELEGRAM_TOKEN: '${TELEGRAM_TOKEN}'
+      TELEGRAM_CHATID: '${TELEGRAM_CHATID}'
+      logstash_host: '${logstash_host}'
+      logstash_port: '${logstash_port}'
+      logDir: '${logDir}'
+      0x0043d60e87c5dd08c86c3123340705a1556c4719: 'xxxxx'
     restart: always
     networks:
       - app-network
+    volumes:
+      - './runtime:/home/maker-client/runtime'

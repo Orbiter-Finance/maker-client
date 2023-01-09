@@ -3,7 +3,6 @@ import { chains } from 'orbiter-chaincore/src/utils';
 
 import type Context from './context';
 import { Transaction } from './models/Transactions';
-import ValidatorService from './service/validator';
 export default class Consumer {
   private connection?: Connection;
   private channels: { [key: string]: Channel } = {};

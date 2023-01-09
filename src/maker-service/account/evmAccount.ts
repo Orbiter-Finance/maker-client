@@ -101,7 +101,6 @@ export default class EVMAccount extends BaseAccount {
             }
           } else {
             tx.gasPrice = tx.gasPrice || (await this.wallet.getGasPrice());
-
           }
         } catch ({ message }) {
           throw new Error(

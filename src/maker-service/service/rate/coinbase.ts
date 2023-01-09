@@ -4,7 +4,7 @@ import fetch from 'cross-fetch';
 export default class CoinbaseService {
   private cache: CachingType = Caching.getCache('rate:usd');
   public async getRates(currency: string) {
-    const url = process.env['NODE_ENV'] !== 'development' ? `https://api.coinbase.com/v2/exchange-rates?currency=${currency}` : `http://coinbase.okaynode.com/v2/exchange-rates?currency=${currency}`;
+    const url = `https://api.coinbase.com/v2/exchange-rates?currency=${currency}`;
     const { data } = await fetch(
       url
     ).then((res:any) => res.json());
