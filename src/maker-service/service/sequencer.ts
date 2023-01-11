@@ -113,44 +113,49 @@ export default class Sequencer {
           console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}, monitorState:`, this.monitorState[chainId], '===now:', dayjs().format('YYYY-MM-DD HH:mm:ss'));
           if (!monitorState.locked && Date.now() - monitorState.lastSubmit > submissionInterval) {
             // if type = 
-            monitorState.locked = true;
-            // filter 
-            const matchOrders: SwapOrder[] = [];
-            this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
-            for (let i = pendingTxs.length - 1; i >= 0; i--) {
-              const order = pendingTxs[i];
-              if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
-                pendingTxs.splice(i, 1);
-                this.ctx.logger.info(`${order.calldata.hash} remove order`);
-                continue;
-              }
-              if (order.type === SwapOrderType.CrossToken) {
-                // matchOrders.
-                const value = await this.ctx.validator.verifyXVMCrossToken(order);
-                if (value && !isEmpty(value)) {
-                  order.value = String(value);
-                  const spliceOrders = pendingTxs.splice(i, 1);
-                  matchOrders.push(...spliceOrders);
+            try {
+              monitorState.locked = true;
+              // filter 
+              const matchOrders: SwapOrder[] = [];
+              this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
+              for (let i = pendingTxs.length - 1; i >= 0; i--) {
+                const order = pendingTxs[i];
+                if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
+                  pendingTxs.splice(i, 1);
+                  this.ctx.logger.info(`${order.calldata.hash} remove order`);
+                  continue;
                 }
-              } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
-                matchOrders.push(...pendingTxs.splice(i, 1));
+                if (order.type === SwapOrderType.CrossToken) {
+                  // matchOrders.
+                  const value = await this.ctx.validator.verifyXVMCrossToken(order);
+                  if (value && !isEmpty(value)) {
+                    order.value = String(value);
+                    const spliceOrders = pendingTxs.splice(i, 1);
+                    matchOrders.push(...spliceOrders);
+                  }
+                } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
+                  matchOrders.push(...pendingTxs.splice(i, 1));
+                }
               }
-            }
-            this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
-            if (matchOrders.length > 0) {
-              this.submit(Number(chainId), matchOrders).then(result => {
-                console.log('submit result:', JSON.stringify(result));
-                this.ctx.logger.info('submit result:', {
-                  result: JSON.stringify(result)
-                });
-              }).finally(() => {
-                monitorState.locked = false;
-                monitorState.lastSubmit = Date.now();
-              })
-            } else {
+              this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
+              if (matchOrders.length > 0) {
+                this.submit(Number(chainId), matchOrders).then(result => {
+                  console.log('submit result:', JSON.stringify(result));
+                  this.ctx.logger.info('submit result:', {
+                    result: JSON.stringify(result)
+                  });
+                }).finally(() => {
+                  monitorState.locked = false;
+                  monitorState.lastSubmit = Date.now();
+                })
+              }
+            } catch (error) {
+              this.ctx.logger.info('submit error:', {
+                error: error
+              });
               monitorState.locked = false;
               monitorState.lastSubmit = Date.now();
-            }
+            } 
           }
 
         }
@@ -241,7 +246,7 @@ export default class Sequencer {
           makerBalance[sendToken] = await account.getBalance(makerReplyAddr, chains.inValidMainToken(chainId, sendToken) ? undefined : sendToken);
         }
         if (makerBalance[sendToken].lt(sendValue)) {
-          tx.error = `${chainConfig.name} - ${makerReplyAddr} Maker Insufficient funds`;
+          tx.error = `${chainConfig.name} - ${makerReplyAddr} Maker ${sendToken}  Insufficient funds ${makerBalance[sendToken]}/${sendValue}`;
           continue;
         }
         makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
