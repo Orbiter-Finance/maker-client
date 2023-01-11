@@ -602,5 +602,28 @@
     "rpc": ["https://prealpha.scroll.io/l2"],
     "watch": ["api", "rpc"],
     "tokens": []
+  },
+  {
+    "api": {
+      "url": "https://l2explorer.a1.taiko.xyz/api",
+      "key": "",
+      "intervalTime": 60000
+    },
+    "xvmList": [],
+    "chainId": "167003",
+    "networkId": "167003",
+    "internalId": "520",
+    "name": "Taiko A1 Testnet",
+    "debug": false,
+    "contracts": [],
+    "nativeCurrency": {
+      "name": "ETH",
+      "symbol": "ETH",
+      "decimals": 18,
+      "address": "0x0000000000000000000000000000000000000000"
+    },
+    "rpc": ["https://l2rpc.a1.taiko.xyz"],
+    "watch": ["api", "rpc"],
+    "tokens": []
   }
 ]
