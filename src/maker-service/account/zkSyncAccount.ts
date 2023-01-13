@@ -5,12 +5,13 @@ import BaseAccount, { TransactionResponse } from './baseAccount';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends BaseAccount {
   public l1Wallet: ethers.Wallet;
-  
+
   constructor(
+    protected internalId: number,
     protected privateKey: string,
     protected readonly zkSyncNetwork: zksync.types.Network
   ) {
-    super(privateKey);
+    super(internalId, privateKey);
     let l1Provider;
     if (zkSyncNetwork === 'mainnet') {
       l1Provider = ethers.providers.getDefaultProvider('mainnet');
@@ -53,6 +54,6 @@ export default class zkSyncAccount extends BaseAccount {
     return {
       hash: response.txHash,
       from: syncWallet.address.toString(),
-    } as  any;
+    } as any;
   }
 }

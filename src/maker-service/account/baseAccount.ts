@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 export type TransactionResponse = ethers.providers.TransactionResponse;
 export type TransactionRequest = ethers.providers.TransactionRequest;
 export default abstract class BaseAccount {
-  constructor(protected readonly privateKey: string) {}
+  constructor( protected internalId:number,protected readonly privateKey: string) {}
   public abstract transfer(
     to: string,
     value: string,

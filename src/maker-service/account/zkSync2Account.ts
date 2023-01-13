@@ -9,8 +9,9 @@ export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends BaseAccount {
   protected wallet: zksync.Wallet;
   public provider: zksync.Provider;
-  constructor(protected privateKey: string, protected rpc: string) {
-    super(privateKey);
+  constructor(protected internalId: number,
+    protected privateKey: string, protected rpc: string) {
+    super(internalId, privateKey);
     const ethProvider = ethers.getDefaultProvider('goerli');
     this.provider = new zksync.Provider(rpc);
     this.wallet = new zksync.Wallet(privateKey, this.provider, ethProvider);

@@ -9,12 +9,19 @@
   export const RPC_NETWORK: { [key: string]: number } = {};
   export default class XVMAccount extends EVMAccount {
     public contract: ethers.Contract;
+    public contractAddress: string;
     constructor(
+      protected internalId:number,
       protected override privateKey: string,
-      protected override rpc: string,
-      public readonly contractAddress: string,
+      // protected override rpc: string,
+      // public readonly contractAddress: string,
     ) {
-      super(privateKey, rpc);
+      const chainConfig = chains.getChainInfo(internalId);
+      if (!chainConfig) {
+        throw new Error('XVM Config Not Found');
+      }
+      super(internalId, privateKey, chainConfig.rpc[0]);
+      this.contractAddress = chainConfig?.xvmList[0];
       this.contract = new ethers.Contract(this.contractAddress, XVMAbi, this.provider);
     }
     async swapOK(calldata: string[] | string, transactionRequest: TransactionRequest = {}): Promise<TransactionResponse> {

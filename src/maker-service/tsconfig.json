@@ -1,16 +1,18 @@
 {
-    "compilerOptions": {
-      "target": "es2017",
-      "module": "commonjs",
-      "strict": true,
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
-      "outDir": "../../build/maker-service",
-      "allowJs": true,
-      "noImplicitAny": false,
-      "resolveJsonModule":true
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./*"]
     },
-    "exclude": ["static"]
-  }
-  
+    "target": "es2017",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "../../build/maker-service",
+    "allowJs": true,
+    "noImplicitAny": false,
+    "resolveJsonModule": true
+  },
+  "exclude": ["static"]
+}

@@ -1,29 +1,30 @@
 import { LoggerService } from './../utils/logger';
-// import { NonceManager } from '@ethersproject/experimental';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
 import { chains } from 'orbiter-chaincore';
-
 import { ERC20Abi } from '../abi';
-const logger = LoggerService.getLogger("Account");
 import BaseAccount from './baseAccount';
 import { NonceManager } from './nonceManager';
+import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends BaseAccount {
   protected wallet: Wallet;
   public nonceManager: NonceManager;
   public provider: ethers.providers.Provider;
+  public logger: LoggerType;
   constructor(
+    protected internalId:number,
     protected readonly privateKey: string,
     protected readonly rpc: string
   ) {
-    super(privateKey);
+    super(internalId, privateKey);
     if (this.rpc.includes('ws')) {
       this.provider = new providers.WebSocketProvider(this.rpc);
     } else {
       this.provider = new providers.JsonRpcProvider(this.rpc);
     }
     this.wallet = new ethers.Wallet(this.privateKey).connect(this.provider);
-    this.nonceManager = new NonceManager(this.wallet);
+    this.nonceManager = new NonceManager(this.wallet, this);
+    this.logger = LoggerService.getLogger(internalId.toString());
   }
   async transferToken(
     token: string,
@@ -126,9 +127,9 @@ export default class EVMAccount extends BaseAccount {
         throw new Error(`=>sendTransaction before error:${message}`);
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
-      logger.info(`${chainConfig.name} sendTransaction before:`, tx);
+      this.logger.info(`${chainConfig.name} sendTransaction before:`, tx);
       const response = await this.nonceManager.sendTransaction(tx);
-      console.debug(`${chainConfig.name} sendTransaction txHash:`, response.hash);
+      this.logger.info(`${chainConfig.name} sendTransaction txHash:`, response.hash);
       // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
       // use nonce manager disabled
       // console.debug('Transaction Data:', JSON.stringify(tx));
@@ -140,7 +141,7 @@ export default class EVMAccount extends BaseAccount {
       // console.debug('Precomputed Nonce:', tx.nonce.toString());
       return response;
     } catch (error) {
-      logger.error(`EVM sendTransaction error`, {
+      this.logger.error(`EVM sendTransaction error`, {
         transactionRequest: tx
       })
       throw error;

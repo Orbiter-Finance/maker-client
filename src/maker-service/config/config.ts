@@ -3,11 +3,11 @@ const dotEnvs = dotenv.config().parsed;
 const vars = process.env;
 export default {
   xvmGas: {
-    22: 600000,
-    5: 50000,
+    22: 1000000,
+    5: 70000,
     66: 70000,
     77: 70000,
-    515: 60000
+    515: 70000
   },
   sqlite: {
     dialect: 'sqlite',

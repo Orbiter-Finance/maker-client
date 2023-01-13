@@ -4,10 +4,14 @@ import path from 'path';
 export class LoggerService {
     static services: { [key: string]: any } = {};
     static createLogger(key: string, opts?: winstonX.WinstonXOptions) {
-        // const logger = LoggerService2.createLogger();
-        // const logDir = path.join(process.env['logDir'] || "runtime");
+        let logDir:undefined | string =  undefined;
+        if (key) {
+            logDir = path.join(process.cwd(),'runtime', 'logs', key);
+        }
+        console.log(logDir, '====logDir');
         opts = Object.assign({
-            // logDir: path.join(logDir, key),
+            logDir,
+            label: key,
             debug: true,
             // logstash: {
             //     port: process.env["logstash.port"],

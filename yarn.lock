@@ -9311,10 +9311,10 @@ ora@^5.3.0, ora@^5.4.1:
     strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
 
-orbiter-chaincore@1.3.9-7:
-  version "1.3.9-7"
-  resolved "https://registry.yarnpkg.com/orbiter-chaincore/-/orbiter-chaincore-1.3.9-7.tgz#e06334bdd8baf315ad1104be50f0f9a80e9fbd1d"
-  integrity sha512-ZDCfo6bdfyd+y7W24zDrj2a/Lo6m0R30I6M3+a3HHDCVV7Hr6oIliNvhpFL/Zb7ee1JX/oOcqmzq44ySxRmgxQ==
+orbiter-chaincore@1.3.9-8:
+  version "1.3.9-8"
+  resolved "https://registry.yarnpkg.com/orbiter-chaincore/-/orbiter-chaincore-1.3.9-8.tgz#b5f14ba7158d57f7a61f26f5d1d5e4d8f454a1cd"
+  integrity sha512-ZUJMb84B0YhDqm7nn6HgPgSXXCrNxVV1Y/cuhGqwjPD8qTBJ4YtyliZxU/igbDe/cWGnUOjlJKUZi4jSNuhenw==
   dependencies:
     "@alch/alchemy-web3" "^1.4.6"
     "@dydxprotocol/v3-client" "^1.9.1"

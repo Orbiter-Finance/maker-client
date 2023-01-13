@@ -1,12 +1,13 @@
 
 import { ethers } from "ethers";
 import { TransactionResponse } from "./baseAccount";
+import EVMAccount from "./evmAccount";
 
 export class NonceManager extends ethers.Signer {
     readonly signer!: ethers.Signer;
     _deltaCount: number;
-    
-    constructor(signer: ethers.Signer) {
+
+    constructor(signer: ethers.Signer, private readonly evmAccount: EVMAccount) {
         super();
         this._deltaCount = 0;
         ethers.utils.defineReadOnly(this, "signer", signer);
@@ -14,7 +15,7 @@ export class NonceManager extends ethers.Signer {
     }
 
     connect(provider: ethers.providers.Provider): NonceManager {
-        return new NonceManager(this.signer.connect(provider));
+        return new NonceManager(this.signer.connect(provider), this.evmAccount);
     }
 
 
@@ -44,7 +45,7 @@ export class NonceManager extends ethers.Signer {
         this.incrementTransactionCount();
         transaction.nonce = this._deltaCount;
         try {
-            console.debug(`nonceManager sendTransaction before:`, transaction);
+            this.evmAccount.logger.info(`nonceManager sendTransaction nonce:`, transaction.nonce);
             const tx = await this.signer.sendTransaction(transaction);
             return tx;
         } catch (error) {

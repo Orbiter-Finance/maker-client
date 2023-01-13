@@ -51,14 +51,15 @@ export class Factory {
       case 519:
       case 520:
         if (ValidatorService.isSupportXVM(toChainId)) {
-          wallet = new XVMAccount(privateKey, chainConfig.rpc[0], chainConfig['xvmList'][0]);
+          wallet = new XVMAccount(toChainId, privateKey);
         } else {
-          wallet = new EVMAccount(privateKey, chainConfig.rpc[0]);
+          wallet = new EVMAccount(toChainId, privateKey, chainConfig.rpc[0]);
         }
         break;
       case 3:
       case 33:
         wallet = new zkSyncAccount(
+          toChainId,
           privateKey,
           equals(toChainId, 3) ? 'mainnet' : 'goerli'
         );
