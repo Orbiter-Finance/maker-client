@@ -162,7 +162,7 @@ export default class Sequencer {
             continue;
           }
           const monitorState = this.monitorState[chainId];
-          console.log(`check orders:${chainId},pendingTxs:${this.pending[chainId].length}, monitorState:`, this.monitorState[chainId], '===now:', dayjs().format('YYYY-MM-DD HH:mm:ss'));
+          this.ctx.logger.debug(`check orders:${chainId},pendingTxs:${this.pending[chainId].length}, monitorState:${monitorState.locked}, lastSubmit:${monitorState.lastSubmit}`);
           if (!monitorState.locked && Date.now() - monitorState.lastSubmit > submissionInterval) {
             this.exec(chainId);
           }
