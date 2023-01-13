@@ -171,16 +171,11 @@ export default class ValidatorService {
     const toValueMaxUint = new BigNumber(swapOrder.value).dividedBy(new BigNumber(10).pow(toToken.decimals));
     const toValue = await getQuotationPrice(toValueMaxUint.toString(), toToken.symbol, 'usd');
     const upRate = new BigNumber(toValue).dividedBy(new BigNumber(fromValue).multipliedBy(100));
-    if (upRate.gte(1)) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked`);
+    if (upRate.gte(1.5)) {
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (${toValue.toString()}/${fromValue.toString()})`);
       return undefined;
     }
-    const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(), toToken.symbol, 'usd', true);
-    const diffPrice = (1 - chainLinkPrice / toValue) * 100;
-    if (diffPrice >= 0.5) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} There is too much difference with the price of the oracle`);
-      return undefined;
-    }
+ 
     // veify 
     const sequencerExist = await this.ctx.db.Sequencer.findOne({
       attributes: ["id"],
@@ -241,12 +236,23 @@ export default class ValidatorService {
       logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum(${currentPriceValue.toString()}/${expectToTokenMinValue.toString()})`);
       return undefined;
     }
+
+    // const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(), toToken.symbol, 'usd', true);
+    // const diffPrice = (1 - chainLinkPrice / toValue) * 100;
+    // if (diffPrice >= 0.5) {
+    //   logger.error(`verifyToTx ${swapOrder.calldata.hash} There is too much difference with the price of the oracle (${chainLinkPrice.toString()}/${toValue.toString()})`);
+    //   return undefined;
+    // }
+
     if (currentPriceValue.gte(expectToTokenMinValue)) {
       if (currentPriceValue.gte(expectToTokenValue)) {
         return expectToTokenValue.multipliedBy(new BigNumber(10).pow(toToken.decimals)).toFixed(0, BigNumber.ROUND_DOWN);
       }
       return currentPriceValue.multipliedBy(new BigNumber(10).pow(toToken.decimals)).toFixed(0, BigNumber.ROUND_DOWN);
     }
+    
+   
+
   }
   private getSenderPrivateKey(from: string) {
     const privateKey = process.env[from.toLocaleLowerCase()] || "";

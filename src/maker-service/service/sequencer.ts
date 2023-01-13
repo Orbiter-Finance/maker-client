@@ -9,7 +9,7 @@ import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
 import BaseAccount, { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
-const submissionInterval = 1000 * 60 * 2;
+const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
   error?: Error | string,
@@ -78,7 +78,7 @@ export default class Sequencer {
         'extra',
       ],
       where: {
-        source: 'xvm',
+        // source: 'xvm',
         status: 1,
         side: 0,
         timestamp: {
@@ -92,72 +92,82 @@ export default class Sequencer {
       order && this.push(order);
     }
   }
+  async exec(chainId: string) {
+    const monitorState = this.monitorState[chainId];
+    const pendingTxs = this.pending[chainId];
+    if (pendingTxs.length <= 0) {
+      return undefined;
+    }
+    try {
+      monitorState.locked = true;
+      // filter 
+      const matchOrders: SwapOrder[] = [];
+      this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
+      for (let i = pendingTxs.length - 1; i >= 0; i--) {
+        const order = pendingTxs[i];
+        if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
+          pendingTxs.splice(i, 1);
+          this.ctx.logger.info(`${order.calldata.hash} remove order`);
+          continue;
+        }
+        if (order.type === SwapOrderType.CrossToken) {
+          // matchOrders.
+          const value = await this.ctx.validator.verifyXVMCrossToken(order);
+          if (value && !isEmpty(value)) {
+            order.value = String(value);
+            const spliceOrders = pendingTxs.splice(i, 1);
+            matchOrders.push(...spliceOrders);
+          }
+        } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
+          matchOrders.push(...pendingTxs.splice(i, 1));
+        }
+      }
+      this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
+      if (matchOrders.length > 0) {
+        const result = await this.submit(Number(chainId), matchOrders);
+        monitorState.locked = false;
+        monitorState.lastSubmit = Date.now();
+        console.log('submit result:', JSON.stringify(result));
+        this.ctx.logger.info('submit result:', {
+          result: JSON.stringify(result)
+        });
+        // .then(result => {
+        //   console.log('submit result:', JSON.stringify(result));
+        //   this.ctx.logger.info('submit result:', {
+        //     result: JSON.stringify(result)
+        //   });
+        // }).finally(() => {
+        //   this.ctx.logger.info(chainId, 'finally 重置locked')
+        //   monitorState.locked = false;
+        //   monitorState.lastSubmit = Date.now();
+        // })
+      }
+    } catch (error) {
+      this.ctx.logger.info(chainId, 'catch 重置locked')
+      this.ctx.logger.info('submit error:', {
+        error: error
+      });
+      monitorState.locked = false;
+      monitorState.lastSubmit = Date.now();
+    }
+  }
   async monitor() {
     try {
       const handle = async () => {
         for (const chainId in this.pending) {
-          let monitorState = this.monitorState[chainId];
-          if (!monitorState) {
+          if (!this.monitorState[chainId]) {
             // init
             this.monitorState[chainId] = {
               locked: false,
               lastSubmit: Date.now()
             };
-            monitorState = this.monitorState[chainId];
             continue;
           }
-          const pendingTxs = this.pending[chainId];
-          if (pendingTxs.length <= 0) {
-            continue;
-          }
-          console.log(`check orders:${chainId},pendingTxs:${pendingTxs.length}, monitorState:`, this.monitorState[chainId], '===now:', dayjs().format('YYYY-MM-DD HH:mm:ss'));
+          const monitorState = this.monitorState[chainId];
+          console.log(`check orders:${chainId},pendingTxs:${this.pending[chainId].length}, monitorState:`, this.monitorState[chainId], '===now:', dayjs().format('YYYY-MM-DD HH:mm:ss'));
           if (!monitorState.locked && Date.now() - monitorState.lastSubmit > submissionInterval) {
-            // if type = 
-            try {
-              monitorState.locked = true;
-              // filter 
-              const matchOrders: SwapOrder[] = [];
-              this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}`);
-              for (let i = pendingTxs.length - 1; i >= 0; i--) {
-                const order = pendingTxs[i];
-                if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
-                  pendingTxs.splice(i, 1);
-                  this.ctx.logger.info(`${order.calldata.hash} remove order`);
-                  continue;
-                }
-                if (order.type === SwapOrderType.CrossToken) {
-                  // matchOrders.
-                  const value = await this.ctx.validator.verifyXVMCrossToken(order);
-                  if (value && !isEmpty(value)) {
-                    order.value = String(value);
-                    const spliceOrders = pendingTxs.splice(i, 1);
-                    matchOrders.push(...spliceOrders);
-                  }
-                } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
-                  matchOrders.push(...pendingTxs.splice(i, 1));
-                }
-              }
-              this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
-              if (matchOrders.length > 0) {
-                this.submit(Number(chainId), matchOrders).then(result => {
-                  console.log('submit result:', JSON.stringify(result));
-                  this.ctx.logger.info('submit result:', {
-                    result: JSON.stringify(result)
-                  });
-                }).finally(() => {
-                  monitorState.locked = false;
-                  monitorState.lastSubmit = Date.now();
-                })
-              }
-            } catch (error) {
-              this.ctx.logger.info('submit error:', {
-                error: error
-              });
-              monitorState.locked = false;
-              monitorState.lastSubmit = Date.now();
-            } 
+            this.exec(chainId);
           }
-
         }
       }
       setInterval(handle, 1000 * 10);
@@ -176,7 +186,7 @@ export default class Sequencer {
       return;
     }
     this.pending[chainId].push(trx);
-    console.log('push:', JSON.stringify(trx));
+    console.log('push:', trx.calldata.hash);
     return this.pending[chainId];
   }
 

@@ -1,6 +1,6 @@
-import Keyv from 'keyv';
+import * as Keyv from 'keyv';
 import { chains } from 'orbiter-chaincore';
-import winston from 'winston';
+import * as winston from 'winston';
 
 import { DB } from './db';
 import { Models } from './models';
@@ -8,10 +8,10 @@ import Sequencer from './service/sequencer';
 import ValidatorService from './service/validator';
 import { Config } from './types/config';
 import Caching from './utils/caching';
-type NODE_ENV = 'development' | 'production' | 'test';
 import configs from './config/config';
 import chainConfigs from './config/chains.json';
 import { LoggerService } from './utils/logger';
+type NODE_ENV = 'development' | 'production' | 'test';
 export default class Context {
   public config: Config = configs as any;
   public db!: Models;

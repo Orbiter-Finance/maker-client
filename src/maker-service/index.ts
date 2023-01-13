@@ -10,9 +10,9 @@ export async function run(): Promise<Context> {
   console.log('init Quotation');
   await new Quotation().subscribe();
   console.log('init Sequencer');
-  await ctx.sequencer.readHistory();
-  console.log('init Consumer');
-  new Consumer(ctx);
+  // await ctx.sequencer.readHistory();
+  // console.log('init Consumer');
+  // new Consumer(ctx);
   return ctx;
 }
 run().catch((error) => {
