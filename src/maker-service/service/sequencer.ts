@@ -144,9 +144,7 @@ export default class Sequencer {
         // })
       }
     } catch (error) {
-      logger.error('submit error:', {
-        error: error
-      });
+      logger.error('submit error:', error);
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();
     }
@@ -189,7 +187,7 @@ export default class Sequencer {
     const logger = LoggerService.getLogger(chainId.toString(), {
       label: chainId
     });
-    logger.debug('push:', trx.calldata.hash);
+    logger.debug('push:', {hash: trx.calldata.hash});
     return this.pending[chainId];
   }
 
