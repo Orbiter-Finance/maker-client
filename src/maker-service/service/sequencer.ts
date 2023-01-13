@@ -128,20 +128,11 @@ export default class Sequencer {
       }
       logger.info(`start after scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
       if (matchOrders.length > 0) {
+        logger.info(`exec submit before:${matchOrders.length}`);
         const result = await this.submit(Number(chainId), matchOrders);
         monitorState.locked = false;
         monitorState.lastSubmit = Date.now();
         console.log('submit result:', JSON.stringify(result));
-        // .then(result => {
-        //   console.log('submit result:', JSON.stringify(result));
-        //   this.ctx.logger.info('submit result:', {
-        //     result: JSON.stringify(result)
-        //   });
-        // }).finally(() => {
-        //   this.ctx.logger.info(chainId, 'finally 重置locked')
-        //   monitorState.locked = false;
-        //   monitorState.lastSubmit = Date.now();
-        // })
       }
     } catch (error) {
       logger.error('submit error:', error);
@@ -267,7 +258,7 @@ export default class Sequencer {
       let submitTx: TransactionResponse | undefined;
       const passOrders: Array<SwapOrder> = [];
       let sendMainTokenValue = ethers.BigNumber.from(0);
-      logger.warn(`${chainConfig.name} sequencer before handle:`, { trxList });
+      logger.info(`${chainConfig.name} sequencer before handle:`, { trxList });
       for (const row of trxList) {
         if (isEmpty(row.error)) {
           const order = pendingTxs.find(order => equals(order.calldata.hash, row.fromHash));
