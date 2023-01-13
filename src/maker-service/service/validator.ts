@@ -5,6 +5,7 @@ import { isEmpty } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
+import { LoggerService } from '../utils/logger';
 import { getQuotationPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 
@@ -19,8 +20,8 @@ export default class ValidatorService {
     return true;
   }
   public async verifyFromTx(fromTx: Transaction): Promise<SwapOrder | undefined> {
-    // const logger = LoggerService.getLogger(fromTx.chainId.toString());
-    const logger = this.ctx.logger;
+    const logger = LoggerService.getLogger(fromTx.chainId.toString());
+    // const logger = this.ctx.logger;
     // is support
     if (
       !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
@@ -130,8 +131,8 @@ export default class ValidatorService {
     return swapOrder;
   }
   public async verifyToTx(swapOrder: SwapOrder) {
-    // const logger = LoggerService.getLogger(swapOrder.chainId.toString());
-    const logger = this.ctx.logger;
+    const logger = LoggerService.getLogger(swapOrder.chainId.toString());
+    // const logger = this.ctx.logger;
     const privateKey = this.getSenderPrivateKey(swapOrder.from);
     if (isEmpty(privateKey)) {
       logger.error(`verifyToTx ${swapOrder.from} private key no found`);
@@ -207,8 +208,8 @@ export default class ValidatorService {
     }
   }
   public async verifyXVMCrossToken(swapOrder: SwapOrder): Promise<string | undefined> {
-    // const logger = LoggerService.getLogger(swapOrder.chainId.toString());
-    const logger = this.ctx.logger;
+    const logger = LoggerService.getLogger(swapOrder.chainId.toString());
+    // const logger = this.ctx.logger;
     if (swapOrder.type != SwapOrderType.CrossToken) {
       logger.error(`verifyXVMCrossToken ${swapOrder.calldata.hash} type error`);
       return undefined;

@@ -1,4 +1,4 @@
-import { isEmpty, groupBy, equals } from 'orbiter-chaincore/src/utils/core';
+import { isEmpty, equals } from 'orbiter-chaincore/src/utils/core';
 import dayjs from "dayjs";
 import { Op } from "sequelize";
 import Context from "../context";
@@ -9,6 +9,7 @@ import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
 import BaseAccount, { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
+import { LoggerService } from '../utils/logger';
 const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
@@ -93,6 +94,9 @@ export default class Sequencer {
     }
   }
   async exec(chainId: string) {
+    const logger = LoggerService.getLogger(chainId.toString(), {
+      label: chainId
+    });
     const monitorState = this.monitorState[chainId];
     const pendingTxs = this.pending[chainId];
     if (pendingTxs.length <= 0) {
@@ -102,7 +106,7 @@ export default class Sequencer {
       monitorState.locked = true;
       // filter 
       const matchOrders: SwapOrder[] = [];
-      this.ctx.logger.info(`start scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
+      logger.info(`start scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
       for (let i = pendingTxs.length - 1; i >= 0; i--) {
         const order = pendingTxs[i];
         if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
@@ -122,15 +126,12 @@ export default class Sequencer {
           matchOrders.push(...pendingTxs.splice(i, 1));
         }
       }
-      this.ctx.logger.info(`start after scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
+      logger.info(`start after scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
       if (matchOrders.length > 0) {
         const result = await this.submit(Number(chainId), matchOrders);
         monitorState.locked = false;
         monitorState.lastSubmit = Date.now();
         console.log('submit result:', JSON.stringify(result));
-        this.ctx.logger.info('submit result:', {
-          result: JSON.stringify(result)
-        });
         // .then(result => {
         //   console.log('submit result:', JSON.stringify(result));
         //   this.ctx.logger.info('submit result:', {
@@ -143,8 +144,7 @@ export default class Sequencer {
         // })
       }
     } catch (error) {
-      this.ctx.logger.info(chainId, 'catch 重置locked')
-      this.ctx.logger.info('submit error:', {
+      logger.error('submit error:', {
         error: error
       });
       monitorState.locked = false;
@@ -186,7 +186,10 @@ export default class Sequencer {
       return;
     }
     this.pending[chainId].push(trx);
-    console.log('push:', trx.calldata.hash);
+    const logger = LoggerService.getLogger(chainId.toString(), {
+      label: chainId
+    });
+    logger.debug('push:', trx.calldata.hash);
     return this.pending[chainId];
   }
 
@@ -200,7 +203,9 @@ export default class Sequencer {
     if (pendingTxs.length <= 0) {
       return { chainId, error: 'pendingTxs less 0' };
     }
-    const logger = this.ctx.logger;
+    const logger = LoggerService.getLogger(chainId.toString(), {
+      label: chainId.toString()
+    });
     const senderPrivateKey = {};
 
     const makerWaitingSending: {
@@ -377,6 +382,7 @@ export default class Sequencer {
         }
       }
     }
+    logger.info("submit success:", {makerDeal: makerWaitingSending})
     return { chainId, makerDeal: makerWaitingSending };
   }
 }

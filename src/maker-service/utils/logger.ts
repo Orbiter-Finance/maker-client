@@ -1,14 +1,13 @@
 import * as winstonX from 'orbiter-chaincore/src/packages/winstonX';
 // import {LoggerService as LoggerService2} from 'orbiter-chaincore/src/utils/logger';
 import path from 'path';
-import { transports } from 'winston';
 export class LoggerService {
     static services: { [key: string]: any } = {};
     static createLogger(key: string, opts?: winstonX.WinstonXOptions) {
         // const logger = LoggerService2.createLogger();
-        const logDir = path.join(process.env['logDir'] || "runtime");
+        // const logDir = path.join(process.env['logDir'] || "runtime");
         opts = Object.assign({
-            logDir: path.join(logDir, key),
+            // logDir: path.join(logDir, key),
             debug: true,
             // logstash: {
             //     port: process.env["logstash.port"],
@@ -22,9 +21,6 @@ export class LoggerService {
             }
         }, opts)
         const logger = winstonX.createLogger(opts);
-        logger.exceptions.handle(
-            new transports.File({ filename: path.join(logDir, 'exceptions.log') })
-        );
         LoggerService.services[key] = logger;
         return logger;
     }

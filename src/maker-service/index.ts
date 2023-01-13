@@ -7,12 +7,13 @@ export async function run(): Promise<Context> {
   await ctx.init().catch((error) => {
     ctx.logger.error(`Context init error:`, error);
   });
-  console.log('init Quotation');
+  ctx.logger.info('start Maker');
   await new Quotation().subscribe();
-  console.log('init Sequencer');
-  await ctx.sequencer.readHistory();
-  console.log('init Consumer');
-  new Consumer(ctx);
+  ctx.logger.info('init Quotation');
+  // await ctx.sequencer.readHistory();
+  ctx.logger.info('init Sequencer');
+  // new Consumer(ctx);
+  ctx.logger.info('init Consumer');
   return ctx;
 }
 run().catch((error) => {

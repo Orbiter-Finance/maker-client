@@ -44,7 +44,7 @@ export class NonceManager extends ethers.Signer {
         this.incrementTransactionCount();
         transaction.nonce = this._deltaCount;
         try {
-            console.info(`nonceManager sendTransaction before:`, transaction);
+            console.debug(`nonceManager sendTransaction before:`, transaction);
             const tx = await this.signer.sendTransaction(transaction);
             return tx;
         } catch (error) {
