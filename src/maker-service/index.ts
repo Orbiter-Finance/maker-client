@@ -10,9 +10,9 @@ export async function run(): Promise<Context> {
   ctx.logger.info('start Maker');
   await new Quotation().subscribe();
   ctx.logger.info('init Quotation');
-  // await ctx.sequencer.readHistory();
+  await ctx.sequencer.readHistory();
   ctx.logger.info('init Sequencer');
-  // new Consumer(ctx);
+  new Consumer(ctx);
   ctx.logger.info('init Consumer');
   return ctx;
 }
