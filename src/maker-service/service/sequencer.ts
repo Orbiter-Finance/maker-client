@@ -187,7 +187,7 @@ export default class Sequencer {
     const logger = LoggerService.getLogger(chainId.toString(), {
       label: chainId
     });
-    logger.debug('push:', {hash: trx.calldata.hash});
+    logger.debug('push:', { hash: trx.calldata.hash });
     return this.pending[chainId];
   }
 
@@ -267,6 +267,7 @@ export default class Sequencer {
       let submitTx: TransactionResponse | undefined;
       const passOrders: Array<SwapOrder> = [];
       let sendMainTokenValue = ethers.BigNumber.from(0);
+      logger.warn(`${chainConfig.name} sequencer before handle:`, { trxList });
       for (const row of trxList) {
         if (isEmpty(row.error)) {
           const order = pendingTxs.find(order => equals(order.calldata.hash, row.fromHash));
@@ -278,11 +279,14 @@ export default class Sequencer {
           }
         }
       }
+      if (passOrders.length <= 0) {
+        logger.warn(`${chainConfig.name} sequencer passOrders lte 0:`, { passOrders, sendMainTokenValue });
+      }
       let isXVMReply = ValidatorService.isSupportXVM(chainId);
       if (isXVMReply && passOrders.length === 1) {
         isXVMReply = false;
       }
-      logger.info(`${chainConfig.name} sequencer swap submit:`, { passOrders, sendMainTokenValue });
+      logger.info(`${chainConfig.name} sequencer get ready submit:`, { passOrders, sendMainTokenValue });
       if (isXVMReply) {
         const encodeDatas = passOrders.map(order => {
           return (<XVMAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
@@ -299,11 +303,11 @@ export default class Sequencer {
           if (tx)
             tx.error = error;
           // }
-          logger.error(`${chainConfig.name} sequencer swap submit swapOK error:${error.message}`, error);
+          logger.error(`${chainConfig.name} sequencer xvm submit error:${error.message}`, error);
         } finally {
           const passHashList = passOrders.map(tx => tx.calldata.hash);
           if (submitTx) {
-            logger.info(`${chainConfig.name}  sequencer swap submit success`, {
+            logger.info(`${chainConfig.name} sequencer xvm submit success`, {
               toHash: submitTx.hash,
               fromHashList: passHashList
             })
@@ -349,12 +353,16 @@ export default class Sequencer {
             }
 
           } catch (error: any) {
-            logger.error(`${chainConfig.name} sequencer swap submit UA Transfer error:${error.message}`, error);
+            logger.error(`${chainConfig.name} sequencer submit error:${error.message}`, error);
             const tx = trxList.find(o => equals(o.fromHash, order.calldata.hash));
             if (tx)
               tx.error = error;
           } finally {
             if (submitTx) {
+              logger.info(`${chainConfig.name} sequencer submit success`, {
+                toHash: submitTx.hash,
+                fromHash: order.calldata.hash
+              })
               const tx = trxList.find(o => equals(o.fromHash, order.calldata.hash));
               if (tx)
                 tx.toHash = submitTx.hash;
@@ -380,7 +388,7 @@ export default class Sequencer {
         }
       }
     }
-    logger.info("submit success:", {makerDeal: makerWaitingSending})
+    logger.info("Complete submission", { makerDeal: makerWaitingSending })
     return { chainId, makerDeal: makerWaitingSending };
   }
 }
