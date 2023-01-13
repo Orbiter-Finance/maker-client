@@ -281,12 +281,13 @@ export default class Sequencer {
       }
       if (passOrders.length <= 0) {
         logger.warn(`${chainConfig.name} sequencer passOrders lte 0:`, { passOrders, sendMainTokenValue });
+        continue;
       }
       let isXVMReply = ValidatorService.isSupportXVM(chainId);
       if (isXVMReply && passOrders.length === 1) {
         isXVMReply = false;
       }
-      logger.info(`${chainConfig.name} sequencer get ready submit:`, { passOrders, sendMainTokenValue });
+      logger.info(`${chainConfig.name} sequencer get ready submit`, { passOrders, sendMainTokenValue,isXVMReply });
       if (isXVMReply) {
         const encodeDatas = passOrders.map(order => {
           return (<XVMAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
