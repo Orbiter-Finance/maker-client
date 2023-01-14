@@ -61,8 +61,15 @@ export default class ChainLink {
 
     }
     public async getPriceFeed(source: string, target: string) {
+        if (source === target) {
+            return new BigNumber(1);
+        }
         const id = `${source}/${target}`.toLocaleLowerCase();
         const addr = this.pairs[id];
+        if  (!addr) {
+            console.log(`ChainLink Not found pairs ${source}=>${target}`);
+            return new BigNumber(0);
+        }
         const provider = new ethers.providers.JsonRpcProvider("https://eth-rpc.gateway.pokt.network");
         const priceFeed = new ethers.Contract(addr, this.aggregatorV3InterfaceABI, provider);
         // We get the data from the last round of the contract 

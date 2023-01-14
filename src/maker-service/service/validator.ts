@@ -6,7 +6,7 @@ import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
 import { LoggerService } from '../utils/logger';
-import { getQuotationPrice } from './quotation';
+import { getChainLinkPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 
 export const orderTimeoutMS = 1000 * 60 * 60 * 5;
@@ -168,15 +168,15 @@ export default class ValidatorService {
     }
     // If the value difference between "from" and "to" is too large, intercept
     const fromValueMaxUint = new BigNumber(swapOrder.calldata.value).dividedBy(new BigNumber(10).pow(fromToken.decimals));
-    const fromValue = await getQuotationPrice(fromValueMaxUint.toString(), fromToken.symbol, 'usd');
+    const fromValue = await getChainLinkPrice(fromValueMaxUint.toString(), fromToken.symbol, 'usd');
     const toValueMaxUint = new BigNumber(swapOrder.value).dividedBy(new BigNumber(10).pow(toToken.decimals));
-    const toValue = await getQuotationPrice(toValueMaxUint.toString(), toToken.symbol, 'usd');
+    const toValue = await getChainLinkPrice(toValueMaxUint.toString(), toToken.symbol, 'usd');
     const upRate = new BigNumber(toValue).dividedBy(new BigNumber(fromValue).multipliedBy(100));
     if (upRate.gte(1.5)) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (${toValue.toString()}/${fromValue.toString()})`);
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (${toValue.toString()}/${fromValue.toString()}/${upRate.toString()})`);
       return undefined;
     }
- 
+
     // veify 
     const sequencerExist = await this.ctx.db.Sequencer.findOne({
       attributes: ["id"],
@@ -208,8 +208,9 @@ export default class ValidatorService {
     }
   }
   public async verifyXVMCrossToken(swapOrder: SwapOrder): Promise<string | undefined> {
-    const logger = LoggerService.getLogger(swapOrder.chainId.toString());
-    // const logger = this.ctx.logger;
+    const logger = LoggerService.getLogger(swapOrder.chainId.toString(), {
+      label: swapOrder.chainId.toString()
+    });
     if (swapOrder.type != SwapOrderType.CrossToken) {
       logger.error(`verifyXVMCrossToken ${swapOrder.calldata.hash} type error`);
       return undefined;
@@ -228,7 +229,7 @@ export default class ValidatorService {
     const destDecimal = Number(toToken.decimals);
     // expectValue = From Token Value
     const fromValue = new BigNumber(swapOrder.calldata.expectValue).dividedBy(new BigNumber(10).pow(fromDecimal));
-    const currentPriceValue = new BigNumber(await getQuotationPrice(fromValue.toString(), fromToken.symbol, toToken.symbol));
+    const currentPriceValue = new BigNumber(await getChainLinkPrice(fromValue.toString(), fromToken.symbol, toToken.symbol));
 
     const expectToTokenValue = new BigNumber(swapOrder.calldata.crossTokenUserExpectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
     const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
@@ -238,29 +239,23 @@ export default class ValidatorService {
       return undefined;
     }
 
-    // const chainLinkPrice = await getQuotationPrice(toValueMaxUint.toString(), toToken.symbol, 'usd', true);
-    // const diffPrice = (1 - chainLinkPrice / toValue) * 100;
-    // if (diffPrice >= 0.5) {
-    //   logger.error(`verifyToTx ${swapOrder.calldata.hash} There is too much difference with the price of the oracle (${chainLinkPrice.toString()}/${toValue.toString()})`);
-    //   return undefined;
-    // }
-
     if (currentPriceValue.gte(expectToTokenMinValue)) {
       if (currentPriceValue.gte(expectToTokenValue)) {
         return expectToTokenValue.multipliedBy(new BigNumber(10).pow(toToken.decimals)).toFixed(0, BigNumber.ROUND_DOWN);
       }
       return currentPriceValue.multipliedBy(new BigNumber(10).pow(toToken.decimals)).toFixed(0, BigNumber.ROUND_DOWN);
     }
-    
-   
 
   }
   private getSenderPrivateKey(from: string) {
     const privateKey = process.env[from.toLocaleLowerCase()] || "";
     return privateKey;
   }
-  public static isSupportXVM(chainId: number) {
+  public static isSupportXVM(chainId: number): Boolean {
     const chain = chains.getChainInfo(chainId);
-    return chain?.xvmList && chain?.xvmList.length > 0;
+    if (chain && chain.xvmList) {
+      return chain.xvmList.length > 0;
+    }
+    return false;
   }
 }
