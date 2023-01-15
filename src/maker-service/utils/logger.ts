@@ -8,7 +8,6 @@ export class LoggerService {
         if (key) {
             logDir = path.join(process.cwd(),'runtime', 'logs', key);
         }
-        console.log(logDir, '====logDir');
         opts = Object.assign({
             logDir,
             label: key,

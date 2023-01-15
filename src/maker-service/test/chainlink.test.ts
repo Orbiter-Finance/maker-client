@@ -14,6 +14,11 @@ describe("ChainLink", function () {
     const usd2eth = await getChainLinkPrice(eth2usd.toString(), "usd", "eth");
     expect(usd2eth.toNumber()).eq(1);
 
+    const eth2usdc = await getChainLinkPrice('1', "eth", "usdc");
+    const usdc2eth = await getChainLinkPrice(eth2usdc.toString(), "usdc", "eth");
+    console.log(eth2usdc.toString(), '==', usdc2eth.toString() );
+    expect(usdc2eth.toNumber()).eq(1);
+
     const eth2usdt = await getChainLinkPrice('1', "eth", "usdt");
     const usdt2eth = await getChainLinkPrice(eth2usdt.toString(), "usdt", "eth");
     expect(usdt2eth.toNumber()).eq(1);

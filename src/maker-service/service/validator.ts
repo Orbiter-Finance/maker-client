@@ -41,6 +41,10 @@ export default class ValidatorService {
       logger.error(`${fromTx.hash} ${fromTx.side} tx side incorrect`);
       return undefined;
     }
+    if (fromTx.status !== 1) {
+      logger.error(`${fromTx.hash} ${fromTx.status} tx status incorrect`);
+      return undefined;
+    }
 
     if (isEmpty(fromTx.tokenAddress) || !fromTx.tokenAddress) {
       logger.error(`${fromTx.hash} token address not found`);
@@ -156,21 +160,29 @@ export default class ValidatorService {
     const fromChainId = Number(swapOrder.calldata.chainId);
     const fromToken = chains.getTokenByChain(fromChainId, swapOrder.calldata.token);
     if (isEmpty(fromToken) || !fromToken) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} fromToken not found`);
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} ${swapOrder.calldata.token} fromToken not found`);
       return undefined;
     }
 
     // 
     const toToken = chains.getTokenByChain(swapOrder.chainId, swapOrder.token)
     if (isEmpty(toToken) || !toToken) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} toToken not found`);
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} ${swapOrder.token} toToken not found`);
       return undefined;
     }
     // If the value difference between "from" and "to" is too large, intercept
     const fromValueMaxUint = new BigNumber(swapOrder.calldata.value).dividedBy(new BigNumber(10).pow(fromToken.decimals));
     const fromValue = await getChainLinkPrice(fromValueMaxUint.toString(), fromToken.symbol, 'usd');
+    if (fromValue.lte(0)) {
+      logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained FromToken ${fromToken.symbol}=>usd`);
+      return undefined;
+    }
     const toValueMaxUint = new BigNumber(swapOrder.value).dividedBy(new BigNumber(10).pow(toToken.decimals));
     const toValue = await getChainLinkPrice(toValueMaxUint.toString(), toToken.symbol, 'usd');
+    if (toValue.lte(0)) {
+      logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained ToToken ${toToken.symbol}=>usd`);
+      return undefined;
+    }
     const upRate = new BigNumber(toValue).dividedBy(new BigNumber(fromValue).multipliedBy(100));
     if (upRate.gte(1.5)) {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (${toValue.toString()}/${fromValue.toString()}/${upRate.toString()})`);
@@ -228,14 +240,19 @@ export default class ValidatorService {
     const fromDecimal = Number(fromToken.decimals);
     const destDecimal = Number(toToken.decimals);
     // expectValue = From Token Value
+    // TODO: expectValue or value
     const fromValue = new BigNumber(swapOrder.calldata.expectValue).dividedBy(new BigNumber(10).pow(fromDecimal));
-    const currentPriceValue = new BigNumber(await getChainLinkPrice(fromValue.toString(), fromToken.symbol, toToken.symbol));
+    const currentPriceValue = await getChainLinkPrice(fromValue.toString(), fromToken.symbol, toToken.symbol);
+    if (currentPriceValue.lte(0)) {
+      logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained currentPriceValue ${fromToken.symbol}=>${toToken.symbol}`);
+      return undefined;
+    }
 
     const expectToTokenValue = new BigNumber(swapOrder.calldata.crossTokenUserExpectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
     const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
     // const expectToTokenMaxValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
     if (currentPriceValue.lt(expectToTokenMinValue)) {
-      logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum(${currentPriceValue.toString()}/${expectToTokenMinValue.toString()})`);
+      logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum ${fromToken.symbol}=>${toToken.symbol} (${currentPriceValue.toString()}/${expectToTokenMinValue.toString()})`);
       return undefined;
     }
 

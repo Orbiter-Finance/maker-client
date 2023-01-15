@@ -41,6 +41,9 @@ export async function getChainLinkPrice(
 ): Promise<BigNumber> {
   fromCurrency = fromCurrency.toLocaleLowerCase();
   toCurrency = toCurrency.toLocaleLowerCase();
+  if (fromCurrency === toCurrency) {
+    return new BigNumber(0);
+  }
   const afterValue = new BigNumber(value);
   const chainLink = new ChainLink();
   // 1

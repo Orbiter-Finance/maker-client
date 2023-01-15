@@ -125,14 +125,14 @@ export default class Sequencer {
       if (matchOrders.length > 0) {
         logger.info(`exec submit before:${matchOrders.length}`);
         const result = await this.submit(Number(chainId), matchOrders);
-        monitorState.locked = false;
-        monitorState.lastSubmit = Date.now();
         console.log('submit result:', JSON.stringify(result));
       }
     } catch (error) {
       logger.error('submit error:', error);
+    } finally {
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();
+      logger.info(`start scan end chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
     }
   }
   async monitor() {
@@ -222,13 +222,13 @@ export default class Sequencer {
           if (makerBalance[sendToken] === undefined) {
             const token = chains.inValidMainToken(chainId, sendToken) ? undefined : sendToken;
             logger.info("submit step 3-1-3");
-            makerBalance[sendToken] = await account.getBalance(senderWallet, token);
+            // makerBalance[sendToken] = await account.getBalance(senderWallet, token);
           }
           if (makerBalance[sendToken] && makerBalance[sendToken].lt(sendValue)) {
             order.error = `${senderWallet} Maker ${sendToken}  Insufficient funds ${makerBalance[sendToken]}/${sendValue}`;
             continue;
           }
-          makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
+          // makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
         } catch (error) {
           logger.error("get maker balance error", error);
         }
@@ -261,7 +261,7 @@ export default class Sequencer {
           }
           logger.info("submit step 5-3");
           await this.swapReply(chainId, account, passOrders);
-          logger.info(`${chainId} sequencer submit success`, { passOrders });
+          logger.info('sequencer swapReply success');
           logger.info("submit step 5-4");
         } catch (error) {
           logger.error("Revolving payment error", error);
@@ -292,6 +292,7 @@ export default class Sequencer {
     }
     logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, isXVMReply });
     if (isXVMReply) {
+      logger.info('submit xvm step 6-1');
       const encodeDatas = passOrders.map(order => {
         return (<XVMAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
       })
@@ -300,11 +301,14 @@ export default class Sequencer {
         submitTx = await (<XVMAccount>account).swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
           value: sendMainTokenValue,
         });
+        logger.info('submit xvm step 6-1 wait');
+        await submitTx.wait();
       } catch (error: any) {
         isError = true;
         passOrders[0].error = error;
         logger.error(`sequencer xvm submit error:${error.message}`, error);
       } finally {
+        logger.info('submit xvm step 6-2');
         const passHashList = passOrders.map(tx => tx.calldata.hash);
         if (submitTx) {
           logger.info(`sequencer xvm submit success`, {
@@ -335,25 +339,33 @@ export default class Sequencer {
       }
     }
     if (!isXVMReply) {
+      logger.info('submit step 6-2');
       // ua
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;
       for (const order of passOrders) {
         let isError = false;
         try {
           if (chains.inValidMainToken(chainId, order.token)) {
+            logger.info('submit step 6-2-1-1');
             submitTx = await account.transfer(order.to, order.value, {
               type: txType
             });
+            logger.info('submit step 6-2-1-1 wait');
+            await submitTx.wait();
           } else {
+            logger.info('submit step 6-2-1-2');
             submitTx = await account.transferToken(order.token, order.to, order.value, {
               type: txType
             });
+            logger.info('submit step 6-2-1-2 wait');
+            await submitTx.wait();
           }
-
+          logger.info('submit step 6-2-1-3');
         } catch (error: any) {
           logger.error(`${chainConfig.name} sequencer submit error:${error.message}`, error);
           order.error = error;
         } finally {
+          logger.info('submit step 6-2-2');
           if (submitTx) {
             logger.info(`${chainConfig.name} sequencer submit success`, {
               toHash: submitTx.hash,
@@ -370,6 +382,7 @@ export default class Sequencer {
               transactionCount: 1
             });
           }
+          logger.info('submit step 6-2-3');
           // change
           await this.ctx.db.Transaction.update({
             status: isError ? 96 : 97
@@ -378,9 +391,11 @@ export default class Sequencer {
               hash: order.calldata.hash
             }
           })
+          logger.info('submit step 6-2-4');
         }
       }
     }
+    logger.info('submit step 6-3');
     return passOrders;
   }
 }

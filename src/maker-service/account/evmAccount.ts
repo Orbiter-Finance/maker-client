@@ -141,7 +141,7 @@ export default class EVMAccount extends BaseAccount {
       // console.debug('Precomputed Nonce:', tx.nonce.toString());
       return response;
     } catch (error) {
-      this.logger.error(`EVM sendTransaction error`, error)
+      this.logger.error(`${chainConfig.name} Core SendTransaction error`, error)
       throw error;
     }
   }

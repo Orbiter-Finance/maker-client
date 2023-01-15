@@ -27,7 +27,7 @@ export default class zkSyncAccount extends BaseAccount {
     const params = Object.assign(
       {
         data,
-        type: 2,
+        type: 0,
       },
       transactionRequest
     );
@@ -47,7 +47,7 @@ export default class zkSyncAccount extends BaseAccount {
         from: this.wallet.address,
         value: BigNumber.from(value).toHexString(),
         nonce,
-        data: '0x',
+        data: '0x00',
         chainId: await this.wallet.getChainId(),
       },
       transactionRequest
