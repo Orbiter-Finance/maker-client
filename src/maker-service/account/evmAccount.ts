@@ -103,7 +103,7 @@ export default class EVMAccount extends BaseAccount {
             to,
           }
         );
-
+        this.logger.info(`sendTransaction exec 3:`, { tx });
         // use nonce manager disabled
         // if (!tx.nonce) {
         //   tx.nonce = await this.provider.getTransactionCount(
@@ -114,6 +114,7 @@ export default class EVMAccount extends BaseAccount {
         try {
           if (tx.type === 2) {
             if (!tx.maxFeePerGas || !tx.maxPriorityFeePerGas) {
+              this.logger.info(`sendTransaction exec 4 getFeeData:`);
               const feeData = await this.provider.getFeeData();
               if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
                 tx.maxFeePerGas = feeData.maxFeePerGas.toHexString();
@@ -123,6 +124,7 @@ export default class EVMAccount extends BaseAccount {
               }
             }
           } else {
+            this.logger.info(`sendTransaction exec 4 getGasPrice:`);
             tx.gasPrice = tx.gasPrice || (await this.wallet.getGasPrice());
           }
         } catch ({ message }) {
@@ -133,6 +135,7 @@ export default class EVMAccount extends BaseAccount {
         this.logger.info(`sendTransaction exec 3:`, { to });
         try {
           if (!tx.gasLimit) {
+            this.logger.info(`sendTransaction exec 5 estimateGas:`);
             let gasLimit: number | BigNumber = await this.provider.estimateGas(
               tx
             );
@@ -145,9 +148,9 @@ export default class EVMAccount extends BaseAccount {
             `=> estimateGas limit error:${message}`
           );
         }
-      } catch ({ message }) {
-        // logger.error(`evm sendTransaction before error:${error.message}`, error);
-        throw new Error(`=>sendTransaction before error:${message}`);
+      } catch (error:any) {
+        this.logger.error(`evm sendTransaction before error`, error);
+        throw new Error(`=>sendTransaction before error:${error.message}`);
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
       this.logger.info(`${this.chainConfig.name} sendTransaction before:`, tx);
