@@ -1,7 +1,8 @@
 import { ethers } from 'ethers';
+import { chains } from 'orbiter-chaincore';
 import * as zksync from 'zksync';
 
-import BaseAccount, { TransactionResponse } from './baseAccount';
+import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './baseAccount';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends BaseAccount {
   public l1Wallet: ethers.Wallet;
@@ -24,21 +25,30 @@ export default class zkSyncAccount extends BaseAccount {
     to: string,
     value: string,
     transactionRequest?: ethers.providers.TransactionRequest
-  ): Promise<ethers.providers.TransactionResponse> {
+  ): Promise<TransferResponse> {
     throw new Error('Method not implemented.');
   }
-  public getBalance(to: string): Promise<ethers.BigNumber> {
-    throw new Error('Method not implemented.');
+  public async getBalance(address?: string): Promise<ethers.BigNumber> {
+    return await this.getTokenBalance('0x0000000000000000000000000000000000000000', address);
   }
-  public getTokenBalance(token: string, to: string): Promise<ethers.BigNumber> {
-    throw new Error('Method not implemented.');
+  public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
+    if (address) {
+      throw new Error('The specified address query is not supported temporarily');
+    }
+    const syncProvider = await zksync.getDefaultProvider(this.zkSyncNetwork);
+    const syncWallet = await zksync.Wallet.fromEthSigner(
+      this.l1Wallet,
+      syncProvider
+    );
+    return syncWallet.getBalance(token, 'committed');
   }
   public async transferToken(
     token: string,
     to: string,
     value: string,
-    transactionRequest?: ethers.providers.TransactionRequest
-  ): Promise<TransactionResponse> {
+    transactionRequest?:TransactionRequest
+  ): Promise<TransferResponse | undefined> {
+    const chainConfig = chains.getChainInfo(this.internalId);
     const syncProvider = await zksync.getDefaultProvider(this.zkSyncNetwork);
     const syncWallet = await zksync.Wallet.fromEthSigner(
       this.l1Wallet,
@@ -51,9 +61,20 @@ export default class zkSyncAccount extends BaseAccount {
       // nonce: 307,
       amount,
     });
-    return {
-      hash: response.txHash,
-      from: syncWallet.address.toString(),
-    } as any;
+    console.log(response, '===response')
+    const receipt = await response.awaitReceipt();
+    if (receipt.executed  && receipt.success) {
+      const txData = response.txData.tx;
+      return {
+        hash: response.txHash,
+        from: syncWallet.address(),
+        to,
+        fee: ethers.BigNumber.from(txData.fee),
+        value: ethers.BigNumber.from(value),
+        nonce: txData.nonce,
+        internalId: Number(chainConfig?.internalId)
+      };
+      throw new Error(receipt.failReason);
+    }
   }
 }

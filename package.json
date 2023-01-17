@@ -5,7 +5,7 @@
   "main": "build/main/main.js",
   "scripts": {
     "test": "npx ts-mocha ./src/maker-service/test/*.test.ts",
-    "test2": "npx ts-mocha ./src/maker-service/test/chainlink.test.ts",
+    "test2": "npx ts-mocha ./src/maker-service/test/zksync.test.ts",
     "dev": "npm run build:maker && node scripts/dev-server.js",
     "maker:start": "node ./build/maker-service/index.js",
     "dev:maker": "ts-node ./src/maker-service/",

@@ -2,17 +2,19 @@ import { LoggerService } from './../utils/logger';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import { ERC20Abi } from '../abi';
-import BaseAccount from './baseAccount';
+import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './baseAccount';
 import { NonceManager } from './nonceManager';
 import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
+import { IChainConfig } from 'orbiter-chaincore/src/types';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends BaseAccount {
   protected wallet: Wallet;
   public nonceManager: NonceManager;
   public provider: ethers.providers.Provider;
   public logger: LoggerType;
+  public chainConfig!: IChainConfig;
   constructor(
-    protected internalId:number,
+    protected internalId: number,
     protected readonly privateKey: string,
     protected readonly rpc: string
   ) {
@@ -22,6 +24,11 @@ export default class EVMAccount extends BaseAccount {
     } else {
       this.provider = new providers.JsonRpcProvider(this.rpc);
     }
+    const chainConfig = chains.getChainInfo(internalId);
+    if (!chainConfig) {
+      throw new Error(`${internalId} Chain Config not found`);
+    }
+    this.chainConfig = chainConfig;
     this.wallet = new ethers.Wallet(this.privateKey).connect(this.provider);
     this.nonceManager = new NonceManager(this.wallet, this);
     this.logger = LoggerService.getLogger(internalId.toString());
@@ -31,7 +38,7 @@ export default class EVMAccount extends BaseAccount {
     to: string,
     value: string,
     transactionRequest: ethers.providers.TransactionRequest = {}
-  ) {
+  ): Promise<TransferResponse> {
     const ifa = new ethers.utils.Interface(ERC20Abi);
     const data = ifa.encodeFunctionData('transfer', [to, ethers.BigNumber.from(value)]);
     const params = Object.assign(
@@ -41,21 +48,40 @@ export default class EVMAccount extends BaseAccount {
       transactionRequest
     );
     params.value = ethers.BigNumber.from(0);
-    const response = await this.sendTransaction(token, params);
-    return response;
+    const tx = await this.sendTransaction(token, params);
+    return {
+      hash: tx.hash,
+      internalId: Number(this.internalId),
+      nonce: tx.nonce,
+      from: tx.from,
+      to: to,
+      token,
+      value: ethers.BigNumber.from(value),
+      wait: tx.wait
+    };
   }
   async transfer(
     to: string,
     value: string,
-    transactionRequest: ethers.providers.TransactionRequest = {}
-  ) {
+    transactionRequest: TransactionRequest = {}
+  ): Promise<TransferResponse> {
     transactionRequest.value = ethers.BigNumber.from(value);
-    return this.sendTransaction(to, transactionRequest);
+    const tx = await this.sendTransaction(to, transactionRequest);
+    return {
+      hash: tx.hash,
+      internalId: Number(this.internalId),
+      nonce: tx.nonce,
+      from: tx.from,
+      to: tx.to,
+      value: tx.value,
+      wait: tx.wait
+    };
   }
   async sendTransaction(
     to: string,
     transactionRequest: ethers.providers.TransactionRequest = {}
-  ): Promise<ethers.providers.TransactionResponse> {
+  ): Promise<TransactionResponse> {
+    this.logger.info(`sendTransaction exec 1:`, { to });
     let chainId: number | undefined =
       transactionRequest.chainId || RPC_NETWORK[this.rpc];
     let tx: ethers.providers.TransactionRequest = {};
@@ -63,11 +89,7 @@ export default class EVMAccount extends BaseAccount {
       chainId = await this.wallet.getChainId();
       RPC_NETWORK[this.rpc] = chainId;
     }
-
-    const chainConfig = chains.getChainInfo(chainId.toString());
-    if (!chainConfig) {
-      throw new Error(`${chainId} chainConfig not found`)
-    }
+    this.logger.info(`sendTransaction exec 2:`, { to });
     try {
       try {
         // nonce manager
@@ -108,12 +130,13 @@ export default class EVMAccount extends BaseAccount {
             `=> getGasPrice error:${message}`
           );
         }
+        this.logger.info(`sendTransaction exec 3:`, { to });
         try {
           if (!tx.gasLimit) {
             let gasLimit: number | BigNumber = await this.provider.estimateGas(
               tx
             );
-            console.log(`${chainConfig.name} get gasLimit ${(gasLimit).toString()}`)
+            console.log(`${this.chainConfig.name} get gasLimit ${(gasLimit).toString()}`)
             gasLimit = Number((gasLimit.toNumber() * 2).toFixed(0));
             tx.gasLimit = ethers.utils.hexlify(gasLimit);
           }
@@ -127,9 +150,9 @@ export default class EVMAccount extends BaseAccount {
         throw new Error(`=>sendTransaction before error:${message}`);
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
-      this.logger.info(`${chainConfig.name} sendTransaction before:`, tx);
+      this.logger.info(`${this.chainConfig.name} sendTransaction before:`, tx);
       const response = await this.nonceManager.sendTransaction(tx);
-      this.logger.info(`${chainConfig.name} sendTransaction txHash:`, response.hash);
+      this.logger.info(`${this.chainConfig.name} sendTransaction txHash:`, response.hash);
       // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
       // use nonce manager disabled
       // console.debug('Transaction Data:', JSON.stringify(tx));
@@ -141,7 +164,7 @@ export default class EVMAccount extends BaseAccount {
       // console.debug('Precomputed Nonce:', tx.nonce.toString());
       return response;
     } catch (error) {
-      this.logger.error(`${chainConfig.name} Core SendTransaction error`, error)
+      this.logger.error(`${this.chainConfig.name} Core SendTransaction error`, error)
       throw error;
     }
   }
@@ -153,18 +176,18 @@ export default class EVMAccount extends BaseAccount {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
     return await erc20.allowance(this.wallet.address, spender);
   }
-  public async getBalance(to?: string, token?: string): Promise<BigNumber> {
+  public async getBalance(address?: string, token?: string): Promise<BigNumber> {
     if (token) {
       // is native
       // const chainId = await this.wallet.getChainId();
       // const issMainToken = await chains.inValidMainToken(String(chainId), token);
-      return this.getTokenBalance(token, to);
+      return this.getTokenBalance(token, address);
     } else {
-      return this.provider.getBalance(to || this.wallet.address);
+      return this.provider.getBalance(address || this.wallet.address);
     }
   }
-  public async getTokenBalance(token: string, to?: string): Promise<BigNumber> {
+  public async getTokenBalance(token: string, address?: string): Promise<BigNumber> {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider);
-    return erc20.balanceOf(to || this.wallet.address);
+    return erc20.balanceOf(address || this.wallet.address);
   }
 }

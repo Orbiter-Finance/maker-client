@@ -1,3 +1,4 @@
+import { TransferResponse } from './../account/baseAccount';
 import { isEmpty, equals, groupBy } from 'orbiter-chaincore/src/utils/core';
 import dayjs from "dayjs";
 import { Op } from "sequelize";
@@ -67,6 +68,7 @@ export default class Sequencer {
         'tokenAddress',
         'value',
         'replyAccount',
+        'status',
         'side',
         'memo',
         'expectValue',
@@ -285,24 +287,25 @@ export default class Sequencer {
     passOrders.forEach(order => {
       sendMainTokenValue = chains.inValidMainToken(chainId, order.token) ? sendMainTokenValue.add(order.value) : sendMainTokenValue;
     })
-    let submitTx: TransactionResponse | undefined;
     let isXVMReply = ValidatorService.isSupportXVM(chainId);
     if (isXVMReply && passOrders.length === 1) {
       isXVMReply = false;
     }
     logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, isXVMReply });
     if (isXVMReply) {
+      let submitTx: TransactionResponse | undefined;
       logger.info('submit xvm step 6-1');
       const encodeDatas = passOrders.map(order => {
         return (<XVMAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
       })
       let isError = false;
       try {
+        logger.info('submit xvm step 6-1 swapOK', { encodeDatas, accountType: typeof account });
         submitTx = await (<XVMAccount>account).swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
           value: sendMainTokenValue,
         });
         logger.info('submit xvm step 6-1 wait');
-        await submitTx.wait();
+        submitTx && await submitTx.wait();
       } catch (error: any) {
         isError = true;
         passOrders[0].error = error;
@@ -339,6 +342,7 @@ export default class Sequencer {
       }
     }
     if (!isXVMReply) {
+      let submitTx: TransferResponse | undefined;
       logger.info('submit step 6-2');
       // ua
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;
@@ -346,19 +350,23 @@ export default class Sequencer {
         let isError = false;
         try {
           if (chains.inValidMainToken(chainId, order.token)) {
-            logger.info('submit step 6-2-1-1');
+            logger.info('submit step 6-2-1-1', { to: order.to, value: order.value, txType });
             submitTx = await account.transfer(order.to, order.value, {
               type: txType
             });
             logger.info('submit step 6-2-1-1 wait');
-            await submitTx.wait();
+            if (submitTx && submitTx.wait) {
+              await submitTx.wait();
+            }
           } else {
-            logger.info('submit step 6-2-1-2');
+            logger.info('submit step 6-2-1-2', { token: order.token, to: order.to, value: order.value, txType });
             submitTx = await account.transferToken(order.token, order.to, order.value, {
               type: txType
             });
             logger.info('submit step 6-2-1-2 wait');
-            await submitTx.wait();
+            if (submitTx && submitTx.wait) {
+              await submitTx.wait();
+            }
           }
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
@@ -377,7 +385,7 @@ export default class Sequencer {
               from: submitTx.from,
               to: String(submitTx.to),
               status: 1,
-              chainId: submitTx.chainId,
+              chainId: submitTx.internalId,
               transactions: [order.calldata.hash] as any,
               transactionCount: 1
             });
