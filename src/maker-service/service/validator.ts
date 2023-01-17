@@ -1,5 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
+import { ethers } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import { isEmpty } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
@@ -123,9 +124,30 @@ export default class ValidatorService {
       swapOrder.value = fromTx.expectValue;
     }
     if (swapOrder.type === SwapOrderType.None) {
-      logger.error(`verifyToTx ${swapOrder.type} type none `);
+      logger.error(`verifyFromTx ${swapOrder.type} type none `);
       return undefined;
     }
+    const chainConfig = chains.getChainInfo(swapOrder.chainId);
+    if (!chainConfig) {
+      logger.error(`verifyFromTx ${swapOrder.calldata.hash} ${swapOrder.chainId} chainConfig not found`);
+      return undefined;
+    }
+    const isEVM = (chainConfig['features'] || []).includes("EVM");
+    if (isEVM) {
+      if (!ethers.utils.isAddress(swapOrder.to)) {
+        logger.error(`verifyFromTx ${swapOrder.calldata.hash} ${swapOrder.chainId} to address format error`);
+        return undefined;
+      }
+      if (!ethers.utils.isAddress(swapOrder.token)) {
+        logger.error(`verifyFromTx ${swapOrder.calldata.hash} ${swapOrder.chainId} token address format error`);
+        return undefined;
+      }
+      if (!ethers.utils.isAddress(swapOrder.from)) {
+        logger.error(`verifyFromTx ${swapOrder.calldata.hash} ${swapOrder.chainId} from address format error`);
+        return undefined;
+      }
+    }
+
     // check privateKey
     const privateKey = this.getSenderPrivateKey(swapOrder.from);
     if (isEmpty(privateKey)) {
