@@ -130,7 +130,7 @@ export default class Sequencer {
         console.log('submit result:', JSON.stringify(result));
       }
     } catch (error) {
-      logger.error('submit error:', error);
+      logger.error(`${chainId} submit error:`, error);
     } finally {
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();
