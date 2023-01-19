@@ -55,6 +55,7 @@ export default class zkSyncAccount extends BaseAccount {
       syncProvider
     );
     const amount = zksync.utils.closestPackableTransactionAmount(value);
+    console.log(amount, '===amount')
     const response = await syncWallet.syncTransfer({
       to,
       token,
@@ -74,7 +75,7 @@ export default class zkSyncAccount extends BaseAccount {
         nonce: txData.nonce,
         internalId: Number(chainConfig?.internalId)
       };
-      throw new Error(receipt.failReason);
     }
+    throw new Error(receipt.failReason);
   }
 }

@@ -121,7 +121,6 @@ export default class XVMAccount extends EVMAccount {
     const data = ifa.encodeFunctionData('multicall', [params]);
     transactionRequest.data = data;
     const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
-    // await tx.wait();
     return tx;
     // send 2
     // return await this.contract.connect(this.wallet).multicall(params, transactionRequest);

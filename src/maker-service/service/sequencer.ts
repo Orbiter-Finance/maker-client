@@ -354,19 +354,19 @@ export default class Sequencer {
             submitTx = await account.transfer(order.to, order.value, {
               type: txType
             });
-            logger.info('submit step 6-2-1-1 wait');
-            if (submitTx && submitTx.wait) {
-              await submitTx.wait();
-            }
+            logger.info('submit step 6-2-1-1 wait', {submitTx});
+            // if (submitTx && submitTx.wait) {
+            //   await submitTx.wait();
+            // }
           } else {
             logger.info('submit step 6-2-1-2', { token: order.token, to: order.to, value: order.value, txType });
             submitTx = await account.transferToken(order.token, order.to, order.value, {
               type: txType
             });
-            logger.info('submit step 6-2-1-2 wait');
-            if (submitTx && submitTx.wait) {
-              await submitTx.wait();
-            }
+            logger.info('submit step 6-2-1-2 wait', {submitTx});
+            // if (submitTx && submitTx.wait) {
+            //   await submitTx.wait();
+            // }
           }
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
