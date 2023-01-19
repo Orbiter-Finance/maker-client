@@ -216,10 +216,10 @@ export default class ValidatorService {
       attributes: ["id"],
       raw: true,
       where: {
-        from: swapOrder.calldata.hash
+        hash: swapOrder.calldata.hash
       }
     });
-    if (sequencerExist) {
+    if (sequencerExist && sequencerExist.id) {
       logger.error(`${swapOrder.calldata.hash} verifyToTx Find Sequencer Tx Exist`);
       return undefined;
     }
