@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import BaseAccount, { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
 import { LoggerService } from '../utils/logger';
-const submissionInterval = 1000 * 60 * 2;
+const submissionInterval = 1000 * 10;
 export interface submitResponse {
   chainId: number;
   error?: Error | string,
@@ -130,7 +130,8 @@ export default class Sequencer {
         console.log('submit result:', JSON.stringify(result));
       }
     } catch (error) {
-      logger.error(`${chainId} submit error:`, error);
+      console.log(error);
+      logger.error(`submit error:`, error);
     } finally {
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();

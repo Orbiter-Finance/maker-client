@@ -3,7 +3,7 @@ import path from 'path';
 export class LoggerService {
   static services: { [key: string]: any } = {};
   static createLogger(key: string, opts?: winstonX.WinstonXOptions) {
-    let logDir = path.join(process.env.logDir || process.cwd(), 'runtime', 'logs');
+    let logDir = path.join(process.env.logDir || process.cwd(), 'maker', 'logs');
     if (key) {
       logDir = path.join(logDir, key);
     }

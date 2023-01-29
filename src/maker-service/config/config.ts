@@ -9,13 +9,6 @@ export default {
     77: 70000,
     515: 70000
   },
-  sqlite: {
-    dialect: 'sqlite',
-    storage: './data/database.sqlite',
-    operatorsAliases: false,
-    logging: false,
-    timezone: '+00:00',
-  },
   development: {
     dialect: 'mysql',
     host: vars['MYSQL_DB_HOST'] || 'localhost',
