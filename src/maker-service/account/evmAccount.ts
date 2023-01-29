@@ -21,8 +21,17 @@ export default class EVMAccount extends BaseAccount {
     super(internalId, privateKey);
     if (this.rpc.includes('ws')) {
       this.provider = new providers.WebSocketProvider(this.rpc);
+      this.provider.on('error', (...result)=> {
+        this.logger.error('ws error：', {result});
+      })
+      this.provider.on('debug', (...result)=> {
+        this.logger.error('ws debug', {result});
+      })
     } else {
-      this.provider = new providers.JsonRpcProvider(this.rpc);
+      this.provider = new providers.JsonRpcProvider({
+        url: this.rpc,
+      });
+      // this.provider = new providers.JsonRpcProvider(this.rpc);
     }
     const chainConfig = chains.getChainInfo(internalId);
     if (!chainConfig) {
@@ -122,10 +131,24 @@ export default class EVMAccount extends BaseAccount {
                 tx.maxPriorityFeePerGas =
                   feeData.maxPriorityFeePerGas.toHexString();
               }
+              this.logger.info(`sendTransaction exec 4 getFeeData ok:`, {
+                maxFeePerGas: tx.maxFeePerGas,
+                maxPriorityFeePerGas: tx.maxPriorityFeePerGas
+              });
             }
           } else {
-            this.logger.info(`sendTransaction exec 4 getGasPrice:`);
-            tx.gasPrice = tx.gasPrice || (await this.wallet.getGasPrice());
+            if (!tx.gasPrice) {
+              this.logger.info(`sendTransaction exec 4 getGasPrice:${tx.gasPrice}`);
+              const feeData = await this.provider.getFeeData();
+              this.logger.info(`sendTransaction exec 4 feeData:`, feeData);
+              tx.gasPrice = await this.provider.getGasPrice().catch(error => {
+                this.logger.error(`sendTransaction exec 4 getGasPrice error:`, error);
+                return 0;
+              })
+              // tx.gasPrice = await this.wallet.getGasPrice();
+              this.logger.info(`sendTransaction exec 4 getGasPrice ok:${tx.gasPrice}`);
+            }
+
           }
         } catch ({ message }) {
           throw new Error(
@@ -148,7 +171,7 @@ export default class EVMAccount extends BaseAccount {
             `=> estimateGas limit error:${message}`
           );
         }
-      } catch (error:any) {
+      } catch (error: any) {
         this.logger.error(`evm sendTransaction before error`, error);
         throw new Error(`=>sendTransaction before error:${error.message}`);
       }

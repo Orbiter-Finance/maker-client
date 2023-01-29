@@ -10,7 +10,7 @@ import { LoggerService } from '../utils/logger';
 import { getChainLinkPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 
-export const orderTimeoutMS = 1000 * 60 * 60 * 5;
+export const orderTimeoutMS = 1000 * 60 * 30;
 export default class ValidatorService {
   constructor(private readonly ctx: Context) { }
   public static transactionTimeValid(timestamp: number) {
