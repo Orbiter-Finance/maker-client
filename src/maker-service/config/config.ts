@@ -2,12 +2,25 @@ import * as dotenv from 'dotenv';
 const dotEnvs = dotenv.config().parsed;
 const vars = process.env;
 export default {
-  xvmGas: {
-    22: 1000000,
-    5: 70000,
-    66: 70000,
-    77: 70000,
-    515: 70000
+  5: {
+    maxTxCount: 10,
+    swapGasLimit: 70000,
+  },
+  66: {
+    maxTxCount: 10,
+    swapGasLimit: 70000,
+  },
+  515: {
+    maxTxCount: 10,
+    swapGasLimit: 70000,
+  },
+  77: {
+    maxTxCount: 10,
+    swapGasLimit: 70000,
+  },
+  22: {
+    maxTxCount: 10,
+    swapGasLimit: 1000000,
   },
   development: {
     dialect: 'mysql',

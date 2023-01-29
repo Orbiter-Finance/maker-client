@@ -38,7 +38,11 @@ export default class XVMAccount extends EVMAccount {
     if ((chainConfig['features'] || []).includes("EIP1559")) {
       txType = 2;
     }
-    const gasLimit = ethers.BigNumber.from(config.xvmGas[Number(chainConfig.internalId)] || 0);
+    const chainCustomConfig = config[chainConfig.internalId];
+    let gasLimit = ethers.BigNumber.from(0);
+    if (chainCustomConfig && chainCustomConfig.swapGasLimit) {
+      gasLimit =  ethers.BigNumber.from(chainCustomConfig.swapGasLimit);
+    }
     this.logger.info("exec swapOK 4")
     if (typeof calldata === 'string') {
       this.logger.info("exec swapOK single ", { txType })

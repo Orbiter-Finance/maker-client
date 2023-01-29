@@ -1,5 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { ethers } from "ethers";
+import Caching from '../../utils/caching';
 
 export default class ChainLink {
     private pairs: { [key: string]: string } = {
@@ -58,9 +59,14 @@ export default class ChainLink {
         }
     ];
     constructor() {
-
     }
     public async getPriceFeed(source: string, target: string) {
+        const keyName = `${source}/${target}`;
+        const caching = Caching.getCache('chainlink');
+        const result = await caching.get(keyName);
+        if (result) {
+            return new BigNumber(result);
+        }
         if (source === target) {
             return new BigNumber(1);
         }
@@ -77,7 +83,9 @@ export default class ChainLink {
         // Determine how many decimals the price feed has (10**decimals)
         const decimals = await priceFeed.decimals();
         // We convert the price to a number and return it
-        return new BigNumber((roundData.answer.toString() / Math.pow(10, decimals)))
+        const value = new BigNumber((roundData.answer.toString() / Math.pow(10, decimals)));
+        caching.set(keyName, value.toString(), 1000 * 60 * 1);
+        return value;
     }
 
 }

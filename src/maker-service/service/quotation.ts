@@ -39,6 +39,7 @@ export async function getChainLinkPrice(
   fromCurrency: string,
   toCurrency = 'usd',
 ): Promise<BigNumber> {
+
   fromCurrency = fromCurrency.toLocaleLowerCase();
   toCurrency = toCurrency.toLocaleLowerCase();
   if (fromCurrency === toCurrency) {

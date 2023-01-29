@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import BaseAccount, { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
 import { LoggerService } from '../utils/logger';
-const submissionInterval = 1000 * 10;
+const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
   error?: Error | string,
@@ -95,7 +95,7 @@ export default class Sequencer {
       label: chainId
     });
     const monitorState = this.monitorState[chainId];
-    const pendingTxs = this.pending[chainId];
+    const pendingTxs: SwapOrder[] = this.pending[chainId];
     if (pendingTxs.length <= 0) {
       return undefined;
     }
@@ -106,21 +106,28 @@ export default class Sequencer {
       logger.info(`start scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
       for (let i = pendingTxs.length - 1; i >= 0; i--) {
         const order = pendingTxs[i];
-        if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
-          pendingTxs.splice(i, 1);
-          this.ctx.logger.info(`${order.calldata.hash} remove order`);
-          continue;
-        }
-        if (order.type === SwapOrderType.CrossToken) {
-          // matchOrders.
-          const value = await this.ctx.validator.verifyXVMCrossToken(order);
-          if (value && !isEmpty(value)) {
-            order.value = String(value);
-            const spliceOrders = pendingTxs.splice(i, 1);
-            matchOrders.push(...spliceOrders);
+        try {
+          if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
+            pendingTxs.splice(i, 1);
+            this.ctx.logger.info(`${order.calldata.hash} remove order`);
+            continue;
           }
-        } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
-          matchOrders.push(...pendingTxs.splice(i, 1));
+          if (order.type === SwapOrderType.CrossToken) {
+            // matchOrders.
+            const value = await this.ctx.validator.verifyXVMCrossToken(order);
+            if (value && !isEmpty(value)) {
+              order.value = String(value);
+              const spliceOrders = pendingTxs.splice(i, 1);
+              matchOrders.push(...spliceOrders);
+            }
+          } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
+            matchOrders.push(...pendingTxs.splice(i, 1));
+          }
+          if (matchOrders.length >= 50) {
+            break;
+          }
+        } catch (error) {
+          logger.info(`exec submit before order error`, { hash: order.calldata.hash, error });
         }
       }
       logger.info(`start after scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`);
@@ -131,7 +138,7 @@ export default class Sequencer {
       }
     } catch (error) {
       console.log(error);
-      logger.error(`submit error:`, error);
+      logger.error(`${chainId} submit error:`, error);
     } finally {
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();
@@ -310,7 +317,7 @@ export default class Sequencer {
       } catch (error: any) {
         isError = true;
         passOrders[0].error = error;
-        logger.error(`sequencer xvm submit error:${error.message}`, error);
+        logger.error(`${chainId} sequencer xvm submit error:${error.message}`, error);
       } finally {
         logger.info('submit xvm step 6-2');
         const passHashList = passOrders.map(tx => tx.calldata.hash);
@@ -355,7 +362,7 @@ export default class Sequencer {
             submitTx = await account.transfer(order.to, order.value, {
               type: txType
             });
-            logger.info('submit step 6-2-1-1 wait', {submitTx});
+            logger.info('submit step 6-2-1-1 wait', { submitTx });
             // if (submitTx && submitTx.wait) {
             //   await submitTx.wait();
             // }
@@ -364,7 +371,7 @@ export default class Sequencer {
             submitTx = await account.transferToken(order.token, order.to, order.value, {
               type: txType
             });
-            logger.info('submit step 6-2-1-2 wait', {submitTx});
+            logger.info('submit step 6-2-1-2 wait', { submitTx });
             // if (submitTx && submitTx.wait) {
             //   await submitTx.wait();
             // }

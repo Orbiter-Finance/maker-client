@@ -10,7 +10,7 @@ import { LoggerService } from '../utils/logger';
 import { getChainLinkPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 
-export const orderTimeoutMS = 1000 * 60 * 30;
+export const orderTimeoutMS = 1000 * 60 * 60 * 10;
 export default class ValidatorService {
   constructor(private readonly ctx: Context) { }
   public static transactionTimeValid(timestamp: number) {
@@ -21,7 +21,9 @@ export default class ValidatorService {
     return true;
   }
   public async verifyFromTx(fromTx: Transaction): Promise<SwapOrder | undefined> {
-    const logger = LoggerService.getLogger(fromTx.chainId.toString());
+    const logger = LoggerService.getLogger(fromTx.chainId.toString(), {
+      label: String(fromTx.chainId || "")
+    });
     // const logger = this.ctx.logger;
     // is support
     if (
@@ -157,7 +159,9 @@ export default class ValidatorService {
     return swapOrder;
   }
   public async verifyToTx(swapOrder: SwapOrder) {
-    const logger = LoggerService.getLogger(swapOrder.chainId.toString());
+    const logger = LoggerService.getLogger(swapOrder.chainId.toString(), {
+      label: String(swapOrder.chainId||"")
+    });
     // const logger = this.ctx.logger;
     const privateKey = this.getSenderPrivateKey(swapOrder.from);
     if (isEmpty(privateKey)) {
@@ -243,7 +247,7 @@ export default class ValidatorService {
   }
   public async verifyXVMCrossToken(swapOrder: SwapOrder): Promise<string | undefined> {
     const logger = LoggerService.getLogger(swapOrder.chainId.toString(), {
-      label: swapOrder.chainId.toString()
+      label: String(swapOrder.chainId || "")
     });
     if (swapOrder.type != SwapOrderType.CrossToken) {
       logger.error(`verifyXVMCrossToken ${swapOrder.calldata.hash} type error`);
