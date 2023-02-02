@@ -2,7 +2,7 @@ import { BigNumber } from 'bignumber.js';
 import dayjs from 'dayjs';
 import { ethers } from 'ethers';
 import { chains } from 'orbiter-chaincore';
-import { isEmpty } from 'orbiter-chaincore/src/utils/core';
+import { equals, isEmpty } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
@@ -10,7 +10,7 @@ import { LoggerService } from '../utils/logger';
 import { getChainLinkPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 
-export const orderTimeoutMS = 1000 * 60 * 60 * 10;
+export const orderTimeoutMS = 1000 * 60 * 30;
 export default class ValidatorService {
   constructor(private readonly ctx: Context) { }
   public static transactionTimeValid(timestamp: number) {
@@ -32,13 +32,11 @@ export default class ValidatorService {
       logger.warn(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
       return undefined;
     }
-    // if (fromTx.source != 'xvm') {
-    //   if (!equals(fromTx.from, '0x8A3214F28946A797088944396c476f014F88Dd37')) {
-    //     logger.error(`${fromTx.hash} not xvm tx`);
-    //     return undefined;
-    //   }
-    //   logger.info(`${fromTx.hash} xvm tx 0x8A3214F28946A797088944396c476f014F88Dd37`);
-    // }
+    if (fromTx.source != 'xvm') {
+      // logger.error(`${fromTx.hash} not xvm tx`);
+      return undefined;
+    }
+    
     const side = fromTx.side;
     if (side !== 0) {
       logger.error(`${fromTx.hash} ${fromTx.side} tx side incorrect`);
@@ -160,7 +158,7 @@ export default class ValidatorService {
   }
   public async verifyToTx(swapOrder: SwapOrder) {
     const logger = LoggerService.getLogger(swapOrder.chainId.toString(), {
-      label: String(swapOrder.chainId||"")
+      label: String(swapOrder.chainId || "")
     });
     // const logger = this.ctx.logger;
     const privateKey = this.getSenderPrivateKey(swapOrder.from);

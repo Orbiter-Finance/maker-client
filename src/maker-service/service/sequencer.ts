@@ -11,7 +11,7 @@ import { ethers } from 'ethers';
 import BaseAccount, { TransactionResponse } from '../account/baseAccount';
 import Caching from '../utils/caching';
 import { LoggerService } from '../utils/logger';
-const submissionInterval = 1000 * 60 * 1;
+const submissionInterval = 1000 * 60 * 2;
 export interface submitResponse {
   chainId: number;
   error?: Error | string,
@@ -76,7 +76,7 @@ export default class Sequencer {
         'extra',
       ],
       where: {
-        // source: 'xvm',
+        source: 'xvm',
         status: 1,
         side: 0,
         timestamp: {
