@@ -35,7 +35,7 @@ export default class ValidatorService {
     if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
       // logger.error(`${fromTx.hash} not xvm tx`);
       // is new chain
-      if (!['520', '514', '518'].includes(fromTx.memo)) {
+      if (!['520', '514', '518', '44', '4'].includes(fromTx.memo)) {
         return undefined;
       }
     }
@@ -228,7 +228,7 @@ export default class ValidatorService {
     }
     const upRate = new BigNumber(toValue).dividedBy(new BigNumber(fromValue).multipliedBy(100));
     if (upRate.gte(1.5)) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (${toValue.toString()}/${fromValue.toString()}/${upRate.toString()})`);
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (toValue ${toToken.symbol}:${toValue.toString()},fromValue ${fromToken.symbol}:${fromValue.toString()},upRate:${upRate.toString()})`);
       return undefined;
     }
 

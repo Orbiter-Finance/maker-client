@@ -1,7 +1,7 @@
 import { chains } from 'orbiter-chaincore/src/utils';
 import { ethers } from 'ethers';
 
-import { XVMAbi } from '../abi';
+import { XVMABI } from '../abi';
 import config from '../config/config'
 import EVMAccount from './evmAccount';
 import { TransactionRequest, TransactionResponse } from './IAccount';
@@ -22,7 +22,7 @@ export default class XVMAccount extends EVMAccount {
     }
     super(internalId, privateKey, chainConfig.rpc[0]);
     this.contractAddress = chainConfig?.xvmList[0];
-    this.contract = new ethers.Contract(this.contractAddress, XVMAbi, this.provider);
+    this.contract = new ethers.Contract(this.contractAddress, XVMABI, this.provider);
   }
   async swapOK(calldata: string[] | string, transactionRequest: TransactionRequest = {}): Promise<TransactionResponse | undefined> {
     // get chain config 
@@ -54,7 +54,7 @@ export default class XVMAccount extends EVMAccount {
       // await tx.wait();
       return tx;
     } else if (Array.isArray(calldata)) {
-      const ifa = new ethers.utils.Interface(XVMAbi);
+      const ifa = new ethers.utils.Interface(XVMABI);
       const data = ifa.encodeFunctionData('multicall', [calldata]);
       this.logger.info("exec swapOK Multiple ", { txType })
       const tx = await this.sendTransaction(this.contractAddress, Object.assign({
@@ -75,11 +75,12 @@ export default class XVMAccount extends EVMAccount {
     toAddress: string,
     toValue: string
   ): string {
-    const ifa = new ethers.utils.Interface(XVMAbi);
-    const data = ifa.encodeFunctionData('swapOK', [
+    const ifa = new ethers.utils.Interface(XVMABI);
+    const data = ifa.encodeFunctionData('swapAnswer', [
       tradeId,
-      token,
       toAddress,
+      token,
+      1,
       toValue,
     ]);
     return data;
@@ -90,11 +91,12 @@ export default class XVMAccount extends EVMAccount {
     toAddress: string,
     toValue: string
   ): string {
-    const ifa = new ethers.utils.Interface(XVMAbi);
-    const data = ifa.encodeFunctionData('swapFail', [
+    const ifa = new ethers.utils.Interface(XVMABI);
+    const data = ifa.encodeFunctionData('swapAnswer', [
       tradeId,
-      token,
       toAddress,
+      token,
+      2,
       toValue,
     ]);
     return data;
@@ -105,7 +107,7 @@ export default class XVMAccount extends EVMAccount {
     toAddress: string,
     toValue: string
   ) {
-    const ifa = new ethers.utils.Interface(XVMAbi);
+    const ifa = new ethers.utils.Interface(XVMABI);
     const data = ifa.encodeFunctionData('swapFail', [
       tradeId,
       token,
@@ -121,7 +123,7 @@ export default class XVMAccount extends EVMAccount {
   }
   async multicall(params: string[], transactionRequest: ethers.providers.TransactionRequest = {}) {
     // send 1
-    const ifa = new ethers.utils.Interface(XVMAbi);
+    const ifa = new ethers.utils.Interface(XVMABI);
     const data = ifa.encodeFunctionData('multicall', [params]);
     transactionRequest.data = data;
     const tx = await this.sendTransaction(this.contractAddress, transactionRequest);

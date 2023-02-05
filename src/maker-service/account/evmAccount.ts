@@ -188,6 +188,9 @@ export default class EVMAccount extends BaseAccount {
       // const response = await this.provider.sendTransaction(signedTx);
       // console.debug('Precomputed txHash:', txHash);
       // console.debug('Precomputed Nonce:', tx.nonce.toString());
+      response.wait().then(tx=>{
+        this.logger.info(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
+      })
       return response;
     } catch (error) {
       this.logger.error(`${this.chainConfig.name} Core SendTransaction error`, error)

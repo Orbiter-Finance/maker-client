@@ -1,15 +1,13 @@
 import { BigNumberish, ethers } from 'ethers';
-import fs from "fs";
-import path from 'path';
 import NonceManager from '../lib/nonce';
 import { Account, Contract, defaultProvider, ec, json, number, SequencerProvider, stark, hash, uint256 } from 'starknet';
-import starknetErc20Abi from '../abi/starknet-erc20.json';
 // const compiledErc20 = json.parse(
 //     fs.readFileSync(path.join(__dirname, '../', "abi/starknet-erc20.json")).toString("ascii")
 // );
 import { TransactionRequest, TransferResponse } from './IAccount';
 import OrbiterAccount from './Account';
 import { getNonceCacheStore } from '../utils/caching';
+import { StarknetErc20ABI } from '../abi';
 export default class StarknetAccount extends OrbiterAccount {
     public account: Account;
     private nonceManager: NonceManager;
@@ -33,12 +31,13 @@ export default class StarknetAccount extends OrbiterAccount {
             store: getNonceCacheStore(address)
         });
     }
-    public transfer(
+    public async transfer(
         to: string,
         value: string,
         transactionRequest?: TransactionRequest
-    ): Promise<TransferResponse> {
-        throw new Error('Method not implemented.');
+    ): Promise<TransferResponse | undefined> {
+        const mainToken = await this.chainConfig.nativeCurrency.address;
+        return await this.transferToken(mainToken, to, value, transactionRequest);
     }
     public getProviderV4() {
         const rpcFirst = this.chainConfig.rpc[0];
@@ -56,8 +55,7 @@ export default class StarknetAccount extends OrbiterAccount {
             return ethers.BigNumber.from(0);
         }
         const provider = this.getProviderV4()
-        const abi = starknetErc20Abi.abi;
-        const erc20 = new Contract(abi, token, provider)
+        const erc20 = new Contract(StarknetErc20ABI, token, provider)
         // erc20.connect(this.account);
         const balanceBeforeTransfer = await erc20.balanceOf(address || this.account.address);
         return ethers.BigNumber.from(number.toBN(balanceBeforeTransfer.balance.low).toString());
