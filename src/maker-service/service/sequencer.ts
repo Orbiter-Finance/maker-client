@@ -1,4 +1,4 @@
-import { TransferResponse } from './../account/baseAccount';
+import { TransferResponse } from '../account/IAccount';
 import { isEmpty, equals, groupBy } from 'orbiter-chaincore/src/utils/core';
 import dayjs from "dayjs";
 import { Op } from "sequelize";
@@ -8,10 +8,10 @@ import XVMAccount from '../account/xvmAccount';
 import { chains } from 'orbiter-chaincore';
 import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
-import BaseAccount, { TransactionResponse } from '../account/baseAccount';
+import BaseAccount, { TransactionResponse } from '../account/IAccount';
 import Caching from '../utils/caching';
 import { LoggerService } from '../utils/logger';
-const submissionInterval = 1000 * 60 * 2;
+const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
   error?: Error | string,
@@ -22,10 +22,11 @@ export interface CalldataType {
   hash: string;
   token: string;
   value: string;
+  // valueSubFee: string;
+  // actualValue: string;
   expectValue: string;
   timestamp: number;
   slipPoint: number;
-  crossTokenUserExpectValue?: string;
 }
 export enum SwapOrderType {
   None,
@@ -86,8 +87,13 @@ export default class Sequencer {
     });
     this.ctx.logger.info('init history:', { fromHash: historyList.map(tx => tx.hash) });
     for (const tx of historyList) {
-      const order = await this.ctx.validator.verifyFromTx(tx);
-      order && this.push(order);
+      try {
+        const order = await this.ctx.validator.verifyFromTx(tx);
+        order && this.push(order);
+      } catch (error) {
+        this.ctx.logger.error('init history verifyFromTx error:', { hash: tx.hash });
+      }
+
     }
   }
   async exec(chainId: string) {
@@ -224,7 +230,7 @@ export default class Sequencer {
         }
         try {
           logger.info("submit step 3-1-2");
-          const account: BaseAccount = Factory.createMakerAccount(validResult.privateKey, chainId);
+          const account: BaseAccount = Factory.createMakerAccount(validResult.address, validResult.privateKey, chainId);
           // get balance
           const senderWallet = order.from;
           const sendToken = order.token.toLocaleLowerCase();
@@ -261,7 +267,7 @@ export default class Sequencer {
             continue;
           }
           logger.info("submit step 5-1");
-          const account: BaseAccount = Factory.createMakerAccount(privateKey, chainId);
+          const account: BaseAccount = Factory.createMakerAccount(sender, privateKey, chainId);
           const trxList = groupFromAddrList[makerReplyAddr];
           const passOrders: Array<SwapOrder> = trxList.filter(o => isEmpty(o.error));
           logger.info("submit step 5-2");
@@ -295,9 +301,13 @@ export default class Sequencer {
     passOrders.forEach(order => {
       sendMainTokenValue = chains.inValidMainToken(chainId, order.token) ? sendMainTokenValue.add(order.value) : sendMainTokenValue;
     })
-    let isXVMReply = ValidatorService.isSupportXVM(chainId);
-    if (isXVMReply && passOrders.length === 1) {
-      isXVMReply = false;
+    let isXVMReply:Boolean  = false;
+    if (passOrders.length === 1) {
+      if ([SwapOrderType.CrossAddr, SwapOrderType.CrossAddr].includes(passOrders[0].type)) {
+        isXVMReply = ValidatorService.isSupportXVM(chainId);
+      }
+    } else{
+      isXVMReply = ValidatorService.isSupportXVM(chainId);
     }
     logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, isXVMReply });
     if (isXVMReply) {

@@ -5,7 +5,7 @@ import * as zksync from 'zksync-web3';
 
 import { ERC20Abi } from '../abi';
 
-import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './baseAccount';
+import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends BaseAccount {

@@ -17,7 +17,7 @@ export interface TransactionResponse extends ethers.providers.TransactionRespons
 };
 
 export type TransactionRequest = ethers.providers.TransactionRequest;
-export default abstract class BaseAccount {
+export default abstract class IAccount {
   constructor(protected internalId: number, protected readonly privateKey: string) { }
   public abstract transfer(
     to: string,

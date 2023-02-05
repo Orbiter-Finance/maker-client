@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import { XVMAbi } from '../abi';
 import config from '../config/config'
 import EVMAccount from './evmAccount';
-import { TransactionRequest, TransactionResponse } from './baseAccount';
+import { TransactionRequest, TransactionResponse } from './IAccount';
 
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class XVMAccount extends EVMAccount {

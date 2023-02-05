@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import * as zksync from 'zksync';
 
-import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './baseAccount';
+import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends BaseAccount {
   public l1Wallet: ethers.Wallet;
@@ -55,14 +55,12 @@ export default class zkSyncAccount extends BaseAccount {
       syncProvider
     );
     const amount = zksync.utils.closestPackableTransactionAmount(value);
-    console.log(amount, '===amount')
     const response = await syncWallet.syncTransfer({
       to,
       token,
       // nonce: 307,
       amount,
     });
-    console.log(response, '===response')
     const receipt = await response.awaitReceipt();
     if (receipt.executed  && receipt.success) {
       const txData = response.txData.tx;

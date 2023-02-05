@@ -1,6 +1,6 @@
 
 import { ethers } from "ethers";
-import { TransactionResponse } from "./baseAccount";
+import { TransactionResponse } from "./IAccount";
 import EVMAccount from "./evmAccount";
 
 export class NonceManager extends ethers.Signer {

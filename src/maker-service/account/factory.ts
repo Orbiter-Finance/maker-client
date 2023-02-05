@@ -3,14 +3,16 @@ import { equals, groupBy } from 'orbiter-chaincore/src/utils/core';
 import Context from '../context';
 import ValidatorService from '../service/validator';
 
-import BaseAccount from './baseAccount';
+import BaseAccount from './IAccount';
 import EVMAccount from './evmAccount';
 import XVMAccount from './xvmAccount';
 import zkSyncAccount from './zkSyncAccount';
+import StarknetAccount from './starknetAccount';
 
 export class Factory {
   private static wallets: { [key: string]: BaseAccount } = {}; // key = pk + chainId
   static createMakerAccount<T extends BaseAccount>(
+    makerAddress: string,
     privateKey: string,
     toChainId: number,
   ): T {
@@ -62,6 +64,14 @@ export class Factory {
           toChainId,
           privateKey,
           equals(toChainId, 3) ? 'mainnet' : 'goerli'
+        );
+        break;
+      case 4:
+      case 44:
+        wallet = new StarknetAccount(
+          toChainId,
+          privateKey,
+          makerAddress.toLocaleLowerCase()
         );
         break;
     }

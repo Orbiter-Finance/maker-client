@@ -68,13 +68,18 @@ export default class Consumer {
         hash = tx.hash;
         this.ctx.logger.info(`subscribe tx:${tx.hash}`);
         if (tx) {
-          const swapOrder = await this.ctx.validator.verifyFromTx(tx);
-          if (swapOrder) {
-            this.ctx.logger.info(`swapOrder:`, { swapOrder: swapOrder })
-            await this.ctx.sequencer.push(swapOrder);
-          } else {
-            // msg && await channel.ack(msg);
+          try {
+            const swapOrder = await this.ctx.validator.verifyFromTx(tx);
+            if (swapOrder) {
+              this.ctx.logger.info(`swapOrder:`, { swapOrder: swapOrder })
+              await this.ctx.sequencer.push(swapOrder);
+            } else {
+              // msg && await channel.ack(msg);
+            }
+          } catch (error) {
+            this.ctx.logger.info(`subscribe tx verifyFromTx error:${tx.hash}`, error);
           }
+
         }
       }
       // ack

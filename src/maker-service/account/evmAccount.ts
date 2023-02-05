@@ -2,7 +2,7 @@ import { LoggerService } from './../utils/logger';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import { ERC20Abi } from '../abi';
-import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './baseAccount';
+import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 import { NonceManager } from './nonceManager';
 import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
 import { IChainConfig } from 'orbiter-chaincore/src/types';
