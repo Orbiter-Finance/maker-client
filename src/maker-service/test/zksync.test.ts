@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 chains.fill(chainConfigs as any);
 const privateKey = process.env["privateKey"] || "";
 describe("ZkSync Test", function () {
+    
     const account = Factory.createMakerAccount<zkSyncAccount>("", privateKey, 33);
     it("GetBalance", async function () {
         const balance = await account.getBalance(); 

@@ -14,5 +14,5 @@
     "noImplicitAny": false,
     "resolveJsonModule": true
   },
-  "exclude": ["static"]
+  "exclude": ["static"],
 }

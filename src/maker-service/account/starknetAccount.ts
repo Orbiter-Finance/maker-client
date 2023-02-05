@@ -3,9 +3,10 @@ import fs from "fs";
 import path from 'path';
 import NonceManager from '../lib/nonce';
 import { Account, Contract, defaultProvider, ec, json, number, SequencerProvider, stark, hash, uint256 } from 'starknet';
-const compiledErc20 = json.parse(
-    fs.readFileSync(path.join(__dirname, '../', "abi/starknet-erc20.json")).toString("ascii")
-);
+import starknetErc20Abi from '../abi/starknet-erc20.json';
+// const compiledErc20 = json.parse(
+//     fs.readFileSync(path.join(__dirname, '../', "abi/starknet-erc20.json")).toString("ascii")
+// );
 import { TransactionRequest, TransferResponse } from './IAccount';
 import OrbiterAccount from './Account';
 import { getNonceCacheStore } from '../utils/caching';
@@ -55,7 +56,7 @@ export default class StarknetAccount extends OrbiterAccount {
             return ethers.BigNumber.from(0);
         }
         const provider = this.getProviderV4()
-        const abi = compiledErc20.abi;
+        const abi = starknetErc20Abi.abi;
         const erc20 = new Contract(abi, token, provider)
         // erc20.connect(this.account);
         const balanceBeforeTransfer = await erc20.balanceOf(address || this.account.address);
