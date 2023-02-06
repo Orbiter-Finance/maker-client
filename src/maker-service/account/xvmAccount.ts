@@ -12,15 +12,13 @@ export default class XVMAccount extends EVMAccount {
   public contractAddress: string;
   constructor(
     protected internalId: number,
-    protected override privateKey: string,
-    // protected override rpc: string,
-    // public readonly contractAddress: string,
+    protected override privateKey: string
   ) {
     const chainConfig = chains.getChainInfo(internalId);
     if (!chainConfig) {
       throw new Error('XVM Config Not Found');
     }
-    super(internalId, privateKey, chainConfig.rpc[0]);
+    super(internalId, privateKey);
     this.contractAddress = chainConfig?.xvmList[0];
     this.contract = new ethers.Contract(this.contractAddress, XVMABI, this.provider);
   }

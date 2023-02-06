@@ -5,7 +5,7 @@ import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
 import { IChainConfig } from 'orbiter-chaincore/src/types';
 import IAccount from './IAccount';
 import { BigNumber } from 'ethers';
-export default class Account extends IAccount {
+export default class OrbiterAccount extends IAccount {
     public logger: LoggerType;
     public chainConfig!: IChainConfig;
     constructor(

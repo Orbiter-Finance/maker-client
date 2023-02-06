@@ -55,7 +55,7 @@ export class Factory {
         if (ValidatorService.isSupportXVM(toChainId)) {
           wallet = new XVMAccount(toChainId, privateKey);
         } else {
-          wallet = new EVMAccount(toChainId, privateKey, chainConfig.rpc[0]);
+          wallet = new EVMAccount(toChainId, privateKey);
         }
         break;
       case 3:

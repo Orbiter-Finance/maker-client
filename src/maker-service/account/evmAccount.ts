@@ -1,45 +1,42 @@
 import { LoggerService } from './../utils/logger';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
-import { chains } from 'orbiter-chaincore';
 import { ERC20Abi } from '../abi';
-import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-import { NonceManager } from './nonceManager';
-import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
-import { IChainConfig } from 'orbiter-chaincore/src/types';
+import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
+import OrbiterAccount from './Account';
+import { getNonceCacheStore } from '../utils/caching';
+import NonceManager from '../lib/nonce';
 export const RPC_NETWORK: { [key: string]: number } = {};
-export default class EVMAccount extends BaseAccount {
+export default class EVMAccount extends OrbiterAccount {
   protected wallet: Wallet;
   public nonceManager: NonceManager;
   public provider: ethers.providers.Provider;
-  public logger: LoggerType;
-  public chainConfig!: IChainConfig;
   constructor(
     protected internalId: number,
-    protected readonly privateKey: string,
-    protected readonly rpc: string
+    protected readonly privateKey: string
   ) {
     super(internalId, privateKey);
-    if (this.rpc.includes('ws')) {
-      this.provider = new providers.WebSocketProvider(this.rpc);
-      this.provider.on('error', (...result)=> {
-        this.logger.error('ws error：', {result});
+    const rpc = this.chainConfig.rpc[0];
+    if (rpc.includes('ws')) {
+      this.provider = new providers.WebSocketProvider(rpc);
+      this.provider.on('error', (...result) => {
+        this.logger.error('ws error：', { result });
       })
-      this.provider.on('debug', (...result)=> {
-        this.logger.error('ws debug', {result});
+      this.provider.on('debug', (...result) => {
+        this.logger.error('ws debug', { result });
       })
     } else {
       this.provider = new providers.JsonRpcProvider({
-        url: this.rpc,
+        url: rpc,
       });
-      // this.provider = new providers.JsonRpcProvider(this.rpc);
     }
-    const chainConfig = chains.getChainInfo(internalId);
-    if (!chainConfig) {
-      throw new Error(`${internalId} Chain Config not found`);
-    }
-    this.chainConfig = chainConfig;
     this.wallet = new ethers.Wallet(this.privateKey).connect(this.provider);
-    this.nonceManager = new NonceManager(this.wallet, this);
+    // this.nonceManager = new NonceManager(this.wallet, this);
+    this.nonceManager = new NonceManager(this.wallet.address, async () => {
+      const nonce = await this.wallet.getTransactionCount("pending");
+      return Number(nonce);
+    }, {
+      store: getNonceCacheStore(`${internalId}-${this.wallet.address}`)
+    });
     this.logger = LoggerService.getLogger(internalId.toString());
   }
   async transferToken(
@@ -92,11 +89,11 @@ export default class EVMAccount extends BaseAccount {
   ): Promise<TransactionResponse> {
     this.logger.info(`sendTransaction exec 1:`, { to });
     let chainId: number | undefined =
-      transactionRequest.chainId || RPC_NETWORK[this.rpc];
+      transactionRequest.chainId || RPC_NETWORK[this.internalId];
     let tx: ethers.providers.TransactionRequest = {};
     if (!chainId) {
       chainId = await this.wallet.getChainId();
-      RPC_NETWORK[this.rpc] = chainId;
+      RPC_NETWORK[this.internalId] = chainId;
     }
     this.logger.info(`sendTransaction exec 2:`, { to });
     try {
@@ -177,21 +174,32 @@ export default class EVMAccount extends BaseAccount {
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
       this.logger.info(`${this.chainConfig.name} sendTransaction before:`, tx);
-      const response = await this.nonceManager.sendTransaction(tx);
-      this.logger.info(`${this.chainConfig.name} sendTransaction txHash:`, response.hash);
-      // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
-      // use nonce manager disabled
-      // console.debug('Transaction Data:', JSON.stringify(tx));
-      // const signedTx = await this.wallet.signTransaction(tx);
-      // // console.log('Signed Transaction:', signedTx);
-      // const txHash = ethers.utils.keccak256(signedTx);
-      // const response = await this.provider.sendTransaction(signedTx);
-      // console.debug('Precomputed txHash:', txHash);
-      // console.debug('Precomputed Nonce:', tx.nonce.toString());
-      response.wait().then(tx=>{
-        this.logger.info(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
-      })
-      return response;
+      const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
+      try {
+        // const response = await this.nonceManager.sendTransaction(tx);
+        // this.logger.info(`${this.chainConfig.name} sendTransaction txHash:`, response.hash);
+        // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
+        // use nonce manager disabled
+        tx.nonce = nonce;
+        console.debug('Transaction Data:', JSON.stringify(tx));
+        const signedTx = await this.wallet.signTransaction(tx);
+        // // console.log('Signed Transaction:', signedTx);
+        const txHash = ethers.utils.keccak256(signedTx);
+        const response = await this.provider.sendTransaction(signedTx);
+        this.logger.info(`${this.chainConfig.name} sendTransaction txHash:`, txHash);
+        submit();
+        // console.debug('Precomputed txHash:', txHash);
+        // console.debug('Precomputed Nonce:', tx.nonce.toString());
+        response.wait().then(tx => {
+          this.logger.info(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
+        })
+        return response;
+      } catch (error) {
+        this.logger.error('rollback nonce:', error);
+        rollback()
+        throw error;
+      }
+
     } catch (error) {
       this.logger.error(`${this.chainConfig.name} Core SendTransaction error`, error)
       throw error;

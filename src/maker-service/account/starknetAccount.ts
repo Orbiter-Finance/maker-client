@@ -14,7 +14,7 @@ export default class StarknetAccount extends OrbiterAccount {
     constructor(
         protected internalId: number,
         protected privateKey: string,
-        private address:string
+        address:string
     ) {
         super(internalId, privateKey);
         // get address
@@ -28,7 +28,7 @@ export default class StarknetAccount extends OrbiterAccount {
             const nonce = await this.account.getNonce();
             return Number(nonce);
         }, {
-            store: getNonceCacheStore(address)
+            store: getNonceCacheStore(`${internalId}-${address}`)
         });
     }
     public async transfer(
@@ -68,7 +68,7 @@ export default class StarknetAccount extends OrbiterAccount {
     ): Promise<TransferResponse | undefined> {
         const provider = this.getProviderV4();
         let maxFee = number.toBN(0.009 * 10 ** 18);
-        const { nonce, done, rollback } = await this.nonceManager.getNextNonce();
+        const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
         const invocation = {
             contractAddress: token,
             entrypoint: 'transfer',
@@ -99,7 +99,7 @@ export default class StarknetAccount extends OrbiterAccount {
             }, (tx) => {
                 this.logger.error(`waitForTransaction REJECT:`, { hash: executeHash.transaction_hash, ...tx });
             })
-            done()
+            submit()
             return {
                 hash: executeHash.transaction_hash,
                 from: this.account.address,
@@ -109,7 +109,7 @@ export default class StarknetAccount extends OrbiterAccount {
                 internalId: Number(this.chainConfig?.internalId)
             };
         } catch (error) {
-            console.log('erroir----', error);
+            this.logger.error('rollback nonce:', error);
             rollback();
             throw error;
         }

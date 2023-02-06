@@ -36,6 +36,7 @@ export default class ValidatorService {
       // logger.error(`${fromTx.hash} not xvm tx`);
       // is new chain
       if (!['520', '514', '518', '44', '4'].includes(fromTx.memo)) {
+        logger.error(`${fromTx.hash} tx chainId is not supported`);
         return undefined;
       }
     }

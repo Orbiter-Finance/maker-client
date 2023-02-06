@@ -37,7 +37,7 @@ export default class NonceManager {
         }
         setTimeout(this.autoUpdate.bind(this), 1000);
     }
-    public async getNextNonce(): Promise<{ nonce: number, done: Function, rollback: Function }> {
+    public async getNextNonce(): Promise<{ nonce: number, submit: Function, rollback: Function }> {
         return new Promise(async (resolve, reject) => {
             try {
                 const release = await this.mutex.acquire()
@@ -46,7 +46,7 @@ export default class NonceManager {
                     await this.store.set("lastUsage", Date.now());
                     return resolve({
                         nonce: nonce,
-                        done: async () => {
+                        submit: async () => {
                             await this.store.set("nonce", nonce + 1);
                             release();
                         },
