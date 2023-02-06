@@ -24,22 +24,20 @@ export default class ValidatorService {
     const logger = LoggerService.getLogger(fromTx.chainId.toString(), {
       label: String(fromTx.chainId || "")
     });
-    // const logger = this.ctx.logger;
-    // is support
     if (
       !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
     ) {
-      logger.warn(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
+      logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
       return undefined;
     }
-    if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
-      // logger.error(`${fromTx.hash} not xvm tx`);
-      // is new chain
-      if (!['520', '514', '518', '44', '4'].includes(fromTx.memo)) {
-        logger.error(`${fromTx.hash} tx chainId is not supported`);
-        return undefined;
-      }
-    }
+    // if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
+    //   // logger.error(`${fromTx.hash} not xvm tx`);
+    //   // is new chain
+    //   if (!['520', '514', '518', '44', '4'].includes(fromTx.memo)) {
+    //     logger.error(`${fromTx.hash} tx chainId is not supported`);
+    //     return undefined;
+    //   }
+    // }
 
     const side = fromTx.side;
     if (side !== 0) {
@@ -105,9 +103,9 @@ export default class ValidatorService {
           swapOrder.value = fromTx.expectValue;
         } else {
           swapOrder.type = SwapOrderType.CrossToken;
-          swapOrder.value = "0x00";
+          swapOrder.value = new BigNumber(params.data['expectValue']).toString();
           swapOrder.calldata.slipPoint = new BigNumber(params.data['slippage']).toNumber();
-          swapOrder.calldata.expectValue = new BigNumber(params.data['expectValue']).toString();
+          // swapOrder.calldata.expectValue = new BigNumber(params.data['expectValue']).toString();
         }
       }
      
@@ -125,7 +123,7 @@ export default class ValidatorService {
     // valid token chain & to token
     const toToken = chains.getTokenByChain(toChainId, swapOrder.token);
     if (isEmpty(toToken) || !toToken) {
-      logger.error(`${fromTx.hash} toToken not found`);
+      logger.error(`${fromTx.hash} ${swapOrder.token} toToken not found`);
       return undefined;
     }
    
@@ -216,20 +214,23 @@ export default class ValidatorService {
     }
     // If the value difference between "from" and "to" is too large, intercept
     const fromValueMaxUint = new BigNumber(swapOrder.calldata.value).dividedBy(new BigNumber(10).pow(fromToken.decimals));
-    const fromValue = await getChainLinkPrice(fromValueMaxUint.toString(), fromToken.symbol, 'usd');
-    if (fromValue.lte(0)) {
+    const fromUSDValue = await getChainLinkPrice(fromValueMaxUint.toString(), fromToken.symbol, 'usd');
+    if (fromUSDValue.lte(0)) {
       logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained FromToken ${fromToken.symbol}=>usd`);
       return undefined;
     }
     const toValueMaxUint = new BigNumber(swapOrder.value).dividedBy(new BigNumber(10).pow(toToken.decimals));
-    const toValue = await getChainLinkPrice(toValueMaxUint.toString(), toToken.symbol, 'usd');
-    if (toValue.lte(0)) {
+    const toUSDValue = await getChainLinkPrice(toValueMaxUint.toString(), toToken.symbol, 'usd');
+    if (toUSDValue.lte(0)) {
       logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained ToToken ${toToken.symbol}=>usd`);
       return undefined;
     }
-    const upRate = new BigNumber(toValue).dividedBy(new BigNumber(fromValue).multipliedBy(100));
+    console.log(`fromUSDValue:${fromUSDValue.toString()}`);
+    console.log(`toUSDValue:${toUSDValue.toString()}`);
+    const upRate = new BigNumber(toUSDValue).dividedBy(new BigNumber(fromUSDValue).multipliedBy(100));
+    console.log('upRate:', upRate);
     if (upRate.gte(1.5)) {
-      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (toValue ${toToken.symbol}:${toValue.toString()},fromValue ${fromToken.symbol}:${fromValue.toString()},upRate:${upRate.toString()})`);
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (toValue ${toToken.symbol}:${toValueMaxUint.toString()},fromValue ${fromToken.symbol}:${fromValueMaxUint.toString()},upRate:${upRate.toString()})`);
       return undefined;
     }
 
@@ -279,7 +280,7 @@ export default class ValidatorService {
     }
     const toToken = chains.getTokenByChain(swapOrder.chainId, swapOrder.token);
     if (isEmpty(toToken) || !toToken) {
-      logger.error(`${swapOrder.calldata.hash} toToken not found`);
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} ${swapOrder.token} toToken not found`);
       return undefined;
     }
     const fromDecimal = Number(fromToken.decimals);
@@ -287,7 +288,7 @@ export default class ValidatorService {
     if (swapOrder.type === SwapOrderType.CrossToken) {
       // expectValue = From Token Value
       // TODO: expectValue or value
-      const fromValue = new BigNumber(swapOrder.calldata.expectValue).dividedBy(new BigNumber(10).pow(fromDecimal));
+      const fromValue = new BigNumber(swapOrder.calldata.value).dividedBy(new BigNumber(10).pow(fromDecimal));
       const fromValuePriceValue = await getChainLinkPrice(fromValue.toString(), fromToken.symbol, toToken.symbol);
       if (fromValuePriceValue.lte(0)) {
         logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained currentPriceValue ${fromToken.symbol}=>${toToken.symbol}`);
@@ -296,7 +297,7 @@ export default class ValidatorService {
 
       const expectToTokenValue = new BigNumber(swapOrder.calldata.expectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
       const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
-      return swapOrder.calldata.expectValue;
+      return swapOrder.value;
       // if (fromValuePriceValue.gt(expectToTokenMinValue)) {
       //   logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum ${fromToken.symbol}=>${toToken.symbol} (${fromValuePriceValue.toString()}/${expectToTokenMinValue.toString()})`);
       //   return undefined;
