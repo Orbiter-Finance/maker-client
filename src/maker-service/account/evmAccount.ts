@@ -192,6 +192,8 @@ export default class EVMAccount extends OrbiterAccount {
         // console.debug('Precomputed Nonce:', tx.nonce.toString());
         response.wait().then(tx => {
           this.logger.info(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
+        }).catch(err=> {
+          this.logger.error(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, err)
         })
         return response;
       } catch (error) {

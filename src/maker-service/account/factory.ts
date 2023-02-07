@@ -8,6 +8,8 @@ import EVMAccount from './evmAccount';
 import XVMAccount from './xvmAccount';
 import zkSyncAccount from './zkSyncAccount';
 import StarknetAccount from './starknetAccount';
+import ZKSyncAccount from './zkSyncAccount';
+import ZKSpaceAccount from './zkspaceAccount';
 
 export class Factory {
   private static wallets: { [key: string]: BaseAccount } = {}; // key = pk + chainId
@@ -26,6 +28,21 @@ export class Factory {
       return wallet as T;
     }
     switch (toChainId) {
+      case 3:
+      case 33:
+        wallet = new ZKSyncAccount(
+          toChainId,
+          privateKey
+        );
+        break;
+      case 4:
+      case 44:
+        wallet = new StarknetAccount(
+          toChainId,
+          privateKey,
+          makerAddress.toLocaleLowerCase()
+        );
+        break;
       case 1:
       case 2:
       case 22:
@@ -58,20 +75,10 @@ export class Factory {
           wallet = new EVMAccount(toChainId, privateKey);
         }
         break;
-      case 3:
-      case 33:
-        wallet = new zkSyncAccount(
+      case 512:
+        wallet = new ZKSpaceAccount(
           toChainId,
-          privateKey,
-          equals(toChainId, 3) ? 'mainnet' : 'goerli'
-        );
-        break;
-      case 4:
-      case 44:
-        wallet = new StarknetAccount(
-          toChainId,
-          privateKey,
-          makerAddress.toLocaleLowerCase()
+          privateKey
         );
         break;
     }

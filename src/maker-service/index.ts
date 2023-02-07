@@ -2,8 +2,10 @@ import Consumer from './consumer';
 import Context from './context';
 import Quotation from './service/quotation';
 import 'cross-fetch/polyfill';
+import { startInjectTCP } from './lib/tcpServer';
 export async function run(): Promise<Context> {
   const ctx = new Context();
+  startInjectTCP(ctx)
   await ctx.init().catch((error) => {
     ctx.logger.error(`Context init error:`, error);
   });

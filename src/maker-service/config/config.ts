@@ -52,6 +52,8 @@ export default {
     logging: false,
     timezone: '+00:00',
   },
+  keys: {
+  },
   RABBIT_HOST: vars["RABBIT_HOST"],
   RABBIT_USER: vars["RABBIT_USER"],
   RABBIT_PASSWORD: vars["RABBIT_PASSWORD"],

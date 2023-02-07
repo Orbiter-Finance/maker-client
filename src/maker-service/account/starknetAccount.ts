@@ -98,6 +98,8 @@ export default class StarknetAccount extends OrbiterAccount {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
             }, (tx) => {
                 this.logger.error(`waitForTransaction REJECT:`, { hash: executeHash.transaction_hash, ...tx });
+            }).catch(err=> {
+                this.logger.error(`waitForTransaction error:`, err);
             })
             submit()
             return {

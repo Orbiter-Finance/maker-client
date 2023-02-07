@@ -77,7 +77,7 @@ export default class Sequencer {
         'extra',
       ],
       where: {
-        source: 'xvm',
+        // source: 'xvm',
         status: 1,
         side: 0,
         timestamp: {
@@ -97,24 +97,23 @@ export default class Sequencer {
     }
   }
   async exec(chainId: string) {
-    const logger = LoggerService.getLogger(chainId.toString(), {
-      label: chainId
-    });
+    const logger = LoggerService.getLogger("");
     const monitorState = this.monitorState[chainId];
-    const pendingTxs: SwapOrder[] = this.pending[chainId];
-    if (pendingTxs.length <= 0) {
+    const pendingAllTxs: SwapOrder[] = this.pending[chainId];
+    if (pendingAllTxs.length <= 0) {
       return undefined;
     }
+    const pendingTxs = pendingAllTxs.splice(0, 10);
+    const matchOrders: SwapOrder[] = [];
     try {
       monitorState.locked = true;
       // filter 
-      const matchOrders: SwapOrder[] = [];
-      logger.info(`start scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
-      for (let i = pendingTxs.length - 1; i >= 0; i--) {
-        const order = pendingTxs[i];
+      logger.info(`start scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`, {
+        hashs: pendingTxs.map(row => row.calldata.hash)
+      });
+      for (const order of pendingTxs) {
         try {
           if (!ValidatorService.transactionTimeValid(order.calldata.timestamp)) {
-            pendingTxs.splice(i, 1);
             this.ctx.logger.info(`${order.calldata.hash} remove order`);
             continue;
           }
@@ -123,14 +122,12 @@ export default class Sequencer {
             const value = await this.ctx.validator.verifyXVMCrossToken(order);
             if (value && !isEmpty(value)) {
               order.value = String(value);
-              const spliceOrders = pendingTxs.splice(i, 1);
-              matchOrders.push(...spliceOrders);
+              matchOrders.push(order);
+            } else {
+              pendingAllTxs.push(order);
             }
           } else if ([SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)) {
-            matchOrders.push(...pendingTxs.splice(i, 1));
-          }
-          if (matchOrders.length >= 50) {
-            break;
+            matchOrders.push(order);
           }
         } catch (error) {
           logger.info(`exec submit before order error`, { hash: order.calldata.hash, error });
@@ -144,11 +141,11 @@ export default class Sequencer {
       }
     } catch (error) {
       console.log(error);
-      logger.error(`${chainId} submit error:`, error);
+      logger.error(`${chainId} submit error:`, {hashs: matchOrders.map(row=>row.calldata.hash)});
     } finally {
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();
-      logger.info(`start scan end chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}`);
+      logger.info(`start scan end chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingAllTxs: ${pendingAllTxs.length}, pendingTxs:${pendingTxs.length}`);
     }
   }
   async monitor() {
@@ -238,13 +235,13 @@ export default class Sequencer {
           if (makerBalance[sendToken] === undefined) {
             const token = chains.inValidMainToken(chainId, sendToken) ? undefined : sendToken;
             logger.info("submit step 3-1-3");
-            // makerBalance[sendToken] = await account.getBalance(senderWallet, token);
+            makerBalance[sendToken] = await account.getBalance(senderWallet, token);
           }
           if (makerBalance[sendToken] && makerBalance[sendToken].lt(sendValue)) {
             order.error = `${senderWallet} Maker ${sendToken}  Insufficient funds ${makerBalance[sendToken]}/${sendValue}`;
             continue;
           }
-          // makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
+          makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
         } catch (error) {
           logger.error("get maker balance error", error);
         }
@@ -301,12 +298,12 @@ export default class Sequencer {
     passOrders.forEach(order => {
       sendMainTokenValue = chains.inValidMainToken(chainId, order.token) ? sendMainTokenValue.add(order.value) : sendMainTokenValue;
     })
-    let isXVMReply:Boolean  = false;
+    let isXVMReply: Boolean = false;
     if (passOrders.length === 1) {
       if ([SwapOrderType.CrossAddr, SwapOrderType.CrossAddr].includes(passOrders[0].type)) {
         isXVMReply = ValidatorService.isSupportXVM(chainId);
       }
-    } else{
+    } else {
       isXVMReply = ValidatorService.isSupportXVM(chainId);
     }
     logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, isXVMReply });
@@ -365,7 +362,6 @@ export default class Sequencer {
       // ua
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;
       for (const order of passOrders) {
-        let isError = false;
         try {
           if (chains.inValidMainToken(chainId, order.token)) {
             logger.info('submit step 6-2-1-1', { to: order.to, value: order.value, txType });
@@ -373,18 +369,12 @@ export default class Sequencer {
               type: txType
             });
             logger.info('submit step 6-2-1-1 wait', { submitTx });
-            // if (submitTx && submitTx.wait) {
-            //   await submitTx.wait();
-            // }
           } else {
             logger.info('submit step 6-2-1-2', { token: order.token, to: order.to, value: order.value, txType });
             submitTx = await account.transferToken(order.token, order.to, order.value, {
               type: txType
             });
             logger.info('submit step 6-2-1-2 wait', { submitTx });
-            // if (submitTx && submitTx.wait) {
-            //   await submitTx.wait();
-            // }
           }
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
@@ -411,7 +401,7 @@ export default class Sequencer {
           logger.info('submit step 6-2-3');
           // change
           await this.ctx.db.Transaction.update({
-            status: isError ? 96 : 97
+            status: order.error ? 96 : 97
           }, {
             where: {
               hash: order.calldata.hash

@@ -29,7 +29,7 @@ export type CachingType = Keyv;
 export function getNonceCacheStore(address: string) {
   
   return new KeyvFile({
-    filename: path.join(process.cwd(), 'runtime', 'nonce', `${address}.json`), // the file path to store the data
+    filename: path.join(process.cwd(), 'runtime', 'nonce', `${address.toLocaleLowerCase()}.json`), // the file path to store the data
     expiredCheckDelay: 24 * 3600 * 1000, // ms, check and remove expired data in each ms
     writeDelay: 100, // ms, batch write to disk in a specific duration, enhance write perfor
   })

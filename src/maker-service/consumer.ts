@@ -72,7 +72,7 @@ export default class Consumer {
             const swapOrder = await this.ctx.validator.verifyFromTx(tx);
             if (swapOrder) {
               this.ctx.logger.info(`swapOrder:`, { swapOrder: swapOrder })
-              await this.ctx.sequencer.push(swapOrder);
+              this.ctx.sequencer.push(swapOrder);
             } else {
               this.ctx.logger.error(`subscribe tx verifyFromTx fail:${tx.hash}`);
               // msg && await channel.ack(msg);

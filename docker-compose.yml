@@ -24,7 +24,6 @@ services:
       logstash_host: '${logstash_host}'
       logstash_port: '${logstash_port}'
       logDir: '${logDir}'
-      0x0043d60e87c5dd08c86c3123340705a1556c4719: 'xxxxx'
     restart: always
     networks:
       - app-network

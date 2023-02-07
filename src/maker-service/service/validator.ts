@@ -21,9 +21,10 @@ export default class ValidatorService {
     return true;
   }
   public async verifyFromTx(fromTx: Transaction): Promise<SwapOrder | undefined> {
-    const logger = LoggerService.getLogger(fromTx.chainId.toString(), {
-      label: String(fromTx.chainId || "")
-    });
+    // const logger = LoggerService.getLogger(fromTx.chainId.toString(), {
+    //   label: String(fromTx.chainId || "")
+    // });
+    const logger = LoggerService.getLogger("");
     if (
       !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
     ) {
@@ -123,7 +124,7 @@ export default class ValidatorService {
     // valid token chain & to token
     const toToken = chains.getTokenByChain(toChainId, swapOrder.token);
     if (isEmpty(toToken) || !toToken) {
-      logger.error(`${fromTx.hash} ${swapOrder.token} toToken not found`);
+      logger.error(`${fromTx.chainId} ${fromTx.hash} ${swapOrder.token} toToken not found`);
       return undefined;
     }
    
@@ -315,7 +316,7 @@ export default class ValidatorService {
 
   }
   private getSenderPrivateKey(from: string) {
-    const privateKey = process.env[from.toLocaleLowerCase()] || "";
+    const privateKey = process.env[from.toLocaleLowerCase()] || this.ctx.config["keys"][from.toLocaleLowerCase()];
     return privateKey;
   }
   public static isSupportXVM(chainId: number): Boolean {
