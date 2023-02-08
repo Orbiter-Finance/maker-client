@@ -47,8 +47,7 @@ export default class StarknetAccount extends OrbiterAccount {
         return provider;
     }
     public async getBalance(address?: string): Promise<ethers.BigNumber> {
-        throw new Error('not main token balance');
-        // return await this.getTokenBalance('0x0000000000000000000000000000000000000000', address);
+        return await this.getTokenBalance(this.chainConfig.nativeCurrency.address, address);
     }
     public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
         if (!token) {
