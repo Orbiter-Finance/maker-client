@@ -9,7 +9,7 @@ import XVMAccount from './xvmAccount';
 import zkSyncAccount from './zkSyncAccount';
 import StarknetAccount from './starknetAccount';
 import ZKSyncAccount from './zkSyncAccount';
-import ZKSpaceAccount from './zkspaceAccount';
+import ZKSpaceAccount from './zksAccount';
 
 export class Factory {
   private static wallets: { [key: string]: BaseAccount } = {}; // key = pk + chainId
