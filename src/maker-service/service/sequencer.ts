@@ -117,7 +117,7 @@ export default class Sequencer {
             this.ctx.logger.info(`${order.calldata.hash} remove order`);
             continue;
           }
-          if (this.ctx.validator.checkSenderPrivateKey(order.from)) {
+          if (!this.ctx.validator.checkSenderPrivateKey(order.from)) {
             pendingAllTxs.push(order);
             continue;
           }
