@@ -7,16 +7,16 @@ export async function run(): Promise<Context> {
   const ctx = new Context();
   startInjectTCP(ctx);
   ctx.logger.info('start TCP Server success');
-  // await ctx.init().catch((error) => {
-  //   ctx.logger.error(`Context init error:`, error);
-  // });
-  // ctx.logger.info('Context init success');
-  // await new Quotation().subscribe();
-  // ctx.logger.info('init Quotation success');
-  // new Consumer(ctx);
-  // ctx.logger.info('init Consumer success');
-  // await ctx.sequencer.readHistory();
-  // ctx.logger.info('init Sequencer success');
+  await ctx.init().catch((error) => {
+    ctx.logger.error(`Context init error:`, error);
+  });
+  ctx.logger.info('Context init success');
+  await new Quotation().subscribe();
+  ctx.logger.info('init Quotation success');
+  new Consumer(ctx);
+  ctx.logger.info('init Consumer success');
+  await ctx.sequencer.readHistory();
+  ctx.logger.info('init Sequencer success');
   return ctx;
 }
 run().catch((error) => {
