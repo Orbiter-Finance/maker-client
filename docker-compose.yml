@@ -25,6 +25,8 @@ services:
       logstash_port: '${logstash_port}'
       logDir: '${logDir}'
     restart: always
+    ports:
+      - "8000:8000"
     networks:
       - app-network
     volumes:
