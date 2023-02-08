@@ -3,7 +3,7 @@ import { Factory } from "../account/factory";
 import chainConfigs from '../config/chains.json';
 import { expect } from 'chai';
 import { ethers } from 'ethers';
-import ZKSpaceAccount from '../account/zkspaceAccount';
+import ZKSpaceAccount from '../account/zksAccount';
 chains.fill(chainConfigs as any);
 const privateKey = process.env["0x0043d60e87c5dd08c86c3123340705a1556c4719"] || "";
 describe("ZKSpace Test", function () {
