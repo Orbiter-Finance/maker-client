@@ -313,7 +313,9 @@ export default class ValidatorService {
     } else {
       return swapOrder.value;
     }
-
+  }
+  public checkSenderPrivateKey(from: string) {
+    return !isEmpty(this.getSenderPrivateKey(from));
   }
   private getSenderPrivateKey(from: string) {
     const privateKey = process.env[from.toLocaleLowerCase()] || this.ctx.config["keys"][from.toLocaleLowerCase()];
