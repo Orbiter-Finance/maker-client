@@ -85,7 +85,7 @@ export default class Sequencer {
         },
       },
     });
-    this.ctx.logger.info('init history:', { fromHash: historyList.map(tx => tx.hash) });
+    this.ctx.logger.info('init read history success', { fromHash: historyList.map(tx => tx.hash) });
     for (const tx of historyList) {
       try {
         const order = await this.ctx.validator.verifyFromTx(tx);
