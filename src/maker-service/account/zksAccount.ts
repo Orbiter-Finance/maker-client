@@ -36,7 +36,7 @@ export default class ZKSpaceAccount extends OrbiterAccount {
     }
 
     public async getBalance(address?: string): Promise<ethers.BigNumber> {
-        return await this.getTokenBalance(0, address);
+        return await this.getTokenBalance(Number(this.chainConfig.nativeCurrency.id), address);
     }
     public async getTokenBalance(tokenOrId: string | number, address?: string): Promise<ethers.BigNumber> {
         const tokenInfo = await chains.getTokenByChain(Number(this.chainConfig.internalId), tokenOrId);
