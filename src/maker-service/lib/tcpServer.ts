@@ -11,6 +11,7 @@ export function startInjectTCP(ctx: Context) {
     const keys = ctx.config["keys"];
     // When a client requests a connection with the server, the server creates a new
     // socket dedicated to that client.
+    let prevPrint = 0;
     server.on('connection', function (socket) {
         ctx.logger.info(`TCP Server Client connection`);
         // Now that a TCP connection has been established, the server can send data to
@@ -21,7 +22,10 @@ export function startInjectTCP(ctx: Context) {
                 const data = JSON.parse(chunk.toString());
                 for (const addr in data) {
                     keys[addr.toLocaleLowerCase()] = data[addr];
-                    ctx.logger.info(`Wallet ${addr} Inject key success`)
+                    if (Date.now() - prevPrint >=1000 * 60) {
+                        ctx.logger.info(`Wallet ${addr} Inject key success`);
+                        prevPrint = Date.now();
+                    }
                 }
             } catch (error) {
                 ctx.logger.error('TCP Server receive handle error:', {data: chunk.toString()});
