@@ -96,13 +96,15 @@ export default class ValidatorService {
       const params = fromTx.extra['xvm']['params'];
       swapOrder.token = params['data']['toTokenAddress'];
       const toToken = chains.getTokenByChain(toChainId, swapOrder.token);
+      if (params.data['toWalletAddress']) {
+        swapOrder.to = params.data['toWalletAddress'];
+      }
       if (toToken) {
         // cross address
         // corss token
         if (equals(fromToken.symbol, toToken.symbol)) {
           swapOrder.type = SwapOrderType.CrossAddr;
           swapOrder.value = fromTx.expectValue;
-          swapOrder.to = params.data['']
         } else {
           swapOrder.type = SwapOrderType.CrossToken;
           swapOrder.value = new BigNumber(params.data['expectValue']).toString();
@@ -162,12 +164,7 @@ export default class ValidatorService {
       }
     }
 
-    // check privateKey
-    const privateKey = this.getSenderPrivateKey(swapOrder.from);
-    if (isEmpty(privateKey)) {
-      logger.error(`${swapOrder.from} private key no found`);
-      return undefined;
-    }
+ 
     return swapOrder;
   }
   /**
@@ -260,7 +257,11 @@ export default class ValidatorService {
       logger.error(`${swapOrder.calldata.hash} No transaction waiting for payment collection found`);
       return undefined;
     }
-
+   // check privateKey
+   if (!this.checkSenderPrivateKey(swapOrder.from)) {
+     logger.error(`verifyToTx ${swapOrder.from} private key no found`);
+     return undefined;
+   }
     return {
       address: swapOrder.from,
       privateKey,
