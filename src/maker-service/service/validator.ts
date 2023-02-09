@@ -151,7 +151,7 @@ export default class ValidatorService {
     const isEVM = (chainConfig['features'] || []).includes("EVM");
     if (isEVM) {
       if (!ethers.utils.isAddress(swapOrder.to)) {
-        logger.error(`verifyFromTx ${swapOrder.calldata.hash} ${swapOrder.chainId} to address format error`);
+        logger.error(`verifyFromTx ${swapOrder.calldata.hash} ${swapOrder.to} to address format error`);
         return undefined;
       }
       if (!ethers.utils.isAddress(swapOrder.token)) {

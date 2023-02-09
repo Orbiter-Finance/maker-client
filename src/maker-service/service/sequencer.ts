@@ -68,12 +68,12 @@ export default class Sequencer {
         'chainId',
         'tokenAddress',
         'value',
-        'replyAccount',
         'status',
         'side',
         'memo',
         'expectValue',
         'replySender',
+        'replyAccount',
         'extra',
       ],
       where: {
@@ -324,7 +324,7 @@ export default class Sequencer {
           value: sendMainTokenValue,
         });
         logger.info('submit xvm step 6-1 wait');
-        submitTx && await submitTx.wait();
+        // submitTx && await submitTx.wait();
       } catch (error: any) {
         isError = true;
         passOrders[0].error = error;
@@ -345,7 +345,7 @@ export default class Sequencer {
             from: submitTx.from,
             to: String(submitTx.to),
             status: 1,
-            chainId: submitTx.chainId,
+            chainId: chainId,
             transactions: passHashList as any,
             transactionCount: encodeDatas.length
           });
@@ -361,11 +361,11 @@ export default class Sequencer {
       }
     }
     if (!isXVMReply) {
-      let submitTx: TransferResponse | undefined;
       logger.info('submit step 6-2');
       // ua
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;
       for (const order of passOrders) {
+        let submitTx: TransferResponse | undefined;
         try {
           if (chains.inValidMainToken(chainId, order.token)) {
             logger.info('submit step 6-2-1-1', { to: order.to, value: order.value, txType });
@@ -380,24 +380,24 @@ export default class Sequencer {
             });
             logger.info('submit step 6-2-1-2 wait', { submitTx });
           }
+          order.hash = submitTx && submitTx.hash;
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
           logger.error(`${chainConfig.name} sequencer submit error:${error.message}`, error);
           order.error = error;
         } finally {
           logger.info('submit step 6-2-2');
-          if (submitTx) {
+          if (order.hash) {
             logger.info(`${chainConfig.name} sequencer submit success`, {
               toHash: submitTx.hash,
               fromHash: order.calldata.hash
             })
-            order.hash = submitTx.hash;
             await this.ctx.db.Sequencer.upsert({
-              hash: submitTx.hash,
-              from: submitTx.from,
-              to: String(submitTx.to),
+              hash: order.hash,
+              from: order.from,
+              to: String(order.to),
               status: 1,
-              chainId: submitTx.internalId,
+              chainId: order.chainId,
               transactions: [order.calldata.hash] as any,
               transactionCount: 1
             });
