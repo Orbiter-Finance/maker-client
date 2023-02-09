@@ -24,7 +24,7 @@ services:
       TELEGRAM_CHATID: '${TELEGRAM_CHATID}'
       logstash_host: '${logstash_host}'
       logstash_port: '${logstash_port}'
-      logDir: '${logDir}'
+      logDir: '/home/maker-client/runtime'
     restart: always
     ports:
       - "8000:8000"

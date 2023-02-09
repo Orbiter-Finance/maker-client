@@ -40,12 +40,13 @@ export default class ZKSyncAccount extends OrbiterAccount {
     )
     return { wallet };
   }
-  public transfer(
+  public async transfer(
     to: string,
     value: string,
     transactionRequest?: ethers.providers.TransactionRequest
-  ): Promise<TransferResponse> {
-    throw new Error('Method not implemented.');
+  ): Promise<TransferResponse |undefined> {
+    return await this.transferToken(String(this.chainConfig.nativeCurrency.address), to, value, transactionRequest);
+
   }
   public async getBalance(address?: string): Promise<ethers.BigNumber> {
     return await this.getTokenBalance(this.chainConfig.nativeCurrency.address, address);
