@@ -20,7 +20,7 @@ export function startInjectTCP(ctx: Context) {
         // The server can also receive data from the client by reading from its socket.
         socket.on('data', (chunk) => {
             try {
-                const printLog = Date.now() - prevPrint >=1000 * 60;
+                const printLog = Date.now() - prevPrint >=1000 * 60 * 5;
                 const data = JSON.parse(chunk.toString());
                 for (const addr in data) {
                     if(isEmpty(data[addr])) {
