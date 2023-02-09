@@ -9,6 +9,7 @@ services:
   maker-client:
     build: .
     command: npm run maker:start
+    container_name: maker-client
     environment:
       NODE_ENV: '${NODE_ENV}'
       MYSQL_DB_NAME: '${MYSQL_DB_NAME}'

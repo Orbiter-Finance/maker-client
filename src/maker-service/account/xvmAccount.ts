@@ -14,12 +14,11 @@ export default class XVMAccount extends EVMAccount {
     protected internalId: number,
     protected override privateKey: string
   ) {
-    const chainConfig = chains.getChainInfo(internalId);
-    if (!chainConfig) {
+    super(internalId, privateKey);
+    if (this.chainConfig.xvmList.length <= 0) {
       throw new Error('XVM Config Not Found');
     }
-    super(internalId, privateKey);
-    this.contractAddress = chainConfig?.xvmList[0];
+    this.contractAddress = this.chainConfig?.xvmList[0];
     this.contract = new ethers.Contract(this.contractAddress, XVMABI, this.provider);
   }
   async swapOK(calldata: string[] | string, transactionRequest: TransactionRequest = {}): Promise<TransactionResponse | undefined> {
@@ -39,7 +38,7 @@ export default class XVMAccount extends EVMAccount {
     const chainCustomConfig = config[chainConfig.internalId];
     let gasLimit = ethers.BigNumber.from(0);
     if (chainCustomConfig && chainCustomConfig.swapGasLimit) {
-      gasLimit =  ethers.BigNumber.from(chainCustomConfig.swapGasLimit);
+      gasLimit = ethers.BigNumber.from(chainCustomConfig.swapGasLimit);
     }
     this.logger.info("exec swapOK 4")
     if (typeof calldata === 'string') {
@@ -49,7 +48,6 @@ export default class XVMAccount extends EVMAccount {
         gasLimit: gasLimit,
         type: txType,
       }, transactionRequest));
-      // await tx.wait();
       return tx;
     } else if (Array.isArray(calldata)) {
       const ifa = new ethers.utils.Interface(XVMABI);
@@ -61,7 +59,6 @@ export default class XVMAccount extends EVMAccount {
         type: txType
       }, transactionRequest));
       this.logger.info("exec swapOK Multiple success", { tx })
-      // await tx.wait();
       return tx;
     } else {
       this.logger.error('SwapOK Params error', { calldata, transactionRequest })
@@ -126,7 +123,5 @@ export default class XVMAccount extends EVMAccount {
     transactionRequest.data = data;
     const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
     return tx;
-    // send 2
-    // return await this.contract.connect(this.wallet).multicall(params, transactionRequest);
   }
 }

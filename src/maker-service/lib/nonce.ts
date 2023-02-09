@@ -4,13 +4,13 @@ import Keyv from 'keyv';
 export default class NonceManager {
     private mutex = new Mutex();
     private store: Keyv;
-    constructor(address: string, private readonly refreshNonceFun: Function, option: {
+    constructor(key: string, private readonly refreshNonceFun: Function, option: {
         initNonce?: number,
         store?: Keyv.Store<any>
     } = {}) {
         this.store = new Keyv({
             store: option.store,
-            namespace: address
+            namespace: key
         });
         this.mutex.runExclusive(async () => {
             const refreshNonce = await this.refreshNonceFun();

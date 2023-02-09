@@ -23,7 +23,7 @@ export function startInjectTCP(ctx: Context) {
                 const printLog = Date.now() - prevPrint >=1000 * 60 * 5;
                 const data = JSON.parse(chunk.toString());
                 for (const addr in data) {
-                    if(isEmpty(data[addr])) {
+                    if(!isEmpty(data[addr])) {
                         keys[addr.toLocaleLowerCase()] = data[addr];
                     }
                     if (printLog) {
