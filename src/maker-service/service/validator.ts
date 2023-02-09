@@ -102,6 +102,7 @@ export default class ValidatorService {
         if (equals(fromToken.symbol, toToken.symbol)) {
           swapOrder.type = SwapOrderType.CrossAddr;
           swapOrder.value = fromTx.expectValue;
+          swapOrder.to = params.data['']
         } else {
           swapOrder.type = SwapOrderType.CrossToken;
           swapOrder.value = new BigNumber(params.data['expectValue']).toString();
@@ -297,6 +298,7 @@ export default class ValidatorService {
       }
 
       const expectToTokenValue = new BigNumber(swapOrder.calldata.expectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
+
       const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
       return swapOrder.value;
       // if (fromValuePriceValue.gt(expectToTokenMinValue)) {

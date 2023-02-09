@@ -7,7 +7,7 @@ import { sign_musig } from 'zksync-crypto'
 import ZKSpaceSDK from '../lib/zkspace';
 import { getNonceCacheStore } from '../utils/caching';
 import { HttpGet, HttpPost } from '../utils/request';
-import OrbiterAccount from './Account';
+import OrbiterAccount from './orbiterAccount';
 import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class ZKSpaceAccount extends OrbiterAccount {

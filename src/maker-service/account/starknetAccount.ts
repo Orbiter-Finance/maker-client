@@ -2,7 +2,7 @@ import { BigNumberish, ethers } from 'ethers';
 import NonceManager from '../lib/nonce';
 import { Account, Contract, defaultProvider, ec, json, number, SequencerProvider, stark, hash, uint256 } from 'starknet';
 import { TransactionRequest, TransferResponse } from './IAccount';
-import OrbiterAccount from './Account';
+import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import { StarknetErc20ABI } from '../abi';
 export default class StarknetAccount extends OrbiterAccount {

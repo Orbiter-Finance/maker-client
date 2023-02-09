@@ -3,7 +3,7 @@ import { chains } from 'orbiter-chaincore';
 import * as zksync from 'zksync';
 import NonceManager from '../lib/nonce';
 import { getNonceCacheStore } from '../utils/caching';
-import OrbiterAccount from './Account';
+import OrbiterAccount from './orbiterAccount';
 
 import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 export const RPC_NETWORK: { [key: string]: number } = {};

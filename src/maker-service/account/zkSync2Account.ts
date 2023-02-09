@@ -6,7 +6,7 @@ import * as zksync from 'zksync-web3';
 import { ERC20Abi } from '../abi';
 import NonceManager from '../lib/nonce';
 import { getNonceCacheStore } from '../utils/caching';
-import OrbiterAccount from './Account';
+import OrbiterAccount from './orbiterAccount';
 
 import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 

@@ -1,6 +1,6 @@
-import { LoggerService } from './../utils/logger';
+import { LoggerService } from '../utils/logger';
 import { chains } from 'orbiter-chaincore';
-import BaseAccount, { TransactionRequest, TransferResponse } from './IAccount';
+import { TransactionRequest, TransferResponse } from './IAccount';
 import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
 import { IChainConfig } from 'orbiter-chaincore/src/types';
 import IAccount from './IAccount';

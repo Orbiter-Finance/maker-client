@@ -2,7 +2,7 @@ import { LoggerService } from './../utils/logger';
 import { BigNumber, ethers, providers, Wallet } from 'ethers';
 import { ERC20Abi } from '../abi';
 import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-import OrbiterAccount from './Account';
+import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import NonceManager from '../lib/nonce';
 export const RPC_NETWORK: { [key: string]: number } = {};
