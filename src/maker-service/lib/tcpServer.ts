@@ -1,5 +1,6 @@
 import Context from '../context';
 import net from 'net';
+import { isEmpty } from 'orbiter-chaincore/src/utils/core';
 const port = 8000;
 export function startInjectTCP(ctx: Context) {
     const server = new net.Server();
@@ -21,8 +22,10 @@ export function startInjectTCP(ctx: Context) {
             try {
                 const data = JSON.parse(chunk.toString());
                 for (const addr in data) {
-                    keys[addr.toLocaleLowerCase()] = data[addr];
-                    if (Date.now() - prevPrint >=1000 * 60) {
+                    if (!isEmpty(data[addr])) {
+                        keys[addr.toLocaleLowerCase()] = data[addr];
+                    }
+                    if (Date.now() - prevPrint >=1000 * 60)) {
                         ctx.logger.info(`Wallet ${addr} Inject key success`);
                         prevPrint = Date.now();
                     }

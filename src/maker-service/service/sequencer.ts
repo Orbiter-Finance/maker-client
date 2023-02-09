@@ -103,7 +103,7 @@ export default class Sequencer {
     if (pendingAllTxs.length <= 0) {
       return undefined;
     }
-    const pendingTxs = pendingAllTxs.splice(0, 10);
+    const pendingTxs = pendingAllTxs.splice(0, 50);
     const matchOrders: SwapOrder[] = [];
     try {
       monitorState.locked = true;
