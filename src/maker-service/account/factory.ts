@@ -6,7 +6,6 @@ import ValidatorService from '../service/validator';
 import BaseAccount from './IAccount';
 import EVMAccount from './evmAccount';
 import XVMAccount from './xvmAccount';
-import zkSyncAccount from './zkSyncAccount';
 import StarknetAccount from './starknetAccount';
 import ZKSyncAccount from './zkSyncAccount';
 import ZKSpaceAccount from './zksAccount';

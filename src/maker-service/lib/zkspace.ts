@@ -5,19 +5,24 @@ import { private_key_to_pubkey_hash } from 'zksync-crypto'
 import { HttpGet, HttpPost } from "../utils/request";
 import * as zksync from 'zksync';
 import BigNumber from "bignumber.js";
+import { getQuotationPrice } from "../service/quotation";
+import { ZKSpaceSendTokenRequest } from "../account/IAccount";
+import { sign_musig } from 'zksync-crypto'
 
 export default class ZKSpaceSDK {
     public chainConfig!: IChainConfig;
-    constructor(private internalId: number, private privateKey: string) {
+    public L1Wallet: ethers.Wallet;
+    constructor(private internalId: number, privateKey: string) {
         const chainConfig = chains.getChainInfo(internalId);
         if (!chainConfig) {
             throw new Error(`${internalId} Chain Config not found`);
         }
         this.chainConfig = chainConfig;
+        this.L1Wallet = new ethers.Wallet(privateKey);
     }
     async getAccountInfo() {
         try {
-            const { L1Wallet } = await this.getL2Wallet();
+            const L1Wallet = this.L1Wallet;
             const { data } = await HttpGet(`${this.chainConfig.api.url}/account/${L1Wallet.address}/info`);
             const account = {
                 ...data
@@ -28,36 +33,25 @@ export default class ZKSpaceSDK {
             const seed = ethers.utils.arrayify(signature)
             const key = await zksync.crypto.privateKeyFromSeed(seed)
             if (
-                data.pub_key_hash ==
-                'sync:0000000000000000000000000000000000000000'
+                account.pub_key_hash ==
+                'sync:0000000000000000000000000000000000000000' || account.id === 0
             ) {
                 await this.registerAccount(account, key)
             }
-            return { account, key, address: L1Wallet.address };
+            return { ...account, key, address: L1Wallet.address };
         } catch (error: any) {
             throw new Error(`getAccountInfo error ${error.message}`)
         }
     }
-    private async getL2Wallet() {
-        let l1Provider;
-        let l2Provider;
-        if (this.internalId === 12) {
-            l1Provider = ethers.providers.getDefaultProvider('mainnet');
-        } else if (this.internalId === 512) {
-            l1Provider = ethers.providers.getDefaultProvider('goerli');
-        }
-        const L1Wallet = new ethers.Wallet(this.privateKey).connect(l1Provider);
-        return { L1Wallet };
-    }
-    async address() {
-        return await (await this.getL2Wallet()).L1Wallet.address;
+    getAddress() {
+        return this.L1Wallet.address;
     }
     async registerAccount(
         accountInfo: any,
         privateKey: Uint8Array
     ) {
         try {
-            const { L1Wallet } = await this.getL2Wallet();
+            const L1Wallet = this.L1Wallet;
             const pubKeyHash = ethers.utils
                 .hexlify(private_key_to_pubkey_hash(privateKey))
                 .substr(2)
@@ -90,21 +84,110 @@ Only sign this message for a trusted client!`
             }, {
                 'zk-account': L1Wallet.address,
             });
-            return result;
+            if (result['success']) {
+                return result;
+            }
+            throw new Error(`registerAccount: ${result.error.message}`);
         } catch (error) {
             throw error;
         }
     }
     async getAccountTransferFee() {
-        const { L1Wallet } = await this.getL2Wallet();
+        const L1Wallet = this.L1Wallet;
         const { data } = await HttpGet(`${this.chainConfig.api.url}/account/${L1Wallet.address}/fee`);
-        console.log(data, '========data');
-        const ethPrice = 1 / 2000;
+        const ethPrice = await getQuotationPrice("1", "ETH", "USD") || 2000;
         const gasFee = new BigNumber(data.transfer).dividedBy(
             new BigNumber(ethPrice)
         )
-        let gasFee_fix = gasFee.decimalPlaces(6, BigNumber.ROUND_UP)
+        const gasFee_fix = gasFee.decimalPlaces(6, BigNumber.ROUND_UP)
         return Number(gasFee_fix)
+    }
+    async getBalances(address: string) {
+        const result = await HttpGet(`${this.chainConfig.api.url}/account/${address}/balances`);
+        return result
+    }
+    async sendTransaction(to: string,
+        transactionRequest: ZKSpaceSendTokenRequest) {
+        // prod = 13 goerli = 129 rinkeby = 133
+        const account: any = await this.getAccountInfo();
+        if (!account) {
+            throw new Error('account not found')
+        }
+        const zksNetworkID = Number(this.chainConfig.chainId);
+        const feeToken = chains.getTokenByChain(this.internalId, transactionRequest.feeTokenId);
+        if (!feeToken) {
+            throw new Error('feeToken not found')
+        }
+        const sendToken = chains.getTokenByChain(this.internalId, transactionRequest.tokenId);
+        if (!sendToken) {
+            throw new Error('sendToken not found')
+        }
+        const sendNonce = transactionRequest.nonce || account.nonce;
+        const fromAddress = this.L1Wallet.address;
+        const sendValue = ethers.BigNumber.from(transactionRequest.value?.toString());
+        const sendFee = transactionRequest.fee;
+        const msgBytes = ethers.utils.concat([
+            '0x05',
+            zksync.utils.numberToBytesBE(account.id, 4),
+            fromAddress,
+            to,
+            zksync.utils.numberToBytesBE(Number(sendToken.id), 2),
+            zksync.utils.packAmountChecked(sendValue),
+            zksync.utils.numberToBytesBE(Number(feeToken.id), 1),
+            zksync.utils.packFeeChecked(sendFee),
+            zksync.utils.numberToBytesBE(zksNetworkID, 1),
+            zksync.utils.numberToBytesBE(sendNonce, 4),
+        ])
+        const signaturePacked = sign_musig(account.key, msgBytes)
+        const pubKey = ethers.utils
+            .hexlify(signaturePacked.slice(0, 32))
+            .substr(2)
+        const l2Signature = ethers.utils
+            .hexlify(signaturePacked.slice(32))
+            .substr(2)
+        const l2Msg =
+            `Transfer ${new BigNumber(sendValue.toString()).dividedBy(10 ** sendToken.decimals)} ${sendToken.symbol}\n` +
+            `To: ${to.toLowerCase()}\n` +
+            `Chain Id: ${zksNetworkID}\n` +
+            `Nonce: ${sendNonce}\n` +
+            `Fee: ${new BigNumber(sendFee.toString()).dividedBy(10 ** feeToken.decimals)} ${feeToken.symbol}\n` +
+            `Account Id: ${account.id}`
+        const ethSignature = await this.L1Wallet.signMessage(l2Msg);
+        const tx = {
+            type: 'Transfer',
+            accountId: account.id,
+            from: fromAddress,
+            to: to,
+            token: sendToken.id,
+            amount: sendValue.toString(),
+            feeToken: feeToken.id,
+            fee: sendFee.toString(),
+            chainId: zksNetworkID,
+            nonce: sendNonce,
+            signature: {
+                pubKey: pubKey,
+                signature: l2Signature,
+            },
+        }
+        const result = await HttpPost(`${this.chainConfig.api.url}/tx`, {
+            tx,
+            signature: {
+                type: 'EthereumSignature',
+                signature: ethSignature,
+            },
+            fastProcessing: false
+        });
+        if (!result["success"]) {
+            throw new Error(result.error.message);
+        }
+        return {
+            from: fromAddress,
+            to,
+            hash: `0x${result["data"].substr(8)}`,
+            nonce: sendNonce,
+            value: sendValue,
+            fee: sendFee
+        }
     }
 }
 

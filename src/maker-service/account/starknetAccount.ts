@@ -1,9 +1,6 @@
 import { BigNumberish, ethers } from 'ethers';
 import NonceManager from '../lib/nonce';
 import { Account, Contract, defaultProvider, ec, json, number, SequencerProvider, stark, hash, uint256 } from 'starknet';
-// const compiledErc20 = json.parse(
-//     fs.readFileSync(path.join(__dirname, '../', "abi/starknet-erc20.json")).toString("ascii")
-// );
 import { TransactionRequest, TransferResponse } from './IAccount';
 import OrbiterAccount from './Account';
 import { getNonceCacheStore } from '../utils/caching';
@@ -18,7 +15,6 @@ export default class StarknetAccount extends OrbiterAccount {
     ) {
         super(internalId, privateKey);
         // get address
-        // TODO: starknet to address    
         this.account = new Account(
             this.getProviderV4(),
             address,

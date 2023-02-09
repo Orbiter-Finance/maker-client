@@ -17,6 +17,12 @@ export interface TransactionResponse extends ethers.providers.TransactionRespons
 };
 
 export type TransactionRequest = ethers.providers.TransactionRequest;
+
+export interface ZKSpaceSendTokenRequest extends Partial<TransactionRequest>{
+  tokenId:number,
+  feeTokenId: number,
+  fee: ethers.BigNumber
+};
 export default abstract class IAccount {
   constructor(protected internalId: number, protected readonly privateKey: string) { }
   public abstract transfer(

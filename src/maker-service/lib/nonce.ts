@@ -28,14 +28,14 @@ export default class NonceManager {
         const lastUsage = await this.store.get("lastUsage");
         let nonce = await this.store.get("nonce");
         // console.log('autoUpdate nonce,', nonce);
-        if (Date.now() - lastUsage > 1000 * 10) {
+        if (Date.now() - lastUsage > 1000 * 60 * 5) {
             const refreshNonce = await this.refreshNonceFun()
             if (refreshNonce > nonce) {
                 nonce = refreshNonce;
                 await this.store.set("nonce", refreshNonce);
             }
         }
-        setTimeout(this.autoUpdate.bind(this), 1000);
+        setTimeout(this.autoUpdate.bind(this), 1000 * 60);
     }
     public async getNextNonce(): Promise<{ nonce: number, submit: Function, rollback: Function }> {
         return new Promise(async (resolve, reject) => {
@@ -43,10 +43,10 @@ export default class NonceManager {
                 const release = await this.mutex.acquire()
                 try {
                     let nonce = await this.store.get('nonce');
-                    await this.store.set("lastUsage", Date.now());
                     return resolve({
                         nonce: nonce,
                         submit: async () => {
+                            await this.store.set("lastUsage", Date.now());
                             await this.store.set("nonce", nonce + 1);
                             release();
                         },

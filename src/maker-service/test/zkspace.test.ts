@@ -25,10 +25,11 @@ describe("ZKSpace Test", function () {
 
     it("Transfer", async function () {
         this.timeout(1000 * 60 * 5);
-        const sendTx = await account.transferToken("0x0000000000000000000000000000000000000000", "0x0043d60e87c5dd08C86C3123340705a1556C4719", "123456789", {
+        const tx = await account.transferToken(0, "0x8a3214f28946a797088944396c476f014f88dd37", "10000000000000", {
 
         });
-        console.log(sendTx, '==sendTx');
+        expect(tx?.hash).not.empty;
+        // const sendTx = await zkspaceTransfer();
         
     });
 

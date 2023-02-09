@@ -85,7 +85,7 @@ export default class EVMAccount extends OrbiterAccount {
   }
   async sendTransaction(
     to: string,
-    transactionRequest: ethers.providers.TransactionRequest = {}
+    transactionRequest: TransactionRequest = {}
   ): Promise<TransactionResponse> {
     this.logger.info(`sendTransaction exec 1:`, { to });
     let chainId: number | undefined =

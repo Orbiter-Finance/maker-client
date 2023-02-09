@@ -229,7 +229,7 @@ export default class ValidatorService {
     console.log(`fromUSDValue:${fromUSDValue.toString()}`);
     console.log(`toUSDValue:${toUSDValue.toString()}`);
     const upRate = new BigNumber(toUSDValue).dividedBy(new BigNumber(fromUSDValue).multipliedBy(100));
-    console.log('upRate:', upRate);
+    console.log('upRate:', upRate.toString());
     if (upRate.gte(1.5)) {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} There may be a risk of loss, and the transaction has been blocked (toValue ${toToken.symbol}:${toValueMaxUint.toString()},fromValue ${fromToken.symbol}:${fromValueMaxUint.toString()},upRate:${upRate.toString()})`);
       return undefined;
