@@ -42,7 +42,14 @@ export default class NonceManager {
             try {
                 const release = await this.mutex.acquire()
                 try {
+                    const networkNonce = await this.refreshNonceFun();
                     let nonce = await this.store.get('nonce');
+                    if (networkNonce>nonce) {
+                        nonce = networkNonce;
+                        await this.store.set("nonce", nonce);
+                    } else {
+                        // check nonce 
+                    }
                     return resolve({
                         nonce: nonce,
                         submit: async () => {

@@ -30,15 +30,16 @@ export default class ZKSyncAccount extends OrbiterAccount {
       l1Provider = ethers.providers.getDefaultProvider('mainnet');
       l2Provider = await zksync.getDefaultProvider('mainnet');
     } else if (this.internalId === 33) {
-      l1Provider = ethers.providers.getDefaultProvider('goerli');
-      l2Provider = await zksync.getDefaultProvider('goerli');
+      l1Provider = ethers.providers.getDefaultProvider('rinkeby');
+      // l2Provider = await zksync.getDefaultProvider('goerli');
+      l2Provider = await zksync.Provider.newHttpProvider('https://goerli-api.zksync.io/jsrpc')
     }
     const l1Wallet = new ethers.Wallet(this.privateKey).connect(l1Provider);
-    const wallet = await zksync.Wallet.fromEthSigner(
+    const L2Wallet = await zksync.Wallet.fromEthSigner(
       l1Wallet,
       l2Provider
     )
-    return { wallet };
+    return { wallet: L2Wallet };
   }
   public async transfer(
     to: string,
@@ -52,7 +53,7 @@ export default class ZKSyncAccount extends OrbiterAccount {
     return await this.getTokenBalance(this.chainConfig.nativeCurrency.address, address);
   }
   public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
-    if (!address) {
+    if (address) {
       throw new Error('The specified address query is not supported temporarily');
     }
     const { wallet } = await this.getL2Wallet();
@@ -76,7 +77,6 @@ export default class ZKSyncAccount extends OrbiterAccount {
         nonce,
         amount,
       });
-      console.log('zksync response', response);
       submit();
     } catch (error) {
       this.logger.error('rollback nonce:', error);
@@ -85,9 +85,9 @@ export default class ZKSyncAccount extends OrbiterAccount {
     }
     if (response) {
       response.awaitReceipt().then(tx => {
-        this.logger.info(`zkSync ${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
+        this.logger.info(`${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
       }).catch(err => {
-        this.logger.error(`zkSync ${this.chainConfig.name} sendTransaction Error:`, err)
+        this.logger.error(`${this.chainConfig.name} sendTransaction Error:`, err)
       })
     }
     const txData = response.txData.tx;

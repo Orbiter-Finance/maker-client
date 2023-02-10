@@ -5,7 +5,7 @@ import chainConfigs from '../config/chains.json';
 import { expect } from 'chai';
 import { ethers } from 'ethers';
 chains.fill(chainConfigs as any);
-const privateKey = process.env["privateKey"] || "";
+const privateKey = process.env["0x0043d60e87c5dd08c86c3123340705a1556c4719"] || "";
 describe("ZkSync Test", function () {
     
     const account = Factory.createMakerAccount<zkSyncAccount>("", privateKey, 33);
@@ -29,10 +29,9 @@ describe("ZkSync Test", function () {
         // console.log(result2, '==result2')
         // const fromNonce = getAmountFlag(3, "9980000010000000");
         // console.log(fromNonce, '==fromNonce')
-        // const sendTx = await account.transferToken("0x0000000000000000000000000000000000000000", "0x0043d60e87c5dd08C86C3123340705a1556C4719", "123456789", {
-
-        // });
-        // console.log(sendTx, '==sendTx');
+        const sendTx = await account.transferToken("0x0000000000000000000000000000000000000000", "0x8A3214F28946A797088944396c476f014F88Dd37", "9990000065000000", {
+        });
+        console.log(sendTx, '==sendTx');
         
     });
 
