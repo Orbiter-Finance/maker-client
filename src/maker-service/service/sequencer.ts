@@ -250,7 +250,7 @@ export default class Sequencer {
           logger.error("get maker balance error", error);
         }
         // save cache
-        await cache.set(order.calldata.hash, true, orderTimeoutMS);
+        await cache.set(order.calldata.hash, true, 1000 * 60 * 60 * 24 * 7);
         senderPrivateKey[order.from.toLocaleLowerCase()] = validResult.privateKey;
       }
 

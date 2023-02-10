@@ -57,10 +57,10 @@ export default class ZKSyncAccount extends OrbiterAccount {
     }
   }
   public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
-    if (address) {
+    const { wallet } = await this.getL2Wallet();
+    if (address && address != wallet.address()) {
       throw new Error('The specified address query is not supported temporarily');
     }
-    const { wallet } = await this.getL2Wallet();
     return wallet.getBalance(token, 'committed');
   }
   public async transferToken(
