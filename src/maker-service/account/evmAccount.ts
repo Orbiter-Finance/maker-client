@@ -56,13 +56,11 @@ export default class EVMAccount extends OrbiterAccount {
     const tx = await this.sendTransaction(token, params);
     return {
       hash: tx.hash,
-      internalId: Number(this.internalId),
       nonce: tx.nonce,
       from: tx.from,
       to: to,
       token,
       value: ethers.BigNumber.from(value),
-      wait: tx.wait
     };
   }
   async transfer(
@@ -74,12 +72,10 @@ export default class EVMAccount extends OrbiterAccount {
     const tx = await this.sendTransaction(to, transactionRequest);
     return {
       hash: tx.hash,
-      internalId: Number(this.internalId),
       nonce: tx.nonce,
       from: tx.from,
       to: tx.to,
       value: tx.value,
-      wait: tx.wait
     };
   }
   async sendTransaction(

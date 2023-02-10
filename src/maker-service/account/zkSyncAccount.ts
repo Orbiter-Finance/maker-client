@@ -98,7 +98,7 @@ export default class ZKSyncAccount extends OrbiterAccount {
       fee: ethers.BigNumber.from(txData.fee),
       value: ethers.BigNumber.from(value),
       nonce: txData.nonce,
-      internalId: Number(chainConfig?.internalId)
+      token
     };
   }
 }

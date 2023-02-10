@@ -186,7 +186,8 @@ Only sign this message for a trusted client!`
             hash: `0x${result["data"].substr(8)}`,
             nonce: sendNonce,
             value: sendValue,
-            fee: sendFee
+            fee: sendFee,
+            token: sendToken.address
         }
     }
 }

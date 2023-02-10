@@ -9,6 +9,7 @@ import XVMAccount from './xvmAccount';
 import StarknetAccount from './starknetAccount';
 import ZKSyncAccount from './zkSyncAccount';
 import ZKSpaceAccount from './zksAccount';
+import IMXAccount from './imxAccount';
 
 export class Factory {
   private static wallets: { [key: string]: BaseAccount } = {}; // key = pk + chainId
@@ -40,6 +41,13 @@ export class Factory {
           toChainId,
           privateKey,
           makerAddress.toLocaleLowerCase()
+        );
+        break;
+      case 8:
+      case 88:
+        wallet = new IMXAccount(
+          toChainId,
+          privateKey
         );
         break;
       case 1:

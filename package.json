@@ -5,7 +5,7 @@
   "main": "build/main/main.js",
   "scripts": {
     "test": "npx ts-mocha ./src/maker-service/test/*.test.ts",
-    "test2": "npx ts-mocha ./src/maker-service/test/zksync.test.ts",
+    "test2": "npx ts-mocha ./src/maker-service/test/imx.test.ts",
     "dev": "npm run build:maker && node scripts/dev-server.js",
     "maker:start": "node ./build/maker-service/index.js",
     "dev:maker": "ts-node ./src/maker-service/",
@@ -52,6 +52,8 @@
     "zksync-web3": "^0.12.1"
   },
   "dependencies": {
+    "@imtbl/core-sdk": "^1.0.1",
+    "@imtbl/imx-sdk": "^1.40.0",
     "async-mutex": "^0.4.0",
     "cross-fetch": "^3.1.5",
     "dayjs": "^1.11.7",

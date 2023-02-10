@@ -380,7 +380,7 @@ export default class Sequencer {
             });
             logger.info('submit step 6-2-1-2 wait', { submitTx });
           }
-          order.hash = submitTx && submitTx.hash;
+          order.hash = submitTx ? submitTx.hash : "";
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
           logger.error(`${chainConfig.name} sequencer submit error:${error.message}`, error);
@@ -389,7 +389,7 @@ export default class Sequencer {
           logger.info('submit step 6-2-2');
           if (order.hash) {
             logger.info(`${chainConfig.name} sequencer submit success`, {
-              toHash: submitTx.hash,
+              toHash: order.hash,
               fromHash: order.calldata.hash
             })
             await this.ctx.db.Sequencer.upsert({

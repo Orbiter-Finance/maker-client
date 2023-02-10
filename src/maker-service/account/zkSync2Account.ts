@@ -1,6 +1,4 @@
 import { BigNumber, ethers } from 'ethers';
-import { chains } from 'orbiter-chaincore';
-import { IChainConfig } from 'orbiter-chaincore/src/types';
 import * as zksync from 'zksync-web3';
 
 import { ERC20Abi } from '../abi';
@@ -8,7 +6,7 @@ import NonceManager from '../lib/nonce';
 import { getNonceCacheStore } from '../utils/caching';
 import OrbiterAccount from './orbiterAccount';
 
-import BaseAccount, { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
+import { TransactionRequest, TransferResponse } from './IAccount';
 
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends OrbiterAccount {
@@ -51,7 +49,6 @@ export default class zkSyncAccount extends OrbiterAccount {
       to,
       value: ethers.BigNumber.from(value),
       nonce: response.nonce,
-      internalId: Number(this.chainConfig?.internalId)
     };
   }
   public async transfer(
@@ -91,7 +88,6 @@ export default class zkSyncAccount extends OrbiterAccount {
         to,
         value: ethers.BigNumber.from(value),
         nonce: response.nonce,
-        internalId: Number(this.chainConfig?.internalId)
       };
     } catch (error) {
       this.logger.error('rollback nonce:', error);

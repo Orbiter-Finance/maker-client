@@ -1,6 +1,5 @@
 import { BigNumber, ethers } from 'ethers';
 export interface TransferResponse {
-  internalId: number,
   hash: string;
   to: string | undefined;
   from: string;
@@ -11,7 +10,6 @@ export interface TransferResponse {
   token?: string;
   data?: string;
   value: BigNumber;
-  wait?: Function
 };
 export interface TransactionResponse extends ethers.providers.TransactionResponse {
 };
