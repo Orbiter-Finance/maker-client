@@ -45,12 +45,16 @@ export default class ZKSyncAccount extends OrbiterAccount {
     to: string,
     value: string,
     transactionRequest?: ethers.providers.TransactionRequest
-  ): Promise<TransferResponse |undefined> {
+  ): Promise<TransferResponse | undefined> {
     return await this.transferToken(String(this.chainConfig.nativeCurrency.address), to, value, transactionRequest);
 
   }
-  public async getBalance(address?: string): Promise<ethers.BigNumber> {
-    return await this.getTokenBalance(this.chainConfig.nativeCurrency.address, address);
+  public async getBalance(address?: string, token?: string): Promise<ethers.BigNumber> {
+    if (token && token != this.chainConfig.nativeCurrency.address) {
+      return this.getTokenBalance(token, address);
+    } else {
+      return this.getTokenBalance(this.chainConfig.nativeCurrency.address, address);
+    }
   }
   public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
     if (address) {

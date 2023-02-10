@@ -211,7 +211,7 @@ export default class EVMAccount extends OrbiterAccount {
     return await erc20.allowance(this.wallet.address, spender);
   }
   public async getBalance(address?: string, token?: string): Promise<BigNumber> {
-    if (token) {
+    if (token && token != this.chainConfig.nativeCurrency.address) {
       // is native
       // const chainId = await this.wallet.getChainId();
       // const issMainToken = await chains.inValidMainToken(String(chainId), token);

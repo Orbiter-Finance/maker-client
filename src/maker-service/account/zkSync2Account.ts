@@ -95,8 +95,12 @@ export default class zkSyncAccount extends OrbiterAccount {
       throw error;
     }
   }
-  public getBalance(to?: string): Promise<BigNumber> {
-    return this.provider.getBalance(to || this.wallet.address);
+  public async getBalance(address?: string, token?: string): Promise<ethers.BigNumber> {
+    if (token && token != this.chainConfig.nativeCurrency.address) {
+      return  this.getTokenBalance(token, address);
+    } else {
+      return this.provider.getBalance(address || this.wallet.address);
+    }
   }
   public getTokenBalance(token: string, to?: string): Promise<BigNumber> {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider);

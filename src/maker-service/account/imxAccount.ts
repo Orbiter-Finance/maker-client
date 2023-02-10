@@ -28,8 +28,12 @@ export default class IMXAccount extends OrbiterAccount {
         return await this.transferToken(String(this.chainConfig.nativeCurrency.address), to, value, transactionRequest);
     }
 
-    public async getBalance(address?: string): Promise<ethers.BigNumber> {
-        return await this.getTokenBalance(this.chainConfig.nativeCurrency.symbol, address);
+    public async getBalance(address?: string, token?: string): Promise<ethers.BigNumber> {
+        if (token && token != this.chainConfig.nativeCurrency.address) {
+            return await this.getTokenBalance(token, address);
+        } else {
+            return await this.getTokenBalance(this.chainConfig.nativeCurrency.symbol, address);
+        }
     }
     public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
         const result = await this.client.getBalance({
@@ -47,7 +51,7 @@ export default class IMXAccount extends OrbiterAccount {
     ): Promise<TransferResponse | undefined> {
 
         console.log(await this.client.listTokens(), '==tokens=');
-        const unsignedTransferRequest:any = {
+        const unsignedTransferRequest: any = {
             type: '',
             receiver: to,
             amount: value, // Denominated in wei
