@@ -2,17 +2,28 @@
 # __*__coding: UTF-8__*__
 import  socket
 import time
+import os
 import json
 import getpass
 target_host = "127.0.0.1"
 target_port = 8000
 client = None;
-wallets = {'0x0043d60e87c5dd08C86C3123340705a1556C4719': ''}
-for addr in wallets:
-   print("********** Wallet Address:: %s **********\n" % addr)
-   if wallets[addr]=='':
-        str = getpass.getpass(prompt='Private Key ['+addr+']:')
-        wallets[addr] = str;
+wallets = {}
+print(os.path.abspath('cmd/.env'))
+print(os.getcwd())
+fileObj = open(os.path.abspath('cmd/.env'),'r')
+try:
+  addrList = fileObj.readlines()
+  for key in addrList:
+    address = key.strip('\n');
+    print("********** Wallet Address:: %s **********\n" % address)
+    if (wallets.__contains__(address) == False):
+        wallets.setdefault(address, "");
+    if wallets[address]=='':
+        str = getpass.getpass(prompt='Inject Key ['+address+']:')
+        wallets[address] = str;
+finally:
+    fileObj.close()
 def tcp_conn():
     global client;
     try:

@@ -2,13 +2,13 @@
 ### Install dependencies ⏬
 
 ```bash
-npm install
+yarn add
 ```
 
 ### Start developing ⚒️
 
 ```bash
-npm run dev
+yarn run dev:maker
 ```
 
 ## Additional Commands
@@ -33,6 +33,41 @@ Optional configuration options can be found in the [Electron Builder CLI docs](h
   - main/ # Main thread (Electron application source)
   - renderer/ # Renderer thread (VueJS application source)
 ```
+
+### Inject private key program
+#### step 1
+```bash
+nohup python3 -u ./cmd/app.py > ./cmd/app.log 2>&1
+```
+#### step 2
+```
+input your key
+```
+#### step 3
+```
+ctrl+z
+```
+#### step 4
+```
+bg
+```
+
+### Docker deploy
+```bash
+docker-compose up -d
+or
+docker-compose up --detach --build
+```
+
+### Runtime files
+#### tokens
+*Currency List*`
+#### maker_logs
+*Collection log record*`
+#### nonce
+*Payment collection nonce management*`
+
+
 
 ## Using static files
 
