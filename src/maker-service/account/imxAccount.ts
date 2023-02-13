@@ -1,13 +1,10 @@
-import { ethers, providers } from 'ethers';
+import { ethers } from 'ethers';
 import { ImmutableX, Config } from '@imtbl/core-sdk';
 import { createStarkSigner } from '@imtbl/core-sdk';
-import NonceManager from '../lib/nonce';
 import OrbiterAccount from './orbiterAccount';
-import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-import { getNonceCacheStore } from '../utils/caching';
+import { TransactionRequest, TransferResponse } from './IAccount';
 import { generateLegacyStarkPrivateKey } from '@imtbl/core-sdk';
 import { equals } from 'orbiter-chaincore/src/utils/core';
-export const RPC_NETWORK: { [key: string]: number } = {};
 export default class IMXAccount extends OrbiterAccount {
     private L1Wallet: ethers.Wallet;
     private client: ImmutableX;
@@ -49,8 +46,6 @@ export default class IMXAccount extends OrbiterAccount {
         value: string,
         transactionRequest?: TransactionRequest
     ): Promise<TransferResponse | undefined> {
-
-        console.log(await this.client.listTokens(), '==tokens=');
         const unsignedTransferRequest: any = {
             type: '',
             receiver: to,

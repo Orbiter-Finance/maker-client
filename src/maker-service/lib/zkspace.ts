@@ -125,7 +125,9 @@ Only sign this message for a trusted client!`
         const sendNonce = transactionRequest.nonce || account.nonce;
         const fromAddress = this.L1Wallet.address;
         const sendValue = ethers.BigNumber.from(transactionRequest.value?.toString());
-        const sendFee = transactionRequest.fee;
+        const sendFee = zksync.utils.closestPackableTransactionFee(
+            transactionRequest.fee
+        )
         const msgBytes = ethers.utils.concat([
             '0x05',
             zksync.utils.numberToBytesBE(account.id, 4),

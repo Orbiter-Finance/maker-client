@@ -8,7 +8,6 @@ import OrbiterAccount from './orbiterAccount';
 
 import { TransactionRequest, TransferResponse } from './IAccount';
 
-export const RPC_NETWORK: { [key: string]: number } = {};
 export default class zkSyncAccount extends OrbiterAccount {
   protected wallet: zksync.Wallet;
   public provider: zksync.Provider;

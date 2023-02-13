@@ -32,6 +32,7 @@ export default class EVMAccount extends OrbiterAccount {
     this.wallet = new ethers.Wallet(this.privateKey).connect(this.provider);
     this.nonceManager = new NonceManager(this.wallet.address, async () => {
       const nonce = await this.wallet.getTransactionCount("pending");
+      console.log('nonce:', nonce);
       return Number(nonce);
     }, {
       store: getNonceCacheStore(`${internalId}-${this.wallet.address}`)
@@ -198,7 +199,7 @@ export default class EVMAccount extends OrbiterAccount {
       }
 
     } catch (error) {
-      this.logger.error(`${this.chainConfig.name} Core SendTransaction error`, error)
+      this.logger.error(`${this.chainConfig.name} SendTransaction error`, error)
       throw error;
     }
   }

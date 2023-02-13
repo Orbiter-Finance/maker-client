@@ -383,7 +383,7 @@ export default class Sequencer {
           order.hash = submitTx ? submitTx.hash : "";
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
-          logger.error(`${chainConfig.name} sequencer submit error:${error.message}`, error);
+          logger.error(`${chainConfig.name} ${order.calldata.hash} sequencer submit error:${error.message}`, error);
           order.error = error;
         } finally {
           logger.info('submit step 6-2-2');

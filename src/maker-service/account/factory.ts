@@ -10,7 +10,7 @@ import StarknetAccount from './starknetAccount';
 import ZKSyncAccount from './zkSyncAccount';
 import ZKSpaceAccount from './zksAccount';
 import IMXAccount from './imxAccount';
-
+import LoopringAccount from './loopringAccount'
 export class Factory {
   private static wallets: { [key: string]: BaseAccount } = {}; // key = pk + chainId
   static createMakerAccount<T extends BaseAccount>(
@@ -50,6 +50,13 @@ export class Factory {
           privateKey
         );
         break;
+      case 9:
+      case 99:
+            wallet = new LoopringAccount(
+              toChainId,
+              privateKey
+            );
+            break;
       case 1:
       case 2:
       case 22:
@@ -88,6 +95,9 @@ export class Factory {
           privateKey
         );
         break;
+        default:
+          throw new Error('Chain Not implemented')
+          break;
     }
     Factory.wallets[walletId] = wallet;
     return wallet as T;

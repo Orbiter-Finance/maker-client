@@ -3,13 +3,10 @@ import { ethers } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import * as zksync from 'zksync';
 import NonceManager from '../lib/nonce';
-import { sign_musig } from 'zksync-crypto'
 import ZKSpaceSDK from '../lib/zkspace';
 import { getNonceCacheStore } from '../utils/caching';
-import { HttpGet, HttpPost } from '../utils/request';
 import OrbiterAccount from './orbiterAccount';
-import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-export const RPC_NETWORK: { [key: string]: number } = {};
+import { TransactionRequest, TransferResponse } from './IAccount';
 export default class ZKSpaceAccount extends OrbiterAccount {
     private nonceManager: NonceManager;
     private wallet: ZKSpaceSDK;
@@ -95,7 +92,7 @@ export default class ZKSpaceAccount extends OrbiterAccount {
             submit();
             return result as TransferResponse;
         } catch (error) {
-            this.logger.error('sendTransaction error', error);
+            this.logger.error(`${this.chainConfig.name} sendTransaction error`, error);
             rollback();
         }
 

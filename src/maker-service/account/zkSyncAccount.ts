@@ -6,7 +6,6 @@ import { getNonceCacheStore } from '../utils/caching';
 import OrbiterAccount from './orbiterAccount';
 
 import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-export const RPC_NETWORK: { [key: string]: number } = {};
 export default class ZKSyncAccount extends OrbiterAccount {
   private nonceManager: NonceManager;
   constructor(
