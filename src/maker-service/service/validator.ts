@@ -3,6 +3,8 @@ import dayjs from 'dayjs';
 import { ethers } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import { equals, isEmpty } from 'orbiter-chaincore/src/utils/core';
+import sequelize, { Op } from 'sequelize';
+import { hash } from 'starknet';
 import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
@@ -21,9 +23,6 @@ export default class ValidatorService {
     return true;
   }
   public async verifyFromTx(fromTx: Transaction): Promise<SwapOrder | undefined> {
-    // const logger = LoggerService.getLogger(fromTx.chainId.toString(), {
-    //   label: String(fromTx.chainId || "")
-    // });
     const logger = LoggerService.getLogger("");
     if (
       !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
@@ -32,15 +31,18 @@ export default class ValidatorService {
       return undefined;
     }
     if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
-      logger.error(`${fromTx.hash} not OrbiterX tx 1`);
-      if (!['development', 'test'].includes(this.ctx.NODE_ENV))
-        return;
+      console.error(`${fromTx.hash} not OrbiterX tx 1`);
+      if (!['development', 'test'].includes(this.ctx.NODE_ENV)) {
+        console.log('stop...')
+      }
+        // return;
       // return;
     }
-    if (!(fromTx.extra && fromTx.extra['xvm']['name'] == 'swap')) {
-      logger.error(`${fromTx.hash} not OrbiterX tx 2`);
-      if (!['development', 'test'].includes(this.ctx.NODE_ENV))
-        return;
+    if (!(fromTx.extra && fromTx.extra['xvm'] && fromTx.extra['xvm']['name'] == 'swap')) {
+      console.error(`${fromTx.hash} not OrbiterX tx 2`);
+      if (!['development', 'test'].includes(this.ctx.NODE_ENV)) {
+        console.log('stop...')
+      }
       // return;
     }
 
@@ -84,7 +86,7 @@ export default class ValidatorService {
       calldata: {
         chainId: Number(fromChainId),
         nonce: Number(fromTx.nonce),
-        hash: fromTx.hash,
+        hash: fromTx.hash.toLocaleLowerCase(),
         token: fromToken.address,
         value: fromTx.value,
         expectValue: fromTx.expectValue,
@@ -242,14 +244,15 @@ export default class ValidatorService {
     const sequencerExist = await this.ctx.db.Sequencer.findOne({
       attributes: ["id"],
       raw: true,
-      where: {
-        hash: swapOrder.calldata.hash
+      where:<any> {
+        [Op.or]: [sequelize.fn('JSON_CONTAINS', sequelize.col('transactions'), sequelize.fn('JSON_Array', swapOrder.calldata.hash.toLocaleLowerCase()))]
       }
     });
     if (sequencerExist && sequencerExist.id) {
       logger.error(`${swapOrder.calldata.hash} verifyToTx Find Sequencer Tx Exist`);
       return undefined;
     }
+    //
     const sourceTx = await this.ctx.db.Transaction.findOne({
       attributes: ['id'],
       where: {
@@ -259,7 +262,7 @@ export default class ValidatorService {
       }
     });
     if (!sourceTx) {
-      logger.error(`${swapOrder.calldata.hash} No transaction waiting for payment collection found`);
+      logger.error(`${swapOrder.calldata.hash} No transaction waiting for payment collection found(from db)`);
       return undefined;
     }
     // check privateKey
