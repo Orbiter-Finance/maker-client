@@ -163,6 +163,7 @@ export default class LoopringAccount extends OrbiterAccount {
             apiKey: apiKey,
             isHWAddr: false,
         })
+        this.logger.info('transfer response:', transactionResult);
         if (transactionResult) {
             return {
                 hash: transactionResult['hash'],

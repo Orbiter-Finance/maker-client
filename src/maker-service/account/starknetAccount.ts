@@ -92,7 +92,8 @@ export default class StarknetAccount extends OrbiterAccount {
                 maxFee
             }
             );
-            console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
+            this.logger.info('transfer response:', executeHash);
+            // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
             provider.waitForTransaction(executeHash.transaction_hash).then(async (tx) => {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
             }, (tx) => {
@@ -131,7 +132,7 @@ export default class StarknetAccount extends OrbiterAccount {
             }),
             0
         );
-        console.log("pre-calculated address: ", precalculatedAddress);
+        // console.log("pre-calculated address: ", precalculatedAddress);
         return precalculatedAddress;
     }
 }

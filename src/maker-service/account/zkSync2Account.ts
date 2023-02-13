@@ -80,6 +80,7 @@ export default class zkSyncAccount extends OrbiterAccount {
       detail.gasLimit =
         detail.gasLimit || (await this.wallet.provider.estimateGas(detail));
       const response = await this.wallet.sendTransaction(detail);
+      this.logger.info('transfer response:', response);
       submit()
       return {
         hash: response.hash,

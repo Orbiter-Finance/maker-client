@@ -80,6 +80,7 @@ export default class ZKSyncAccount extends OrbiterAccount {
         nonce,
         amount,
       });
+      this.logger.info('transfer response:', response);
       submit();
     } catch (error) {
       this.logger.error('rollback nonce:', error);

@@ -60,9 +60,10 @@ export default class IMXAccount extends OrbiterAccount {
         const starkKey = await generateLegacyStarkPrivateKey(this.L1Wallet);
         const starkSigner = await createStarkSigner(starkKey);
         const walletConnection: any = { ethSigner: this.L1Wallet, starkSigner };
-        const res = await this.client.transfer(walletConnection, unsignedTransferRequest);
+        const response = await this.client.transfer(walletConnection, unsignedTransferRequest);
+        this.logger.info('transfer response:', response);
         return {
-            hash: String(res.transfer_id),
+            hash: String(response.transfer_id),
             from: this.L1Wallet.address,
             to,
             value: ethers.BigNumber.from(value),

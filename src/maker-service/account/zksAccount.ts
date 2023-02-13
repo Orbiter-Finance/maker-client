@@ -82,15 +82,16 @@ export default class ZKSpaceAccount extends OrbiterAccount {
         const fee = ethers.BigNumber.from(new BigNumber(feeNum).multipliedBy(10 ** 18).toFixed(0));
         const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
         try {
-            const result = await this.wallet.sendTransaction(to, {
+            const response = await this.wallet.sendTransaction(to, {
                 feeTokenId,
                 tokenId: Number(tokenInfo.id),
                 nonce,
                 fee,
                 value: transferValue
             });
+            this.logger.info('transfer response:', response);
             submit();
-            return result as TransferResponse;
+            return response as TransferResponse;
         } catch (error) {
             this.logger.error(`${this.chainConfig.name} sendTransaction error`, error);
             rollback();
