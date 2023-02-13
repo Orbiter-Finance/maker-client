@@ -1,11 +1,9 @@
-import { chains, logger } from 'orbiter-chaincore';
-import { equals, groupBy } from 'orbiter-chaincore/src/utils/core';
-import Context from '../context';
+import { chains } from 'orbiter-chaincore';
 import ValidatorService from '../service/validator';
 
 import BaseAccount from './IAccount';
 import EVMAccount from './evmAccount';
-import XVMAccount from './xvmAccount';
+import XVMAccount from './orbiterXAccount';
 import StarknetAccount from './starknetAccount';
 import ZKSyncAccount from './zkSyncAccount';
 import ZKSpaceAccount from './zksAccount';

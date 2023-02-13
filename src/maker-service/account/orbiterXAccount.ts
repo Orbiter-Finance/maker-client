@@ -7,7 +7,7 @@ import EVMAccount from './evmAccount';
 import { TransactionRequest, TransactionResponse } from './IAccount';
 
 export const RPC_NETWORK: { [key: string]: number } = {};
-export default class XVMAccount extends EVMAccount {
+export default class OrbiterXAccount extends EVMAccount {
   public contract: ethers.Contract;
   public contractAddress: string;
   constructor(

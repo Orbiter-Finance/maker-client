@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import { Op } from "sequelize";
 import Context from "../context";
 import { Factory } from '../account/factory';
-import XVMAccount from '../account/xvmAccount';
+import orbiterXAccount from '../account/orbiterXAccount';
 import { chains } from 'orbiter-chaincore';
 import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
@@ -315,12 +315,12 @@ export default class Sequencer {
       let submitTx: TransactionResponse | undefined;
       logger.info('submit xvm step 6-1');
       const encodeDatas = passOrders.map(order => {
-        return (<XVMAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
+        return (<orbiterXAccount>account).swapOkEncodeABI(order.calldata.hash, order.token, order.to, order.value);
       })
       let isError = false;
       try {
         logger.info('submit xvm step 6-1 swapOK', { encodeDatas, accountType: typeof account });
-        submitTx = await (<XVMAccount>account).swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
+        submitTx = await (<orbiterXAccount>account).swapOK(encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas, {
           value: sendMainTokenValue,
         });
         logger.info('submit xvm step 6-1 wait');

@@ -31,14 +31,18 @@ export default class ValidatorService {
       logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
       return undefined;
     }
-    // if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
-    //   // logger.error(`${fromTx.hash} not xvm tx`);
-    //   // is new chain
-    //   if (!['520', '514', '518', '44', '4'].includes(fromTx.memo)) {
-    //     logger.error(`${fromTx.hash} tx chainId is not supported`);
-    //     return undefined;
-    //   }
-    // }
+    if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
+      logger.error(`${fromTx.hash} not OrbiterX tx 1`);
+      if (!['development', 'test'].includes(this.ctx.NODE_ENV))
+        return;
+      // return;
+    }
+    if (!(fromTx.extra && fromTx.extra['xvm']['name'] == 'swap')) {
+      logger.error(`${fromTx.hash} not OrbiterX tx 2`);
+      if (!['development', 'test'].includes(this.ctx.NODE_ENV))
+        return;
+      // return;
+    }
 
     const side = fromTx.side;
     if (side !== 0) {
@@ -90,7 +94,7 @@ export default class ValidatorService {
       type: SwapOrderType.None
     };
     if (fromTx.extra['xvm']) {
-      if (fromTx.extra['xvm']['name']!='swap') {
+      if (fromTx.extra['xvm']['name'] != 'swap') {
         logger.error(`${fromTx.chainId} - ${fromTx.hash} xvm function name not eq swap`);
         return;
       }
@@ -113,7 +117,7 @@ export default class ValidatorService {
           // swapOrder.calldata.expectValue = new BigNumber(params.data['expectValue']).toString();
         }
       }
-     
+
     } else {
       // ua
       swapOrder.token = fromTx.extra['ua']['toTokenAddress'];
@@ -131,7 +135,7 @@ export default class ValidatorService {
       logger.error(`${fromTx.chainId} ${fromTx.hash} ${swapOrder.token} toToken not found`);
       return undefined;
     }
-   
+
     // 
     // If the transaction is within half an hour, automatic payment collection will not be allowed
     if (!ValidatorService.transactionTimeValid(swapOrder.calldata.timestamp)) {
@@ -165,7 +169,7 @@ export default class ValidatorService {
       }
     }
 
- 
+
     return swapOrder;
   }
   /**
@@ -258,11 +262,11 @@ export default class ValidatorService {
       logger.error(`${swapOrder.calldata.hash} No transaction waiting for payment collection found`);
       return undefined;
     }
-   // check privateKey
-   if (!this.checkSenderPrivateKey(swapOrder.from)) {
-     logger.error(`verifyToTx ${swapOrder.from} private key no found`);
-     return undefined;
-   }
+    // check privateKey
+    if (!this.checkSenderPrivateKey(swapOrder.from)) {
+      logger.error(`verifyToTx ${swapOrder.from} private key no found`);
+      return undefined;
+    }
     return {
       address: swapOrder.from,
       privateKey,
