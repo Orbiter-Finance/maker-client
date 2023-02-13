@@ -26,7 +26,7 @@ export default abstract class IAccount {
   public abstract transfer(
     to: string,
     value: string,
-    transactionRequest?: TransactionRequest
+    transactionRequest?: TransactionRequest | any
   ): Promise<TransferResponse | undefined>;
   public abstract getBalance(to?: string, token?: string): Promise<ethers.BigNumber>;
   public abstract getTokenBalance(
@@ -38,6 +38,6 @@ export default abstract class IAccount {
     token: string,
     to: string,
     value: string,
-    transactionRequest?: TransactionRequest
+    transactionRequest?: TransactionRequest | any
   ): Promise<TransferResponse | undefined>;
 }

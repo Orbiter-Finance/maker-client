@@ -1,17 +1,22 @@
 import { ethers } from 'ethers';
 import OrbiterAccount from './orbiterAccount';
-import { TransactionRequest, TransferResponse } from './IAccount';
-import { generateLegacyStarkPrivateKey } from '@imtbl/core-sdk';
+import { TransferResponse } from './IAccount';
+import fs from 'fs';
 import {
-  ChainId,
-  ConnectorNames,
-  ExchangeAPI,
-  generateKeyPair,
-  GlobalAPI,
-  UserAPI,
-  VALID_UNTIL,
+    ConnectorNames,
+    ExchangeAPI,
+    generateKeyPair,
+    UserAPI,
 } from '@loopring-web/loopring-sdk'
 import { equals } from 'orbiter-chaincore/src/utils/core';
+import { HttpGet } from '../utils/request';
+import { chains } from 'orbiter-chaincore';
+import { writeFile } from 'fs/promises';
+import path from 'path/posix';
+import { outputJSONSync } from 'fs-extra';
+import Web3 from 'web3';
+import PrivateKeyProvider from 'truffle-privatekey-provider';
+import { LoopringSendTokenRequest } from '../types';
 export default class LoopringAccount extends OrbiterAccount {
     private L1Wallet: ethers.Wallet;
     private client: ExchangeAPI;
@@ -20,14 +25,36 @@ export default class LoopringAccount extends OrbiterAccount {
         protected privateKey: string
     ) {
         super(internalId, privateKey);
-        const L1Provider = ethers.getDefaultProvider(internalId === 9 ? "mainnet" : "goerli");
-        this.L1Wallet = new ethers.Wallet(this.privateKey).connect(L1Provider);
+       
+        this.L1Wallet = new ethers.Wallet(this.privateKey)
         this.client = new ExchangeAPI({ chainId: Number(this.chainConfig.networkId) })
+        this.client.getTokens().then(({ tokensMap }) => {
+            const tokenList = Object.keys(tokensMap).map((symbol) => {
+                const token = tokensMap[symbol];
+                return {
+                    address: token.address,
+                    decimals: token.decimals,
+                    symbol: token.symbol,
+                    id: token.tokenId,
+                    name: token.name,
+                    type: token.type
+                }
+            });
+            outputJSONSync(
+                path.join(
+                    process.cwd(),
+                    "runtime",
+                    `tokens/${this.chainConfig.internalId}.json`,
+                ),
+                tokenList,
+            );
+
+        })
     }
     public async transfer(
         to: string,
         value: string,
-        transactionRequest?: ethers.providers.TransactionRequest
+        transactionRequest?: LoopringSendTokenRequest
     ): Promise<TransferResponse | undefined> {
         return await this.transferToken(String(this.chainConfig.nativeCurrency.address), to, value, transactionRequest);
     }
@@ -36,20 +63,23 @@ export default class LoopringAccount extends OrbiterAccount {
         if (token && token != this.chainConfig.nativeCurrency.address) {
             return await this.getTokenBalance(token, address);
         } else {
-            address=  address || this.L1Wallet.address;
-            console.log(this.client, '===client', address);
-            const result =await this.client.getEthBalances({
-                owner: address
-            });
-            console.log(result, '===ok');
-            return await this.getTokenBalance(this.chainConfig.nativeCurrency.symbol, address);
+            return await this.getTokenBalance(this.chainConfig.nativeCurrency.address, address);
         }
     }
     public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
-        // const result = await this.client.getBalance({
-        //     owner: address || this.L1Wallet.address,
-        //     address: token
-        // });
+        address = address || this.L1Wallet.address;
+        const tokenInfo = chains.getTokenByChain(this.internalId, token);
+        if (!tokenInfo) {
+            throw new Error(`${token} token not found`);
+        }
+        const { accInfo } = await this.client.getAccount({ owner: address });
+        const balances = await HttpGet(`${this.chainConfig.api.url}/api/v3/user/balances`, {
+            accountId: accInfo.accountId,
+            tokens: tokenInfo.id
+        });
+        if (balances.length > 0) {
+            return ethers.BigNumber.from(balances[0].total);
+        }
         return ethers.BigNumber.from(0);
     }
 
@@ -57,13 +87,96 @@ export default class LoopringAccount extends OrbiterAccount {
         token: string,
         to: string,
         value: string,
-        transactionRequest?: TransactionRequest
+        transactionRequest?: LoopringSendTokenRequest
     ): Promise<TransferResponse | undefined> {
-
+        const tokenInfo = chains.getTokenByChain(this.internalId, token);
+        if (!tokenInfo) {
+            throw new Error(`${token} token not found`);
+        }
+        const userApi = new UserAPI({
+            chainId: Number(this.chainConfig.networkId)
+        });
+        const fromAddress = this.L1Wallet.address;
+        const { accInfo } = await this.client.getAccount({ owner: fromAddress });
+        if (!accInfo) {
+            throw Error('account unlocked')
+        }
+        const providerChain = chains.getChainInfo(this.chainConfig.networkId);
+        if (!providerChain || !providerChain.rpc || providerChain.rpc.length <= 0) {
+            throw new Error('LoopringAccount not config rpc');
+        }
+        const provider = new PrivateKeyProvider(this.privateKey, providerChain?.rpc[0]);
+        const web3 = new Web3(provider);
+        const { exchangeInfo } = await this.client.getExchangeInfo();
+        const eddsaKey = await generateKeyPair({
+            web3,
+            address: accInfo.owner,
+            keySeed: accInfo.keySeed,
+            walletType: ConnectorNames.Unknown,
+            chainId: Number(this.chainConfig.networkId),
+        })
+        const { apiKey } = await userApi.getUserApiKey(
+            {
+                accountId: accInfo.accountId,
+            },
+            eddsaKey.sk
+        )
+        if (!apiKey) {
+            throw Error('Get Loopring ApiKey Error')
+        }
+        // step 3 get storageId
+        const storageId = await userApi.getNextStorageId(
+            {
+                accountId: accInfo.accountId,
+                sellTokenId: Number(tokenInfo.id)
+            },
+            apiKey
+        )
+        const sendNonce = storageId.offchainId;
+        const ts = Math.round(new Date().getTime() / 1000) + 30 * 86400
+        // step 4 transfer
+        const OriginTransferRequestV3 = {
+            exchange: exchangeInfo.exchangeAddress,
+            payerAddr: fromAddress,
+            payerId: accInfo.accountId,
+            payeeAddr: to,
+            payeeId: 0,
+            storageId: sendNonce,
+            token: {
+                tokenId: tokenInfo.id,
+                volume: value,
+            },
+            maxFee: {
+                tokenId: transactionRequest?.feeTokenId || 0,
+                volume: transactionRequest?.maxFee || '940000000000000',
+            },
+            validUntil: ts,
+            memo: transactionRequest?.memo,
+        }
+        const transactionResult = await userApi.submitInternalTransfer({
+            request: <any>OriginTransferRequestV3,
+            web3: web3 as any,
+            chainId: Number(this.chainConfig.networkId),
+            walletType: ConnectorNames.Unknown,
+            eddsaKey: eddsaKey.sk,
+            apiKey: apiKey,
+            isHWAddr: false,
+        })
+        if (transactionResult) {
+            return {
+                hash: transactionResult['hash'],
+                to: to,
+                from: fromAddress,
+                nonce: transactionResult['storageId'],
+                token: token,
+                data: transactionRequest?.memo,
+                value: ethers.BigNumber.from(value),
+            };
+        }
     }
 }
 
 
 export class Loopring {
-    
+
 }
