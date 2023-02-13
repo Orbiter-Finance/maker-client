@@ -105,12 +105,12 @@ export default class ValidatorService {
         swapOrder.to = params.data['toWalletAddress'];
       }
       if (toToken) {
-        // cross address
-        // corss token
         if (equals(fromToken.symbol, toToken.symbol)) {
+          // cross address
           swapOrder.type = SwapOrderType.CrossAddr;
           swapOrder.value = fromTx.expectValue;
         } else {
+          // corss token
           swapOrder.type = SwapOrderType.CrossToken;
           swapOrder.value = new BigNumber(params.data['expectValue']).toString();
           swapOrder.calldata.slipPoint = new BigNumber(params.data['slippage']).toNumber();
@@ -294,19 +294,22 @@ export default class ValidatorService {
     const fromDecimal = Number(fromToken.decimals);
     const destDecimal = Number(toToken.decimals);
     if (swapOrder.type === SwapOrderType.CrossToken) {
-      // expectValue = From Token Value
-      // TODO: expectValue or value
       const fromValue = new BigNumber(swapOrder.calldata.value).dividedBy(new BigNumber(10).pow(fromDecimal));
       const fromValuePriceValue = await getChainLinkPrice(fromValue.toString(), fromToken.symbol, toToken.symbol);
       if (fromValuePriceValue.lte(0)) {
         logger.error(`${swapOrder.calldata.hash} Exchange rate not obtained currentPriceValue ${fromToken.symbol}=>${toToken.symbol}`);
         return undefined;
       }
-
-      const expectToTokenValue = new BigNumber(swapOrder.calldata.expectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
-
-      const expectToTokenMinValue = expectToTokenValue.minus(expectToTokenValue.multipliedBy(swapOrder.calldata.slipPoint).div(10000))
-      return swapOrder.value;
+      const expectValue = new BigNumber(swapOrder.value).dividedBy(new BigNumber(10).pow(destDecimal));
+      if (fromValuePriceValue.gte(expectValue)) {
+        return swapOrder.value;
+      }
+      // const expectToTokenValue = new BigNumber(swapOrder.calldata.expectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
+      const expectToTokenMinValue = expectValue.minus(expectValue.multipliedBy(swapOrder.calldata.slipPoint).dividedBy(10000));
+      if(fromValuePriceValue.gt(expectToTokenMinValue)) {
+        return expectToTokenMinValue.minus(new BigNumber(10).pow(destDecimal)).toString();
+      }
+      return undefined;
       // if (fromValuePriceValue.gt(expectToTokenMinValue)) {
       //   logger.info(`${swapOrder.calldata.hash} No collection when the exchange rate is lower than the minimum ${fromToken.symbol}=>${toToken.symbol} (${fromValuePriceValue.toString()}/${expectToTokenMinValue.toString()})`);
       //   return undefined;
