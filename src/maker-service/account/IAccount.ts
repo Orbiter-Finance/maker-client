@@ -33,7 +33,6 @@ export default abstract class IAccount {
     token: string,
     to: string
   ): Promise<ethers.BigNumber>;
-
   public abstract transferToken(
     token: string,
     to: string,

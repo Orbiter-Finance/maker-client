@@ -5,6 +5,7 @@ import { LoggerType } from 'orbiter-chaincore/src/packages/winstonX';
 import { IChainConfig } from 'orbiter-chaincore/src/types';
 import IAccount from './IAccount';
 import { BigNumber } from 'ethers';
+import { SwapOrder } from '../service/sequencer';
 export default class OrbiterAccount extends IAccount {
     public logger: LoggerType;
     public chainConfig!: IChainConfig;
@@ -31,5 +32,8 @@ export default class OrbiterAccount extends IAccount {
     }
     public transferToken(token: string, to: string, value: string, transactionRequest?: TransactionRequest | any): Promise<TransferResponse | undefined> {
         throw new Error('Method not implemented.');
+    }
+    public async sendCollectionGetParameters(order: SwapOrder) {
+        return {}
     }
 }

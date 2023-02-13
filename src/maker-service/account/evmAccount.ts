@@ -5,6 +5,7 @@ import { TransactionRequest, TransactionResponse, TransferResponse } from './IAc
 import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import NonceManager from '../lib/nonce';
+import { SwapOrder } from '../service/sequencer';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends OrbiterAccount {
   protected wallet: Wallet;

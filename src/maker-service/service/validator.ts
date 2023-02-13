@@ -79,6 +79,7 @@ export default class ValidatorService {
       value: "",
       calldata: {
         chainId: Number(fromChainId),
+        nonce: Number(fromTx.nonce),
         hash: fromTx.hash,
         token: fromToken.address,
         value: fromTx.value,

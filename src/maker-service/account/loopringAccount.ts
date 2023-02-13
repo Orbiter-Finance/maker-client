@@ -17,6 +17,7 @@ import { outputJSONSync } from 'fs-extra';
 import Web3 from 'web3';
 import PrivateKeyProvider from 'truffle-privatekey-provider';
 import { LoopringSendTokenRequest } from '../types';
+import { SwapOrder } from '../service/sequencer';
 export default class LoopringAccount extends OrbiterAccount {
     private L1Wallet: ethers.Wallet;
     private client: ExchangeAPI;
@@ -25,7 +26,7 @@ export default class LoopringAccount extends OrbiterAccount {
         protected privateKey: string
     ) {
         super(internalId, privateKey);
-       
+
         this.L1Wallet = new ethers.Wallet(this.privateKey)
         this.client = new ExchangeAPI({ chainId: Number(this.chainConfig.networkId) })
         this.client.getTokens().then(({ tokensMap }) => {
@@ -174,9 +175,10 @@ export default class LoopringAccount extends OrbiterAccount {
             };
         }
     }
-}
 
-
-export class Loopring {
-
+    public async sendCollectionGetParameters(order: SwapOrder) {
+        return {
+            memo: order.calldata.nonce
+        }
+    }
 }

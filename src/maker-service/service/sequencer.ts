@@ -8,9 +8,10 @@ import XVMAccount from '../account/xvmAccount';
 import { chains } from 'orbiter-chaincore';
 import ValidatorService, { orderTimeoutMS } from './validator';
 import { ethers } from 'ethers';
-import BaseAccount, { TransactionResponse } from '../account/IAccount';
+import { TransactionResponse } from '../account/IAccount';
 import Caching from '../utils/caching';
 import { LoggerService } from '../utils/logger';
+import OrbiterAccount from '../account/orbiterAccount';
 const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
@@ -22,8 +23,7 @@ export interface CalldataType {
   hash: string;
   token: string;
   value: string;
-  // valueSubFee: string;
-  // actualValue: string;
+  nonce: number;
   expectValue: string;
   timestamp: number;
   slipPoint: number;
@@ -145,7 +145,7 @@ export default class Sequencer {
       }
     } catch (error) {
       console.log(error);
-      logger.error(`${chainId} submit error:`, {hashs: matchOrders.map(row=>row.calldata.hash)});
+      logger.error(`${chainId} submit error:`, { hashs: matchOrders.map(row => row.calldata.hash) });
     } finally {
       monitorState.locked = false;
       monitorState.lastSubmit = Date.now();
@@ -231,7 +231,7 @@ export default class Sequencer {
         }
         try {
           logger.info("submit step 3-1-2");
-          const account: BaseAccount = Factory.createMakerAccount(validResult.address, validResult.privateKey, chainId);
+          const account: OrbiterAccount = Factory.createMakerAccount(validResult.address, validResult.privateKey, chainId);
           // get balance
           const senderWallet = order.from;
           const sendToken = order.token.toLocaleLowerCase();
@@ -268,7 +268,7 @@ export default class Sequencer {
             continue;
           }
           logger.info("submit step 5-1");
-          const account: BaseAccount = Factory.createMakerAccount(sender, privateKey, chainId);
+          const account: OrbiterAccount = Factory.createMakerAccount(sender, privateKey, chainId);
           const trxList = groupFromAddrList[makerReplyAddr];
           const passOrders: Array<SwapOrder> = trxList.filter(o => isEmpty(o.error));
           logger.info("submit step 5-2");
@@ -290,7 +290,7 @@ export default class Sequencer {
       throw error;
     }
   }
-  public async swapReply(chainId: number, account: BaseAccount, passOrders: Array<SwapOrder>) {
+  public async swapReply(chainId: number, account: OrbiterAccount, passOrders: Array<SwapOrder>) {
     const logger = LoggerService.getLogger(chainId.toString(), {
       label: chainId.toString()
     });
@@ -366,17 +366,20 @@ export default class Sequencer {
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;
       for (const order of passOrders) {
         let submitTx: TransferResponse | undefined;
+        const transferParams = (await account.sendCollectionGetParameters(order)) || {};
         try {
           if (chains.inValidMainToken(chainId, order.token)) {
             logger.info('submit step 6-2-1-1', { to: order.to, value: order.value, txType });
             submitTx = await account.transfer(order.to, order.value, {
-              type: txType
+              type: txType,
+              ...transferParams
             });
             logger.info('submit step 6-2-1-1 wait', { submitTx });
           } else {
             logger.info('submit step 6-2-1-2', { token: order.token, to: order.to, value: order.value, txType });
             submitTx = await account.transferToken(order.token, order.to, order.value, {
-              type: txType
+              type: txType,
+              ...transferParams
             });
             logger.info('submit step 6-2-1-2 wait', { submitTx });
           }
