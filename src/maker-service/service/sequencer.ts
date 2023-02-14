@@ -242,7 +242,8 @@ export default class Sequencer {
             makerBalance[sendToken] = await account.getBalance(senderWallet, token);
           }
           if (makerBalance[sendToken] && makerBalance[sendToken].lt(sendValue)) {
-            order.error = `${senderWallet} Maker ${sendToken}  Insufficient funds ${makerBalance[sendToken]}/${sendValue}`;
+            order.error = `${senderWallet} Maker ${sendToken} Insufficient funds ${makerBalance[sendToken]}/${sendValue}`;
+            logger.error(`${order.calldata.hash} transfer Insufficient funds`);
             continue;
           }
           makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
