@@ -109,8 +109,8 @@ export default class StarknetAccount extends OrbiterAccount {
                 value: ethers.BigNumber.from(value),
                 nonce: nonce,
             };
-        } catch (error) {
-            this.logger.error('rollback nonce:', error);
+        } catch (error:any) {
+            this.logger.error(`rollback nonce:${error.message}`);
             rollback();
             throw error;
         }

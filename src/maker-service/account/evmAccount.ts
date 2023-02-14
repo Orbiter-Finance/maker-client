@@ -192,8 +192,8 @@ export default class EVMAccount extends OrbiterAccount {
           this.logger.error(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, err)
         })
         return response;
-      } catch (error) {
-        this.logger.error('rollback nonce:', error);
+      } catch (error: any) {
+        this.logger.error(`rollback nonce:${error.message}`);
         rollback()
         throw error;
       }

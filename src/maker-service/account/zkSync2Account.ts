@@ -89,8 +89,8 @@ export default class zkSyncAccount extends OrbiterAccount {
         value: ethers.BigNumber.from(value),
         nonce: response.nonce,
       };
-    } catch (error) {
-      this.logger.error('rollback nonce:', error);
+    } catch (error:any) {
+      this.logger.error(`rollback nonce:${error.message}`);
       rollback();
       throw error;
     }
