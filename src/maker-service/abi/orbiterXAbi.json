@@ -45,56 +45,6 @@
     "type": "event"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "maker",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
-    "name": "Swap",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "op",
-        "type": "uint256"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "operator",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "recipient",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bytes32",
-        "name": "tradeId",
-        "type": "bytes32"
-      }
-    ],
-    "name": "SwapAnswer",
-    "type": "event"
-  },
-  {
     "inputs": [
       { "internalType": "address", "name": "maker", "type": "address" },
       { "internalType": "bool", "name": "enable", "type": "bool" }
@@ -138,7 +88,11 @@
   },
   {
     "inputs": [
-      { "internalType": "address payable", "name": "maker", "type": "address" },
+      {
+        "internalType": "address payable",
+        "name": "recipient",
+        "type": "address"
+      },
       { "internalType": "address", "name": "token", "type": "address" },
       { "internalType": "uint256", "name": "value", "type": "uint256" },
       { "internalType": "bytes", "name": "data", "type": "bytes" }
@@ -150,11 +104,14 @@
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "tradeId", "type": "bytes32" },
-      { "internalType": "address payable", "name": "to", "type": "address" },
+      {
+        "internalType": "address payable",
+        "name": "recipient",
+        "type": "address"
+      },
       { "internalType": "address", "name": "token", "type": "address" },
-      { "internalType": "uint256", "name": "op", "type": "uint256" },
-      { "internalType": "uint256", "name": "value", "type": "uint256" }
+      { "internalType": "uint256", "name": "value", "type": "uint256" },
+      { "internalType": "bytes", "name": "data", "type": "bytes" }
     ],
     "name": "swapAnswer",
     "outputs": [],

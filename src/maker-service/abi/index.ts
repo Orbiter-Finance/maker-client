@@ -1,4 +1,4 @@
-import xvmAbiJSON from './xvm.json';
+import orbiterXAbi from './orbiterXAbi.json';
 import starknetErc20AbiJSON from './starknet-erc20.json';
 export const ERC20Abi = [
   {
@@ -671,5 +671,5 @@ export const ERC20Abi = [
     type: 'event',
   },
 ];
-export const XVMABI = xvmAbiJSON;
+export const OrbiterXAbi = orbiterXAbi;
 export const StarknetErc20ABI = starknetErc20AbiJSON.abi;
