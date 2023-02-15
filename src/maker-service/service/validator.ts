@@ -4,7 +4,6 @@ import { ethers } from 'ethers';
 import { chains } from 'orbiter-chaincore';
 import { equals, isEmpty } from 'orbiter-chaincore/src/utils/core';
 import sequelize, { Op } from 'sequelize';
-import { hash } from 'starknet';
 import Context from '../context';
 
 import { Transaction } from '../models/Transactions';
@@ -73,6 +72,21 @@ export default class ValidatorService {
     if (isEmpty(fromToken) || !fromToken) {
       logger.error(`${fromTx.chainId} - ${fromTx.hash} fromChain fromToken not found`);
       return undefined;
+    }
+    // find db data
+    const tx = await this.ctx.db.Transaction.findOne({
+      attributes:['status'],
+      where: {
+        hash: fromTx.hash
+      }
+    });
+    if (!tx) {
+      logger.error(`verifyFromTx ${fromTx.hash} data not found`);
+      return;
+    }
+    if (tx.status!=1) {
+      logger.error(`verifyFromTx ${fromTx.hash} data status is not 1`);
+      return;
     }
     const toChainId = Number(fromTx.memo);
     const swapOrder: SwapOrder = {

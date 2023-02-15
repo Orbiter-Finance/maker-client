@@ -303,16 +303,16 @@ export default class Sequencer {
     passOrders.forEach(order => {
       sendMainTokenValue = chains.inValidMainToken(chainId, order.token) ? sendMainTokenValue.add(order.value) : sendMainTokenValue;
     })
-    let isXVMReply: Boolean = false;
+    let oxTransfer: Boolean = false;
     if (passOrders.length === 1) {
       if ([SwapOrderType.CrossAddr, SwapOrderType.CrossAddr].includes(passOrders[0].type)) {
-        isXVMReply = ValidatorService.isSupportXVM(chainId);
+        oxTransfer = ValidatorService.isSupportXVM(chainId);
       }
     } else {
-      isXVMReply = ValidatorService.isSupportXVM(chainId);
+      oxTransfer = ValidatorService.isSupportXVM(chainId);
     }
-    logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, isXVMReply });
-    if (isXVMReply) {
+    logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, oxTransfer });
+    if (oxTransfer) {
       let submitTx: TransactionResponse | undefined;
       logger.info('submit xvm step 6-1');
       const encodeDatas = passOrders.map(order => {
@@ -361,7 +361,7 @@ export default class Sequencer {
         })
       }
     }
-    if (!isXVMReply) {
+    if (!oxTransfer) {
       logger.info('submit step 6-2');
       // ua
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;

@@ -11,7 +11,7 @@
       "features": ["EIP1559", "EVM"],
       "debug": false,
       "name": "Ethereum Testnet Goerli",
-      "xvmList": ["0x6838e53488B9F75894a9fDF9feB509eE22c281dd"],
+      "xvmList": ["0x2096D6DD537CF7A7ee1662BBbEc8C2809fCf2647"],
       "nativeCurrency": {
         "name": "Ether",
         "symbol": "ETH",
@@ -54,7 +54,7 @@
       "networkId": "421613",
       "internalId": "22",
       "features": ["EIP1559", "EVM"],
-      "xvmList": ["0x6838e53488B9F75894a9fDF9feB509eE22c281dd"],
+      "xvmList": ["0x8D6363511418F5871107b6C2Dac78Cfb1174f3EB"],
       "name": "Arbitrum Görli",
       "nativeCurrency": {
         "name": "Ether",
@@ -128,7 +128,7 @@
       "rpc": ["https://goerli.gateway.metisdevops.link"],
       "watch": ["rpc", "api"],
       "contracts": [],
-      "xvmList": ["0x783f0AB9199206Ee7e70d4D728A9d93609610800"],
+      "xvmList": ["0x6838e53488B9F75894a9fDF9feB509eE22c281dd"],
       "tokens": [
         {
           "name": "Ether (WETH)",
@@ -216,7 +216,7 @@
       },
       "watch": ["rpc", "api"],
       "contracts": ["0x40eC19690ebEd534e9b9C58e341727028cF143c0"],
-      "xvmList": ["0x6838e53488B9F75894a9fDF9feB509eE22c281dd"],
+      "xvmList": ["0x2096D6DD537CF7A7ee1662BBbEc8C2809fCf2647"],
       "tokens": [
         {
           "name": "Wrapped Ether",
@@ -265,7 +265,7 @@
         "https://opt-goerli.g.alchemy.com/v2/Your Key"
       ],
       "watch": ["rpc", "api"],
-      "xvmList": ["0x6838e53488B9F75894a9fDF9feB509eE22c281dd"],
+      "xvmList": ["0x2096d6dd537cf7a7ee1662bbbec8c2809fcf2647"],
       "contracts": ["0x2200a79aDdFE2EFd7bDe34300f4C8FE902E31d39"],
       "tokens": [
         {
@@ -488,7 +488,7 @@
       },
       "rpc": ["https://data-seed-prebsc-1-s1.binance.org:8545"],
       "watch": ["rpc", "api"],
-      "xvmList": ["0x6838e53488B9F75894a9fDF9feB509eE22c281dd"],
+      "xvmList": ["0x2096D6DD537CF7A7ee1662BBbEc8C2809fCf2647"],
       "tokens": [
         {
           "name": "Testnet ETH",
@@ -536,29 +536,6 @@
       },
       "rpc": ["https://rpc.public.zkevm-test.net"],
       "xvmList": [],
-      "watch": ["rpc", "api"],
-      "tokens": []
-    },
-    {
-      "api": {
-        "url": "",
-        "key": ""
-      },
-      "chainId": "599",
-      "networkId": "599",
-      "internalId": "599",
-      "name": "Orbiter(Goerli)",
-      "debug": false,
-      "contracts": [],
-      "nativeCurrency": {
-        "name": "ETH",
-        "symbol": "ETH",
-        "decimals": 18,
-        "address": "0x0000000000000000000000000000000000000000"
-      },
-      "rpc": [
-        "http://ec2-54-178-23-104.ap-northeast-1.compute.amazonaws.com:8545"
-      ],
       "watch": ["rpc", "api"],
       "tokens": []
     },
