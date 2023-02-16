@@ -51,6 +51,10 @@ ctrl+z
 ```
 bg
 ```
+#### kill
+```
+ps -ef | grep python => kill -9 pid
+```
 
 ### Docker deploy
 ```bash

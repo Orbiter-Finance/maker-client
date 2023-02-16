@@ -69,7 +69,7 @@ export default class OrbiterXAccount extends EVMAccount {
     toValue: string
   ): string {
     const ifa = new ethers.utils.Interface(OrbiterXAbi);
-    const bufferList = [tradeId.replace('0x', ''), String(1)]
+    const bufferList = [Buffer.from(tradeId), '1']
     const encoded = RLP.encode(bufferList) // 
     const data = ifa.encodeFunctionData('swapAnswer', [
       toAddress,
