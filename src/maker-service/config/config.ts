@@ -4,23 +4,23 @@ const vars = process.env;
 export default {
   5: {
     maxTxCount: 10,
-    swapGasLimit: 70000,
+    swapAnswerGas: 100000,
   },
   66: {
     maxTxCount: 10,
-    swapGasLimit: 70000,
+    swapAnswerGas: 100000,
   },
   515: {
     maxTxCount: 10,
-    swapGasLimit: 70000,
+    swapAnswerGas: 100000,
   },
   77: {
     maxTxCount: 10,
-    swapGasLimit: 70000,
+    swapAnswerGas: 100000,
   },
   22: {
     maxTxCount: 10,
-    swapGasLimit: 1000000,
+    swapAnswerGas: 2000000,
   },
   development: {
     dialect: 'mysql',
