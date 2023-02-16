@@ -248,7 +248,7 @@ export default class Sequencer {
           }
           makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
         } catch (error) {
-          logger.error("get maker balance error", error);
+          logger.error(`${chainId} get maker balance error`, error);
         }
         // save cache
         await cache.set(order.calldata.hash, true, 1000 * 60 * 60 * 24 * 7);
@@ -305,7 +305,7 @@ export default class Sequencer {
     })
     let oxTransfer: Boolean = false;
     if (passOrders.length === 1) {
-      if ([SwapOrderType.CrossAddr, SwapOrderType.CrossAddr].includes(passOrders[0].type)) {
+      if ([SwapOrderType.CrossAddr, SwapOrderType.CrossToken].includes(passOrders[0].type)) {
         oxTransfer = ValidatorService.isSupportXVM(chainId);
       }
     } else {

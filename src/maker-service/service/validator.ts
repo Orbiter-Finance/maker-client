@@ -283,6 +283,21 @@ export default class ValidatorService {
       logger.error(`verifyToTx ${swapOrder.from} private key no found`);
       return undefined;
     }
+    // find db data
+    const tx = await this.ctx.db.Transaction.findOne({
+      attributes:['status'],
+      where: {
+        hash: swapOrder.calldata.hash
+      }
+    });
+    if (!tx) {
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} data not found`);
+      return;
+    }
+    if (tx.status!=1) {
+      logger.error(`verifyToTx ${swapOrder.calldata.hash} data status is not 1`);
+      return;
+    }
     return {
       address: swapOrder.from,
       privateKey,
@@ -337,8 +352,6 @@ export default class ValidatorService {
       //   }
       //   return currentPriceValue.multipliedBy(new BigNumber(10).pow(toToken.decimals)).toFixed(0, BigNumber.ROUND_DOWN);
       // }
-    } else {
-      return swapOrder.value;
     }
   }
   public checkSenderPrivateKey(from: string) {
