@@ -229,12 +229,12 @@ export default class Sequencer {
           logger.error(`${order.calldata.hash} verifyToTx Fail`)
           continue;
         }
+        const senderWallet = order.from;
+        const sendToken = order.token.toLocaleLowerCase();
         try {
           logger.info("submit step 3-1-2");
           const account: OrbiterAccount = Factory.createMakerAccount(validResult.address, validResult.privateKey, chainId);
           // get balance
-          const senderWallet = order.from;
-          const sendToken = order.token.toLocaleLowerCase();
           const sendValue = ethers.BigNumber.from(order.value);
           if (makerBalance[sendToken] === undefined) {
             const token = chains.inValidMainToken(chainId, sendToken) ? undefined : sendToken;
@@ -248,15 +248,13 @@ export default class Sequencer {
           }
           makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
         } catch (error) {
-          logger.error(`${chainId} get maker balance error`, error);
+          logger.warn(`${chainId} get maker balance error ${senderWallet} - ${sendToken}`, error);
         }
         // save cache
         await cache.set(order.calldata.hash, true, 1000 * 60 * 60 * 24 * 7);
         senderPrivateKey[order.from.toLocaleLowerCase()] = validResult.privateKey;
       }
-
       logger.info("submit step 4");
-
       const prepareList = pendingTxs.filter(o => isEmpty(o.error));
       const groupFromAddrList = groupBy(prepareList, 'from');
       logger.info("submit step 5");
