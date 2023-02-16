@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain, session } from 'electron';
 import { join } from 'path';
 import * as dotenv from 'dotenv';
 dotenv.config();
-const makerService =  require('../maker-service/main');
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 600,
@@ -13,7 +12,7 @@ function createWindow() {
       contextIsolation: true,
     }
   });
-  mainWindow.webContents.openDevTools()
+  // mainWindow.webContents.openDevTools()
 
   if (process.env.NODE_ENV === 'development') {
     const rendererPort = process.argv[2];
@@ -26,8 +25,6 @@ function createWindow() {
 
 app.whenReady().then(async () => {
   createWindow();
-  const ctx = await makerService.start();
-  global.maker = ctx;
   ipcMain.emit("chains",global.maker.NODE_ENV)
   console.log(global.maker.NODE_ENV, '==global.maker', process.pid)
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

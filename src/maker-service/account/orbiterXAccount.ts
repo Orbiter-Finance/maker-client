@@ -35,8 +35,8 @@ export default class OrbiterXAccount extends EVMAccount {
     }
     const chainCustomConfig = config[chainConfig.internalId];
     let gasLimit = ethers.BigNumber.from(0);
-    if (chainCustomConfig && chainCustomConfig.swapAnswerGas) {
-      gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGas);
+    if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimit) {
+      gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
     }
     this.logger.info("exec swapOK 4")
     if (typeof calldata === 'string') {

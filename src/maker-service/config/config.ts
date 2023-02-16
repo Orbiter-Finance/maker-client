@@ -2,25 +2,55 @@ import * as dotenv from 'dotenv';
 const dotEnvs = dotenv.config().parsed;
 const vars = process.env;
 export default {
+  1: {
+    maxTxCount: 10,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 180,
+  },
   5: {
     maxTxCount: 10,
-    swapAnswerGas: 100000,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 180,
+  },
+  6: {
+    maxTxCount: 10,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 180,
   },
   66: {
     maxTxCount: 10,
-    swapAnswerGas: 100000,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 180,
+  },
+  15: {
+    maxTxCount: 10,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 80,
   },
   515: {
     maxTxCount: 10,
-    swapAnswerGas: 100000,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 80,
+  },
+  7: {
+    maxTxCount: 10,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 180,
   },
   77: {
     maxTxCount: 10,
-    swapAnswerGas: 100000,
+    swapAnswerGasLimit: 100000,
+    maxGasPrice: 180,
+  },
+  2: {
+    maxTxCount: 10,
+    swapAnswerGasLimit: 2000000,
+    maxGasPrice: 180,
   },
   22: {
     maxTxCount: 10,
-    swapAnswerGas: 2000000,
+    swapAnswerGasLimit: 2000000,
+    maxGasPrice: 180,
   },
   development: {
     dialect: 'mysql',

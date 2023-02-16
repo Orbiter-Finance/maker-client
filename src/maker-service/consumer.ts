@@ -66,7 +66,7 @@ export default class Consumer {
       if (msg) {
         const tx = JSON.parse(msg.content.toString()) as Transaction;
         hash = tx.hash;
-        this.ctx.logger.info(`subscribe tx:${tx.hash}`);
+        this.ctx.logger.info(`subscribe tx:`, tx);
         if (tx) {
           try {
             const swapOrder = await this.ctx.validator.verifyFromTx(tx);
