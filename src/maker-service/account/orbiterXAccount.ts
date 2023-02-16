@@ -1,11 +1,10 @@
 import { chains } from 'orbiter-chaincore/src/utils';
 import { ethers } from 'ethers';
-
 import { OrbiterXAbi } from '../abi';
 import config from '../config/config'
 import EVMAccount from './evmAccount';
 import { TransactionRequest, TransactionResponse } from './IAccount';
-import RLP from 'rlp'
+import * as RLP from 'rlp'
 export default class OrbiterXAccount extends EVMAccount {
   public contract: ethers.Contract;
   public contractAddress: string;
@@ -70,7 +69,7 @@ export default class OrbiterXAccount extends EVMAccount {
     toValue: string
   ): string {
     const ifa = new ethers.utils.Interface(OrbiterXAbi);
-    const bufferList = [tradeId, 1] // 
+    const bufferList = [tradeId.replace('0x', ''), String(1)]
     const encoded = RLP.encode(bufferList) // 
     const data = ifa.encodeFunctionData('swapAnswer', [
       toAddress,

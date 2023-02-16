@@ -4,19 +4,19 @@ const vars = process.env;
 export default {
   5: {
     maxTxCount: 10,
-    swapGasLimit: 50000,
+    swapGasLimit: 70000,
   },
   66: {
     maxTxCount: 10,
-    swapGasLimit: 50000,
+    swapGasLimit: 70000,
   },
   515: {
     maxTxCount: 10,
-    swapGasLimit: 50000,
+    swapGasLimit: 70000,
   },
   77: {
     maxTxCount: 10,
-    swapGasLimit: 50000,
+    swapGasLimit: 70000,
   },
   22: {
     maxTxCount: 10,
