@@ -15,8 +15,8 @@ export class SMSService {
         const compiled = template(SMSTemplate[templateId]);
         const smsText = compiled(params);
         console.log('smsText ：', smsText);
-        const Key = process.env['sms.key'];
-        const smsMob = process.env['sms.numbers'];
+        const Key = process.env['sms_key'];
+        const smsMob = process.env['sms_numbers'];
         if (!Key || !smsMob) {
             return console.error('Missing configuration for sending short message notification');
         }
