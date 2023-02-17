@@ -23,12 +23,12 @@ export default class ValidatorService {
   }
   public async verifyFromTx(fromTx: Transaction): Promise<SwapOrder | undefined> {
     const logger = LoggerService.getLogger("");
-    if (
-      !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
-    ) {
-      logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
-      return undefined;
-    }
+    // if (
+    //   !this.ctx.config.ENABLE_AUTO_PAYMENT_CHAINS.split(',').includes(fromTx.memo || "")
+    // ) {
+    //   logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
+    //   return undefined;
+    // }
     if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
       logger.warn(`${fromTx.hash} not OrbiterX tx 1`);
       if (!['development', 'test'].includes(this.ctx.NODE_ENV)) {
