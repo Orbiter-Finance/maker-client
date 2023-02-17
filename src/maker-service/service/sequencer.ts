@@ -77,7 +77,7 @@ export default class Sequencer {
         'extra',
       ],
       where: {
-        // source: 'xvm',
+        source: 'xvm',
         status: 1,
         side: 0,
         timestamp: {

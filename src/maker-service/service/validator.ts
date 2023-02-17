@@ -31,17 +31,11 @@ export default class ValidatorService {
     // }
     if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
       logger.warn(`${fromTx.hash} not OrbiterX tx 1`);
-      if (!['development', 'test'].includes(this.ctx.NODE_ENV)) {
-        console.log('stop...')
-      }
-      // return;
+      return;
     }
     if (!(fromTx.extra && fromTx.extra['xvm'] && fromTx.extra['xvm']['name'] == 'swap')) {
       logger.warn(`${fromTx.hash} not OrbiterX tx 2`);
-      if (!['development', 'test'].includes(this.ctx.NODE_ENV)) {
-        console.log('stop...')
-      }
-      // return;
+      return;
     }
 
     const side = fromTx.side;
