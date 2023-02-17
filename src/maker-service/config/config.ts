@@ -84,6 +84,7 @@ export default {
   },
   keys: {
   },
+  RABBIT_PORT: vars["RABBIT_PORT"],
   RABBIT_HOST: vars["RABBIT_HOST"],
   RABBIT_USER: vars["RABBIT_USER"],
   RABBIT_PASSWORD: vars["RABBIT_PASSWORD"],
