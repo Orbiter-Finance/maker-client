@@ -11,12 +11,14 @@ import Caching from './utils/caching';
 import configs from './config/config';
 import chainConfigs from './config/chains.json';
 import { LoggerService } from './utils/logger';
+import { SMSService } from './lib/sms';
 type NODE_ENV = 'development' | 'production' | 'test';
 export default class Context {
   public config: Config = configs as any;
   public db!: Models;
   public caching!: Keyv;
   public validator: ValidatorService;
+  public smsService:SMSService = new SMSService(this);
   public sequencer!: Sequencer;
   public NODE_ENV: NODE_ENV =
     <NODE_ENV>process.env['NODE_ENV'] || 'development';

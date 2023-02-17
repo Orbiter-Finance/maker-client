@@ -285,7 +285,8 @@ export default class Sequencer {
       }
       logger.info("Complete submission", { makerDeal: pendingTxs })
       return { chainId, makerDeal: pendingTxs };
-    } catch (error) {
+    } catch (error: any) {
+
       throw error;
     }
   }
@@ -301,16 +302,16 @@ export default class Sequencer {
     passOrders.forEach(order => {
       sendMainTokenValue = chains.inValidMainToken(chainId, order.token) ? sendMainTokenValue.add(order.value) : sendMainTokenValue;
     })
-    let oxTransfer: Boolean = false;
+    let contractTransfer: Boolean = false;
     if (passOrders.length === 1) {
       if ([SwapOrderType.CrossAddr, SwapOrderType.CrossToken].includes(passOrders[0].type)) {
-        oxTransfer = ValidatorService.isSupportXVM(chainId);
+        contractTransfer = ValidatorService.isSupportXVM(chainId);
       }
     } else {
-      oxTransfer = ValidatorService.isSupportXVM(chainId);
+      contractTransfer = ValidatorService.isSupportXVM(chainId);
     }
-    logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, oxTransfer });
-    if (oxTransfer) {
+    logger.info(`sequencer get ready submit`, { passOrders, sendMainTokenValue, contractTransfer });
+    if (contractTransfer) {
       let submitTx: TransactionResponse | undefined;
       logger.info('submit xvm step 6-1');
       const encodeDatas = passOrders.map(order => {
@@ -327,6 +328,12 @@ export default class Sequencer {
       } catch (error: any) {
         isError = true;
         passOrders[0].error = error;
+        for (const order of passOrders) {
+          this.ctx.smsService.sendAlert('SendTransactionError', {
+            chain: chainId,
+            msg: order.calldata.hash
+          });
+        }
         logger.error(`${chainId} sequencer xvm submit error:${error.message}`, error);
       } finally {
         logger.info('submit xvm step 6-2');
@@ -359,7 +366,7 @@ export default class Sequencer {
         })
       }
     }
-    if (!oxTransfer) {
+    if (!contractTransfer) {
       logger.info('submit step 6-2');
       // ua
       const txType = (chainConfig['features'] || []).includes("EIP1559") ? 2 : 0;
@@ -385,6 +392,10 @@ export default class Sequencer {
           order.hash = submitTx ? submitTx.hash : "";
           logger.info('submit step 6-2-1-3');
         } catch (error: any) {
+          this.ctx.smsService.sendAlert('SendTransactionError', {
+            chain: chainId,
+            msg: order.calldata.hash
+          });
           logger.error(`${chainConfig.name} ${order.calldata.hash} sequencer submit error:${error.message}`, error);
           order.error = error;
         } finally {
