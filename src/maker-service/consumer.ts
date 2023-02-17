@@ -14,6 +14,7 @@ export default class Consumer {
       protocol: 'amqp',
       hostname: this.ctx.config.RABBIT_HOST || 'localhost',
       port: Number(this.ctx.config.RABBIT_PORT || 5672),
+      vhost: this.ctx.config.RABBIT_VHOST,
       username: this.ctx.config.RABBIT_USER,
       password: this.ctx.config.RABBIT_PASSWORD
     });
