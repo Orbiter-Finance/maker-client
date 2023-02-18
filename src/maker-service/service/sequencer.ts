@@ -43,7 +43,7 @@ export interface SwapOrder {
   value: string;
   calldata: CalldataType
   type: SwapOrderType;
-  error?: Error | string
+  error?: Error | string | unknown
 }
 interface MonitorState {
   [key: number]: {
@@ -285,8 +285,7 @@ export default class Sequencer {
       }
       logger.info("Complete submission", { makerDeal: pendingTxs })
       return { chainId, makerDeal: pendingTxs };
-    } catch (error: any) {
-
+    } catch (error) {
       throw error;
     }
   }
@@ -325,7 +324,7 @@ export default class Sequencer {
         });
         logger.info('submit xvm step 6-1 wait');
         // submitTx && await submitTx.wait();
-      } catch (error: any) {
+      } catch (error) {
         isError = true;
         passOrders[0].error = error;
         for (const order of passOrders) {
@@ -334,7 +333,8 @@ export default class Sequencer {
             msg: order.calldata.hash
           });
         }
-        logger.error(`${chainId} sequencer xvm submit error:${error.message}`, error);
+        const errmsg = (error as Error).message;
+        logger.error(`${chainId} sequencer xvm submit error:${errmsg}`, error);
       } finally {
         logger.info('submit xvm step 6-2');
         const passHashList = passOrders.map(tx => tx.calldata.hash);
@@ -391,12 +391,13 @@ export default class Sequencer {
           }
           order.hash = submitTx ? submitTx.hash : "";
           logger.info('submit step 6-2-1-3');
-        } catch (error: any) {
+        } catch (error) {
           this.ctx.smsService.sendAlert('SendTransactionError', {
             chain: chainId,
             msg: order.calldata.hash
           });
-          logger.error(`${chainConfig.name} ${order.calldata.hash} sequencer submit error:${error.message}`, error);
+          const errmsg = (error as Error).message;
+          logger.error(`${chainConfig.name} ${order.calldata.hash} sequencer submit error:${errmsg}`, error);
           order.error = error;
         } finally {
           logger.info('submit step 6-2-2');

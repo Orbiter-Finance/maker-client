@@ -20,6 +20,7 @@ export default class Context {
   public validator: ValidatorService;
   public smsService:SMSService = new SMSService(this);
   public sequencer!: Sequencer;
+  public startTime:number = Date.now();
   public NODE_ENV: NODE_ENV =
     <NODE_ENV>process.env['NODE_ENV'] || 'development';
   public logger: winston.Logger = LoggerService.getLogger("");

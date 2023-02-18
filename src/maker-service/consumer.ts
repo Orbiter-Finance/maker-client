@@ -63,30 +63,31 @@ export default class Consumer {
   public async subscribe(chainId: string, queueName: string) {
     const channel = this.channels[chainId];
     const messageHandle = async (msg: ConsumeMessage | null) => {
-      let hash = '';
       if (msg) {
         const tx = JSON.parse(msg.content.toString()) as Transaction;
-        hash = tx.hash;
-        this.ctx.logger.info(`subscribe tx:`, tx);
-        if (tx) {
-          try {
-            const swapOrder = await this.ctx.validator.verifyFromTx(tx);
-            if (swapOrder) {
-              this.ctx.logger.info(`swapOrder:`, { swapOrder: swapOrder })
-              this.ctx.sequencer.push(swapOrder);
-            } else {
-              this.ctx.logger.error(`subscribe tx verifyFromTx fail:${tx.hash}`);
-              // msg && await channel.ack(msg);
+        if (Number(tx['pushTime']) > this.ctx.startTime) {
+          this.ctx.logger.info(`subscribe tx:`, tx);
+          if (tx) {
+            try {
+              const swapOrder = await this.ctx.validator.verifyFromTx(tx);
+              if (swapOrder) {
+                this.ctx.logger.info(`swapOrder:`, { swapOrder: swapOrder })
+                this.ctx.sequencer.push(swapOrder);
+              } else {
+                this.ctx.logger.error(`subscribe tx verifyFromTx fail:${tx.hash}`);
+                // msg && await channel.ack(msg);
+              }
+            } catch (error) {
+              this.ctx.logger.info(`subscribe tx verifyFromTx error:${tx.hash}`, error);
             }
-          } catch (error) {
-            this.ctx.logger.info(`subscribe tx verifyFromTx error:${tx.hash}`, error);
-          }
 
+          }
+        } else {
+          this.ctx.logger.info(`The transaction pushed was not started before Maker ${tx.hash}`);
         }
       }
       // ack
       msg && await channel.ack(msg);
-
     }
     await channel.consume(
       queueName,

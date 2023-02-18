@@ -1,7 +1,7 @@
 import * as winstonX from 'orbiter-chaincore/src/packages/winstonX';
 import path from 'path';
 export class LoggerService {
-  static services: { [key: string]: any } = {};
+  static services: { [key: string]: winstonX.LoggerType } = {};
   static createLogger(key: string, opts?: winstonX.WinstonXOptions) {
     let logDir = path.join(process.env.logDir || process.cwd()+ '/runtime', 'maker_logs');
     if (key) {
