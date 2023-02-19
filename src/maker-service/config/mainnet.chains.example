@@ -386,7 +386,7 @@
     "chainId": "SN_MAIN",
     "networkId": "mainnet-alpha",
     "internalId": "4",
-    "name": "Starknet Goerli Mainnet",
+    "name": "Starknet Mainnet",
     "debug": false,
     "contracts": [
       "0x0173f81c529191726c6e7287e24626fe24760ac44dae2a1f7e02080230f8458b"
