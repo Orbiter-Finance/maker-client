@@ -22,9 +22,6 @@ export default class EVMAccount extends OrbiterAccount {
       this.provider.on('error', (...result) => {
         this.logger.error('ws error：', { result });
       })
-      this.provider.on('debug', (...result) => {
-        this.logger.error('ws debug', { result });
-      })
     } else {
       this.provider = new providers.JsonRpcProvider({
         url: rpc,
