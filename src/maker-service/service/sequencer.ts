@@ -136,7 +136,10 @@ export default class Sequencer {
             const value = await this.ctx.validator.verifyXVMCrossToken(order);
             if (value && !isEmpty(value)) {
               order.value = String(value);
-              matchOrders.push(order);
+              const veifyToRes = await this.ctx.validator.verifyToTx(order);
+              if (veifyToRes) {
+                matchOrders.push(order);
+              }
             } else {
               pendingAllTxs.push(order);
             }

@@ -5,7 +5,6 @@ import { TransactionRequest, TransactionResponse, TransferResponse } from './IAc
 import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import NonceManager from '../lib/nonce';
-import { SwapOrder } from '../service/sequencer';
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends OrbiterAccount {
   protected wallet: Wallet;
@@ -166,7 +165,6 @@ export default class EVMAccount extends OrbiterAccount {
         throw new Error(`=>sendTransaction before error:${error.message}`);
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
-      this.logger.info(`${this.chainConfig.name} sendTransaction before:`, tx);
       const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
       try {
         // const response = await this.nonceManager.sendTransaction(tx);
@@ -174,7 +172,7 @@ export default class EVMAccount extends OrbiterAccount {
         // logger.info(`${chainConfig.name} sendTransaction after nonce:${this.nonceManager._deltaCount}/${response.nonce}`);
         // use nonce manager disabled
         tx.nonce = nonce;
-        console.debug('Transaction Data:', JSON.stringify(tx));
+        this.logger.info(`${this.chainConfig.name} sendTransaction:`, tx);
         const signedTx = await this.wallet.signTransaction(tx);
         // // console.log('Signed Transaction:', signedTx);
         const txHash = ethers.utils.keccak256(signedTx);
