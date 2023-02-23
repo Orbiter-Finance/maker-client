@@ -1,10 +1,14 @@
-import { LoggerService } from './../utils/logger';
-import { BigNumber, ethers, providers, Wallet } from 'ethers';
-import { ERC20Abi } from '../abi';
-import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-import OrbiterAccount from './orbiterAccount';
-import { getNonceCacheStore } from '../utils/caching';
-import NonceManager from '../lib/nonce';
+import { LoggerService } from "./../utils/logger";
+import { BigNumber, ethers, providers, Wallet } from "ethers";
+import { ERC20Abi } from "../abi";
+import {
+  TransactionRequest,
+  TransactionResponse,
+  TransferResponse
+} from "./IAccount";
+import OrbiterAccount from "./orbiterAccount";
+import { getNonceCacheStore } from "../utils/caching";
+import NonceManager from "../lib/nonce";
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends OrbiterAccount {
   protected wallet: Wallet;
@@ -16,23 +20,27 @@ export default class EVMAccount extends OrbiterAccount {
   ) {
     super(internalId, privateKey);
     const rpc = this.chainConfig.rpc[0];
-    if (rpc.includes('ws')) {
+    if (rpc.includes("ws")) {
       this.provider = new providers.WebSocketProvider(rpc);
-      this.provider.on('error', (...result) => {
-        this.logger.error('ws error：', { result });
-      })
+      this.provider.on("error", (...result) => {
+        this.logger.error("ws error：", { result });
+      });
     } else {
       this.provider = new providers.JsonRpcProvider({
-        url: rpc,
+        url: rpc
       });
     }
     this.wallet = new ethers.Wallet(this.privateKey).connect(this.provider);
-    this.nonceManager = new NonceManager(this.wallet.address, async () => {
-      const nonce = await this.wallet.getTransactionCount("pending");
-      return Number(nonce);
-    }, {
-      store: getNonceCacheStore(`${internalId}-${this.wallet.address}`)
-    });
+    this.nonceManager = new NonceManager(
+      this.wallet.address,
+      async () => {
+        const nonce = await this.wallet.getTransactionCount("pending");
+        return Number(nonce);
+      },
+      {
+        store: getNonceCacheStore(`${internalId}-${this.wallet.address}`)
+      }
+    );
     this.logger = LoggerService.getLogger(internalId.toString());
   }
   async transferToken(
@@ -42,10 +50,13 @@ export default class EVMAccount extends OrbiterAccount {
     transactionRequest: ethers.providers.TransactionRequest = {}
   ): Promise<TransferResponse> {
     const ifa = new ethers.utils.Interface(ERC20Abi);
-    const data = ifa.encodeFunctionData('transfer', [to, ethers.BigNumber.from(value)]);
+    const data = ifa.encodeFunctionData("transfer", [
+      to,
+      ethers.BigNumber.from(value)
+    ]);
     const params = Object.assign(
       {
-        data,
+        data
       },
       transactionRequest
     );
@@ -57,7 +68,7 @@ export default class EVMAccount extends OrbiterAccount {
       from: tx.from,
       to: to,
       token,
-      value: ethers.BigNumber.from(value),
+      value: ethers.BigNumber.from(value)
     };
   }
   async transfer(
@@ -72,7 +83,7 @@ export default class EVMAccount extends OrbiterAccount {
       nonce: tx.nonce,
       from: tx.from,
       to: tx.to,
-      value: tx.value,
+      value: tx.value
     };
   }
   async sendTransaction(
@@ -93,12 +104,12 @@ export default class EVMAccount extends OrbiterAccount {
         // nonce manager
         tx = Object.assign(
           {
-            chainId,
+            chainId
           },
           transactionRequest,
           {
             from: this.wallet.address,
-            to,
+            to
           }
         );
         this.logger.info(`sendTransaction exec 3:`, { tx });
@@ -127,22 +138,34 @@ export default class EVMAccount extends OrbiterAccount {
             }
           } else {
             if (!tx.gasPrice) {
-              this.logger.info(`sendTransaction exec 4 getGasPrice:${tx.gasPrice}`);
+              this.logger.info(
+                `sendTransaction exec 4 getGasPrice:${tx.gasPrice}`
+              );
               const feeData = await this.provider.getFeeData();
               this.logger.info(`sendTransaction exec 4 feeData:`, feeData);
-              tx.gasPrice = await this.provider.getGasPrice().catch(error => {
-                this.logger.error(`sendTransaction exec 4 getGasPrice error:`, error);
+              tx.gasPrice = await this.provider.getGasPrice().catch((error) => {
+                this.logger.error(
+                  `sendTransaction exec 4 getGasPrice error:`,
+                  error
+                );
                 return 0;
-              })
+              });
+              this.logger.info(`sendTransaction exec 4 ChianID:${chainId}`);
+              if (chainId == 137 || chainId == 80001) {
+                if (tx.gasPrice < 100000000000) {
+                  tx.gasPrice = 200000000000;
+                } else {
+                  tx.gasPrice = tx.gasPrice * 2;
+                }
+              }
               // tx.gasPrice = await this.wallet.getGasPrice();
-              this.logger.info(`sendTransaction exec 4 getGasPrice ok:${tx.gasPrice}`);
+              this.logger.info(
+                `sendTransaction exec 4 getGasPrice ok:${tx.gasPrice}`
+              );
             }
-
           }
         } catch ({ message }) {
-          throw new Error(
-            `=> getGasPrice error:${message}`
-          );
+          throw new Error(`=> getGasPrice error:${message}`);
         }
         this.logger.info(`sendTransaction exec 3:`, { to });
         try {
@@ -151,21 +174,22 @@ export default class EVMAccount extends OrbiterAccount {
             let gasLimit: number | BigNumber = await this.provider.estimateGas(
               tx
             );
-            console.log(`${this.chainConfig.name} get gasLimit ${(gasLimit).toString()}`)
+            console.log(
+              `${this.chainConfig.name} get gasLimit ${gasLimit.toString()}`
+            );
             gasLimit = Number((gasLimit.toNumber() * 2).toFixed(0));
             tx.gasLimit = ethers.utils.hexlify(gasLimit);
           }
         } catch ({ message }) {
-          throw new Error(
-            `=> estimateGas limit error:${message}`
-          );
+          throw new Error(`=> estimateGas limit error:${message}`);
         }
       } catch (error: any) {
         this.logger.error(`evm sendTransaction before error`, error);
         throw new Error(`=>sendTransaction before error:${error.message}`);
       }
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
-      const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
+      const { nonce, submit, rollback } =
+        await this.nonceManager.getNextNonce();
       try {
         // const response = await this.nonceManager.sendTransaction(tx);
         // this.logger.info(`${this.chainConfig.name} sendTransaction txHash:`, response.hash);
@@ -177,36 +201,61 @@ export default class EVMAccount extends OrbiterAccount {
         // // console.log('Signed Transaction:', signedTx);
         const txHash = ethers.utils.keccak256(signedTx);
         const response = await this.provider.sendTransaction(signedTx);
-        this.logger.info(`${this.chainConfig.name} sendTransaction txHash:`, txHash);
+        this.logger.info(
+          `${this.chainConfig.name} sendTransaction txHash:`,
+          txHash
+        );
         submit();
         // console.debug('Precomputed txHash:', txHash);
         // console.debug('Precomputed Nonce:', tx.nonce.toString());
-        response.wait().then(tx => {
-          this.logger.info(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
-        }).catch(err=> {
-          this.logger.error(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, err)
-        })
+        response
+          .wait()
+          .then((tx) => {
+            this.logger.info(
+              `evm ${this.chainConfig.name} sendTransaction waitForTransaction:`,
+              tx
+            );
+          })
+          .catch((err) => {
+            this.logger.error(
+              `evm ${this.chainConfig.name} sendTransaction waitForTransaction:`,
+              err
+            );
+          });
         return response;
       } catch (error: any) {
         this.logger.error(`rollback nonce:${error.message}`);
-        rollback()
+        rollback();
         throw error;
       }
-
     } catch (error) {
-      this.logger.error(`${this.chainConfig.name} SendTransaction error`, error)
+      this.logger.error(
+        `${this.chainConfig.name} SendTransaction error`,
+        error
+      );
       throw error;
     }
   }
-  public async approve(token: string, spender: string, value: string | BigNumber) {
-    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
+  public async approve(
+    token: string,
+    spender: string,
+    value: string | BigNumber
+  ) {
+    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(
+      this.wallet
+    );
     return await erc20.approve(spender, value);
   }
   public async allowance(token: string, spender: string) {
-    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
+    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(
+      this.wallet
+    );
     return await erc20.allowance(this.wallet.address, spender);
   }
-  public async getBalance(address?: string, token?: string): Promise<BigNumber> {
+  public async getBalance(
+    address?: string,
+    token?: string
+  ): Promise<BigNumber> {
     if (token && token != this.chainConfig.nativeCurrency.address) {
       // is native
       // const chainId = await this.wallet.getChainId();
@@ -216,7 +265,10 @@ export default class EVMAccount extends OrbiterAccount {
       return this.provider.getBalance(address || this.wallet.address);
     }
   }
-  public async getTokenBalance(token: string, address?: string): Promise<BigNumber> {
+  public async getTokenBalance(
+    token: string,
+    address?: string
+  ): Promise<BigNumber> {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider);
     return erc20.balanceOf(address || this.wallet.address);
   }
