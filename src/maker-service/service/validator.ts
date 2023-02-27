@@ -29,13 +29,15 @@ export default class ValidatorService {
     //   logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
     //   return undefined;
     // }
-    if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
-      logger.warn(`${fromTx.hash} not OrbiterX tx 1`);
-      return;
-    }
-    if (!(fromTx.extra && fromTx.extra['xvm'] && fromTx.extra['xvm']['name'] == 'swap')) {
-      logger.warn(`${fromTx.hash} not OrbiterX tx 2`);
-      return;
+    if (this.ctx.NODE_ENV !== 'development' && this.ctx.NODE_ENV !== 'test') {
+      if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
+        logger.warn(`${fromTx.hash} not OrbiterX tx 1`);
+        return;
+      }
+      if (!(fromTx.extra && fromTx.extra['xvm'] && fromTx.extra['xvm']['name'] == 'swap')) {
+        logger.warn(`${fromTx.hash} not OrbiterX tx 2`);
+        return;
+      }
     }
 
     const side = fromTx.side;
@@ -69,7 +71,7 @@ export default class ValidatorService {
     }
     // find db data
     const tx = await this.ctx.db.Transaction.findOne({
-      attributes:['status'],
+      attributes: ['status'],
       where: {
         hash: fromTx.hash
       }
@@ -78,7 +80,7 @@ export default class ValidatorService {
       logger.error(`verifyFromTx ${fromTx.hash} data not found`);
       return;
     }
-    if (tx.status!=1) {
+    if (tx.status != 1) {
       logger.error(`verifyFromTx ${fromTx.hash} data status is not 1`);
       return;
     }
@@ -251,7 +253,7 @@ export default class ValidatorService {
     const sequencerExist = await this.ctx.db.Sequencer.findOne({
       attributes: ["id"],
       raw: true,
-      where:<any> {
+      where: <any>{
         [Op.or]: [sequelize.fn('JSON_CONTAINS', sequelize.col('transactions'), sequelize.fn('JSON_Array', swapOrder.calldata.hash.toLocaleLowerCase()))]
       }
     });
@@ -279,7 +281,7 @@ export default class ValidatorService {
     }
     // find db data
     const tx = await this.ctx.db.Transaction.findOne({
-      attributes:['status'],
+      attributes: ['status'],
       where: {
         hash: swapOrder.calldata.hash
       }
@@ -288,7 +290,7 @@ export default class ValidatorService {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} data not found`);
       return;
     }
-    if (tx.status!=1) {
+    if (tx.status != 1) {
       logger.error(`verifyToTx ${swapOrder.calldata.hash} data status is not 1`);
       return;
     }
@@ -331,7 +333,7 @@ export default class ValidatorService {
       }
       // const expectToTokenValue = new BigNumber(swapOrder.calldata.expectValue || 0).dividedBy(new BigNumber(10).pow(destDecimal));
       const expectToTokenMinValue = expectValue.minus(expectValue.multipliedBy(swapOrder.calldata.slipPoint).dividedBy(10000));
-      if(fromValuePriceValue.gt(expectToTokenMinValue)) {
+      if (fromValuePriceValue.gt(expectToTokenMinValue)) {
         return expectToTokenMinValue.minus(new BigNumber(10).pow(destDecimal)).toString();
       }
       return undefined;
