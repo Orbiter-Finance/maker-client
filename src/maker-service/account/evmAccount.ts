@@ -1,5 +1,5 @@
 import { LoggerService } from './../utils/logger';
-import { BigNumber, ethers, providers, Wallet } from 'ethers';
+import { ethers, providers, Wallet } from 'ethers';
 import { ERC20Abi } from '../abi';
 import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
 import OrbiterAccount from './orbiterAccount';
@@ -7,6 +7,7 @@ import { getNonceCacheStore } from '../utils/caching';
 import NonceManager from '../lib/nonce';
 import { isEmpty } from 'orbiter-chaincore/src/utils/core';
 import config from '../config/config'
+import BigNumber from 'bignumber.js';
 
 export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends OrbiterAccount {
@@ -74,6 +75,7 @@ export default class EVMAccount extends OrbiterAccount {
   }
   async getGasPrice(transactionRequest: ethers.providers.TransactionRequest = {}) {
     try {
+      const chainCustomConfig = config[this.chainConfig.internalId];
       if (transactionRequest.type === 2) {
         if (!transactionRequest.maxFeePerGas || !transactionRequest.maxPriorityFeePerGas) {
           this.logger.info(`sendTransaction exec 4 getFeeData:`);
@@ -84,12 +86,18 @@ export default class EVMAccount extends OrbiterAccount {
             transactionRequest.maxPriorityFeePerGas =
               feeData.maxPriorityFeePerGas.toHexString();
           }
+          if (chainCustomConfig.maxGasPrice) {
+            transactionRequest.maxFeePerGas = ethers.BigNumber.from(chainCustomConfig.maxGasPrice);
+          }
           this.logger.info(`sendTransaction exec 4 getFeeData ok:`, {
             maxFeePerGas: transactionRequest.maxFeePerGas,
             maxPriorityFeePerGas: transactionRequest.maxPriorityFeePerGas
           });
         }
-      } else {
+        delete transactionRequest.gasPrice;
+      }
+
+      if (transactionRequest.type === 0) {
         if (!transactionRequest.gasPrice) {
           this.logger.info(`sendTransaction exec 4 getGasPrice:${transactionRequest.gasPrice}`);
           const feeData = await this.provider.getFeeData();
@@ -101,53 +109,56 @@ export default class EVMAccount extends OrbiterAccount {
           // tx.gasPrice = await this.wallet.getGasPrice();
           this.logger.info(`sendTransaction exec 4 getGasPrice ok:${transactionRequest.gasPrice}`);
         }
+        this.logger.info(`before 1 gasPrice:${String(transactionRequest.gasPrice)}`);
+        if (chainCustomConfig) {
+          const gasPrice = ethers.BigNumber.from(String(transactionRequest.gasPrice || 0));
+          const minPrice = ethers.BigNumber.from(chainCustomConfig.minGasPrice || 0);
+          if (gasPrice.lt(minPrice)) {
+            transactionRequest.gasPrice = minPrice;
+          }
+          this.logger.info(`before 2 gasPrice:${String(transactionRequest.gasPrice)}`);
+          const gasPriceMultiple = new BigNumber(chainCustomConfig.swapAnswerGasPriceMultiple);
+          if (gasPriceMultiple.gt(0)) {
+            const newGasPrice = new BigNumber(gasPrice.toString()).multipliedBy(gasPriceMultiple)
+            transactionRequest.gasPrice = ethers.BigNumber.from(newGasPrice.toFixed(0));
+          }
+          this.logger.info(`after 3 gasPrice:${String(transactionRequest.gasPrice)}`);
+        }
       }
-    } catch ({ message }) {
-      throw new Error(
-        `=> getGasPrice error:${message}`
-      );
+    } catch (error) {
+      console.log('GetGasPrice error:', error);
     }
-
-    this.logger.info(`before 1 gasPrice:${String(transactionRequest.gasPrice)}`);
-    const chainCustomConfig = config[this.chainConfig.internalId];
-    const gasPrice = ethers.BigNumber.from(String(transactionRequest.gasPrice));
-    const minPrice = ethers.BigNumber.from(chainCustomConfig.minGasPrice || 0);
-    if (gasPrice.lt(minPrice)) {
-      transactionRequest.gasPrice = minPrice;
-    }
-    this.logger.info(`before 2 gasPrice:${String(transactionRequest.gasPrice)}`);
-    const gasPriceMultiple = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasPriceMultiple || 0);
-    if (gasPriceMultiple.gt(0)) {
-      transactionRequest.gasPrice = gasPrice.mul(gasPriceMultiple);
-    }
-    this.logger.info(`after 3 gasPrice:${String(transactionRequest.gasPrice)}`);
     return transactionRequest;
   }
   async getGasLimit(transactionRequest: ethers.providers.TransactionRequest = {}) {
-    if (!transactionRequest.gasLimit || isEmpty(transactionRequest.gasLimit)) {
-      let gasLimit: number | BigNumber = 100000;
-      try {
-        this.logger.info(`sendTransaction exec 5 estimateGas:`);
-        gasLimit = await this.provider.estimateGas(
-          transactionRequest
-        );
-        console.log(`${this.chainConfig.name} get gasLimit ${(gasLimit).toString()}`)
-        gasLimit = Number((gasLimit.toNumber() * 2).toFixed(0));
-      } catch ({ message }) {
-        throw new Error(
-          `=> estimateGas limit error:${message}`
-        );
+    try {
+      if (!transactionRequest.gasLimit || isEmpty(transactionRequest.gasLimit)) {
+        let gasLimit: number | ethers.BigNumber = 100000;
+        try {
+          this.logger.info(`sendTransaction exec 5 estimateGas:`);
+          gasLimit = await this.provider.estimateGas(
+            transactionRequest
+          );
+          console.log(`${this.chainConfig.name} get gasLimit ${(gasLimit).toString()}`)
+        } catch ({ message }) {
+          throw new Error(
+            `=> estimateGas limit error:${message}`
+          );
+        }
+        transactionRequest.gasLimit = ethers.utils.hexlify(gasLimit);
       }
-      transactionRequest.gasLimit = ethers.utils.hexlify(gasLimit);
+      const chainCustomConfig = config[this.chainConfig.internalId];
+      // let gasLimit = ethers.BigNumber.from(0);
+      this.logger.info(`before gasLimit:${transactionRequest.gasLimit.toString()}`);
+      if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimitMultiple && transactionRequest.gasLimit) {
+        // gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
+        const newGasLimit = new BigNumber(transactionRequest.gasLimit.toString()).multipliedBy(chainCustomConfig.swapAnswerGasLimitMultiple)
+        transactionRequest.gasLimit = ethers.BigNumber.from(newGasLimit.toFixed(0));
+      }
+      this.logger.info(`after gasLimit:${transactionRequest.gasLimit.toString()}`);
+    } catch (error) {
+      console.log('GetGasLimit error:', error);
     }
-    const chainCustomConfig = config[this.chainConfig.internalId];
-    // let gasLimit = ethers.BigNumber.from(0);
-    this.logger.info(`before gasLimit:${transactionRequest.gasLimit.toString()}`);
-    if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimitMultiple && transactionRequest.gasLimit) {
-      // gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
-      transactionRequest.gasLimit = ethers.BigNumber.from(transactionRequest.gasLimit.toString()).mul(Number(chainCustomConfig.swapAnswerGasLimitMultiple));
-    }
-    this.logger.info(`after gasLimit:${transactionRequest.gasLimit.toString()}`);
     return transactionRequest;
   }
   async transfer(
@@ -186,33 +197,29 @@ export default class EVMAccount extends OrbiterAccount {
     this.logger.info(`sendTransaction exec 1:`, { to });
     let chainId: number | undefined =
       transactionRequest.chainId || RPC_NETWORK[this.internalId];
-    let tx: ethers.providers.TransactionRequest = {};
     if (!chainId) {
       chainId = await this.wallet.getChainId();
       RPC_NETWORK[this.internalId] = chainId;
     }
+    const tx: ethers.providers.TransactionRequest = Object.assign(
+      {
+        chainId,
+      },
+      transactionRequest,
+      {
+        from: this.wallet.address,
+        to,
+      }
+    );
     this.logger.info(`sendTransaction exec 2:`, { to });
     try {
-      try {
-        // nonce manager
-        tx = Object.assign(
-          {
-            chainId,
-          },
-          transactionRequest,
-          {
-            from: this.wallet.address,
-            to,
-          }
-        );
-        this.logger.info(`sendTransaction exec getPrice:`, { tx });
-        this.getGasPrice(tx);
-        this.logger.info(`sendTransaction exec gasLimit:`, { tx });
-        this.getGasLimit(tx);
-      } catch (error: any) {
-        this.logger.error(`evm sendTransaction before error`, error);
-        throw new Error(`=>sendTransaction before error:${error.message}`);
-      }
+      // nonce manager
+      await this.getGasPrice(tx);
+      this.logger.info(`sendTransaction exec getPrice:`, { tx });
+      await this.getGasLimit(tx);
+      this.logger.info(`sendTransaction exec gasLimit:`, { tx });
+      // this.logger.error(`evm sendTransaction before error`, error);
+      // throw new Error(`=>sendTransaction before error:${error.message}`);
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
       const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
       try {
@@ -255,7 +262,7 @@ export default class EVMAccount extends OrbiterAccount {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
     return await erc20.allowance(this.wallet.address, spender);
   }
-  public async getBalance(address?: string, token?: string): Promise<BigNumber> {
+  public async getBalance(address?: string, token?: string): Promise<ethers.BigNumber> {
     if (token && token != this.chainConfig.nativeCurrency.address) {
       // is native
       // const chainId = await this.wallet.getChainId();
@@ -265,7 +272,7 @@ export default class EVMAccount extends OrbiterAccount {
       return this.provider.getBalance(address || this.wallet.address);
     }
   }
-  public async getTokenBalance(token: string, address?: string): Promise<BigNumber> {
+  public async getTokenBalance(token: string, address?: string): Promise<ethers.BigNumber> {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider);
     return erc20.balanceOf(address || this.wallet.address);
   }

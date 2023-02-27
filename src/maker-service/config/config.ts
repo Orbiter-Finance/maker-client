@@ -7,55 +7,65 @@ export default {
     // swapAnswerGasLimit: 100000,
     swapAnswerGasLimitMultiple: 2,
     swapAnswerGasPriceMultiple: 1,
+    maxGasPrice: 85000000000,
+  },
+  2: {
+    maxTxCount: 10,
+    // swapAnswerGasLimit: 2000000,
+    swapAnswerGasLimitMultiple: 1.5,
+    maxGasPrice: 180000000000
+  },
+  22: {
+    maxTxCount: 10,
+    // swapAnswerGasLimit: 2000000,
+    swapAnswerGasLimitMultiple: 1.5,
+    maxGasPrice: 180000000000
   },
   5: {
     maxTxCount: 10,
     // swapAnswerGasLimit: 100000,
     swapAnswerGasLimitMultiple: 2,
     swapAnswerGasPriceMultiple: 1,
+    maxGasPrice: 85000000000,
   },
   6: {
     maxTxCount: 10,
     // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 2,
-    minGasPrice:100000000000,
+    minGasPrice: 100000000000,
+    maxGasPrice: 180000000000
   },
   66: {
     maxTxCount: 10,
     // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 2,
-    minGasPrice:100000000000,
+    minGasPrice: 100000000000,
+    maxGasPrice: 180000000000
   },
   15: {
     maxTxCount: 10,
     // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 1.1,
-    minGasPrice:5500000000,
+    minGasPrice: 5500000000,
   },
   515: {
     maxTxCount: 10,
     // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 1.1,
-    minGasPrice:5500000000,
+    minGasPrice: 5500000000,
   },
   7: {
     maxTxCount: 10,
     // swapAnswerGasLimit: 100000,
+    maxGasPrice: 180000000000
   },
   77: {
     maxTxCount: 10,
+    maxGasPrice: 180000000000
     // swapAnswerGasLimit: 100000,
+
   },
-  2: {
-    // maxTxCount: 10,
-    // swapAnswerGasLimit: 2000000,
-    swapAnswerGasLimitMultiple: 1.5,
-  },
-  22: {
-    maxTxCount: 10,
-    // swapAnswerGasLimit: 2000000,
-    swapAnswerGasLimitMultiple: 1.5,
-  },
+
   development: {
     dialect: 'mysql',
     host: vars['MYSQL_DB_HOST'] || 'localhost',
@@ -72,7 +82,7 @@ export default {
     username: vars['MYSQL_DB_USERNAME'] || 'root',
     password: vars['MYSQL_DB_PASSWORD'] || 'root',
     host: vars['MYSQL_DB_HOST'] || 'localhost',
-    logging: true,
+    logging: false,
     port: Number(vars['MYSQL_DB_PORT'] || '3306'),
     timezone: '+00:00',
   },

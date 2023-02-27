@@ -136,10 +136,7 @@ export default class Sequencer {
             const value = await this.ctx.validator.verifyXVMCrossToken(order);
             if (value && !isEmpty(value)) {
               order.value = String(value);
-              const veifyToRes = await this.ctx.validator.verifyToTx(order);
-              if (veifyToRes) {
-                matchOrders.push(order);
-              }
+              matchOrders.push(order);
             } else {
               pendingAllTxs.push(order);
             }
@@ -153,6 +150,7 @@ export default class Sequencer {
             hash: order.calldata.hash,
             error
           });
+          logger.error(error);
         }
       }
       logger.info(
@@ -293,7 +291,9 @@ export default class Sequencer {
             logger.error(`${order.calldata.hash} transfer Insufficient funds`);
             continue;
           }
-          makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
+          if (makerBalance[sendToken]) {
+            makerBalance[sendToken] = makerBalance[sendToken].sub(sendValue);
+          }
         } catch (error) {
           logger.warn(
             `${chainId} get maker balance error ${senderWallet} - ${sendToken}`,
