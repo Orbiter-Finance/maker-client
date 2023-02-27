@@ -33,34 +33,39 @@ export default class OrbiterXAccount extends EVMAccount {
     if ((chainConfig['features'] || []).includes("EIP1559")) {
       txType = 2;
     }
-    const chainCustomConfig = config[chainConfig.internalId];
-    let gasLimit = ethers.BigNumber.from(0);
-    if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimit) {
-      gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
-    }
+
+    transactionRequest.from = this.wallet.address;
+    transactionRequest.to = chainConfig.xvmList[0];
+
     this.logger.info("exec swapOK 4")
+    transactionRequest.type = txType;
     if (typeof calldata === 'string') {
+      transactionRequest.data = calldata;
       this.logger.info("exec swapOK single ", { txType })
-      const tx = await this.sendTransaction(this.contractAddress, Object.assign({
-        data: calldata,
-        gasLimit: gasLimit,
-        type: txType,
-      }, transactionRequest));
-      return tx;
     } else if (Array.isArray(calldata)) {
       const ifa = new ethers.utils.Interface(OrbiterXAbi);
       const data = ifa.encodeFunctionData('multicall', [calldata]);
       this.logger.info("exec swapOK Multiple ", { txType })
-      const tx = await this.sendTransaction(this.contractAddress, Object.assign({
-        data,
-        gasLimit: gasLimit.mul(calldata.length),
-        type: txType
-      }, transactionRequest));
+      transactionRequest.data = data;
+      const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
       this.logger.info("exec swapOK Multiple success", { tx })
-      return tx;
     } else {
       this.logger.error('SwapOK Params error', { calldata, transactionRequest })
     }
+    if (!transactionRequest.gasLimit) {
+      const gasLimit = await this.provider.estimateGas({
+        from: transactionRequest.from,
+        to: transactionRequest.to,
+        data: transactionRequest.data,
+        value: transactionRequest.value
+      });
+      transactionRequest.gasLimit = gasLimit;
+    }
+    this.logger.info("exec swapOK ready send ", { transactionRequest })
+
+    const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
+    this.logger.info("exec swapOK  send after", { transactionRequest })
+    return tx;
   }
   swapOkEncodeABI(
     tradeId: string,
@@ -79,6 +84,7 @@ export default class OrbiterXAccount extends EVMAccount {
     ]);
     return data;
   }
+
   async multicall(params: string[], transactionRequest: ethers.providers.TransactionRequest = {}) {
     // send 1
     const ifa = new ethers.utils.Interface(OrbiterXAbi);
