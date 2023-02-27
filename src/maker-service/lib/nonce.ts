@@ -17,11 +17,14 @@ export default class NonceManager {
             const nonce = await this.store.get("nonce") || 0;
             const initNonce = option.initNonce || 0;
             const lastNonce = Math.max(refreshNonce, nonce, initNonce);
-            if(lastNonce!=nonce) {
+            if (lastNonce != nonce) {
                 await this.store.set('nonce', lastNonce);
             }
         });
         this.autoUpdate();
+    }
+    public async setNonce(nonce: number) {
+        await this.store.set('nonce', nonce);
     }
     public async autoUpdate() {
         await this.mutex.waitForUnlock();
@@ -32,7 +35,7 @@ export default class NonceManager {
             const refreshNonce = await this.refreshNonceFun()
             if (refreshNonce > nonce) {
                 nonce = refreshNonce;
-                await this.store.set("nonce", refreshNonce);
+                await this.setNonce(refreshNonce);
             }
         }
         setTimeout(this.autoUpdate.bind(this), 1000 * 60);
@@ -44,7 +47,7 @@ export default class NonceManager {
                 try {
                     const networkNonce = await this.refreshNonceFun();
                     let nonce = await this.store.get('nonce');
-                    if (networkNonce>nonce) {
+                    if (networkNonce > nonce) {
                         nonce = networkNonce;
                         await this.store.set("nonce", nonce);
                     } else {
@@ -54,11 +57,11 @@ export default class NonceManager {
                         nonce: nonce,
                         submit: async () => {
                             await this.store.set("lastUsage", Date.now());
-                            await this.store.set("nonce", nonce + 1);
+                            await this.setNonce(nonce + 1);
                             release();
                         },
                         rollback: async () => {
-                            await this.store.set("nonce", nonce);
+                            await this.setNonce(nonce);
                             release();
                         }
                     })

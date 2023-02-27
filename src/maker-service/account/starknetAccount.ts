@@ -11,7 +11,7 @@ export default class StarknetAccount extends OrbiterAccount {
     constructor(
         protected internalId: number,
         protected privateKey: string,
-        address:string
+        address: string
     ) {
         super(internalId, privateKey);
         // get address
@@ -96,9 +96,15 @@ export default class StarknetAccount extends OrbiterAccount {
             // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
             provider.waitForTransaction(executeHash.transaction_hash).then(async (tx) => {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
-            }, (tx) => {
-                this.logger.error(`waitForTransaction REJECT:`, { hash: executeHash.transaction_hash, ...tx });
-            }).catch(err=> {
+            }, (response) => {
+                const { tx_status, tx_failure_reason } = response;
+                if (tx_status === 'REJECTED' && tx_failure_reason.error_message.includes('Invalid transaction nonce. Expected: ')) {
+                    const nonce = tx_failure_reason.error_message.split('Expected: ')[1].split(',')[0];
+                    this.nonceManager.setNonce(nonce);
+                    this.logger.info(`Starknet reset nonce:${nonce}`);
+                }
+                this.logger.error(`waitForTransaction reject:`, { hash: executeHash.transaction_hash, ...response });
+            }).catch(err => {
                 this.logger.error(`waitForTransaction error:`, err);
             })
             submit()
@@ -109,7 +115,7 @@ export default class StarknetAccount extends OrbiterAccount {
                 value: ethers.BigNumber.from(value),
                 nonce: nonce,
             };
-        } catch (error:any) {
+        } catch (error: any) {
             this.logger.error(`rollback nonce:${error.message}`);
             rollback();
             throw error;
