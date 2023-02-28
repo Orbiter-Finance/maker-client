@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js';
 import { chains } from 'orbiter-chaincore/src/utils';
 import { ethers } from 'ethers';
 import { OrbiterXAbi } from '../abi';
@@ -47,10 +48,6 @@ export default class OrbiterXAccount extends EVMAccount {
       const data = ifa.encodeFunctionData('multicall', [calldata]);
       this.logger.info("exec swapOK Multiple ", { txType })
       transactionRequest.data = data;
-      const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
-      this.logger.info("exec swapOK Multiple success", { tx })
-    } else {
-      this.logger.error('SwapOK Params error', { calldata, transactionRequest })
     }
     if (!transactionRequest.gasLimit) {
       try {
@@ -63,6 +60,17 @@ export default class OrbiterXAccount extends EVMAccount {
         transactionRequest.gasLimit = gasLimit;
       } catch (error) {
         this.logger.error(`OrbiterX SwapAnswer estimateGas error`, error);
+        const chainCustomConfig = config[this.chainConfig.internalId];
+        let gasLimit  = ethers.BigNumber.from(100000);
+        if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimit) {
+          if (Array.isArray(calldata)) {
+            const addGas = new BigNumber(chainCustomConfig.swapAnswerGasLimit).multipliedBy(calldata.length)
+            gasLimit = ethers.BigNumber.from(addGas.toFixed(0));
+          } else {
+            gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
+          }
+        };
+        transactionRequest.gasLimit = gasLimit;
       }
     }
     this.logger.info("exec swapOK ready send ", { transactionRequest })

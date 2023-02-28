@@ -63,6 +63,7 @@ export default class EVMAccount extends OrbiterAccount {
         transactionRequest.gasLimit = gasLimit;
       } catch (error) {
         this.logger.error(`evm transferToken estimateGas error`, error);
+        transactionRequest.gasLimit = ethers.BigNumber.from(100000);
       }
     }
     const tx = await this.sendTransaction(token, transactionRequest);
@@ -119,7 +120,7 @@ export default class EVMAccount extends OrbiterAccount {
             transactionRequest.gasPrice = minPrice;
           }
           this.logger.info(`before 2 gasPrice:${String(transactionRequest.gasPrice)}`);
-          const gasPriceMultiple = new BigNumber(chainCustomConfig.swapAnswerGasPriceMultiple);
+          const gasPriceMultiple = new BigNumber(chainCustomConfig.gasPriceMultiple);
           if (gasPriceMultiple.gt(0)) {
             const newGasPrice = new BigNumber(gasPrice.toString()).multipliedBy(gasPriceMultiple)
             transactionRequest.gasPrice = ethers.BigNumber.from(newGasPrice.toFixed(0));
@@ -152,9 +153,9 @@ export default class EVMAccount extends OrbiterAccount {
       const chainCustomConfig = config[this.chainConfig.internalId];
       // let gasLimit = ethers.BigNumber.from(0);
       this.logger.info(`before gasLimit:${transactionRequest.gasLimit.toString()}`);
-      if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimitMultiple && transactionRequest.gasLimit) {
+      if (chainCustomConfig && chainCustomConfig.gasLimitMultiple && transactionRequest.gasLimit) {
         // gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
-        const newGasLimit = new BigNumber(transactionRequest.gasLimit.toString()).multipliedBy(chainCustomConfig.swapAnswerGasLimitMultiple)
+        const newGasLimit = new BigNumber(transactionRequest.gasLimit.toString()).multipliedBy(chainCustomConfig.gasLimitMultiple)
         transactionRequest.gasLimit = ethers.BigNumber.from(newGasLimit.toFixed(0));
       }
       this.logger.info(`after gasLimit:${transactionRequest.gasLimit.toString()}`);
@@ -182,6 +183,7 @@ export default class EVMAccount extends OrbiterAccount {
         transactionRequest.gasLimit = gasLimit;
       } catch (error) {
         this.logger.error(`evm transfer estimateGas error`, error);
+        transactionRequest.gasLimit = ethers.BigNumber.from(100000);
       }
 
     }
