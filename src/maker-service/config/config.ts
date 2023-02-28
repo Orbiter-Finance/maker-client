@@ -37,12 +37,14 @@ export default {
   6: {
     maxTxCount: 10,
     swapAnswerGasPriceMultiple: 2,
+    swapAnswerGasLimitMultiple: 1.5,
     minGasPrice: 100000000000,
     maxGasPrice: 180000000000
   },
   66: {
     maxTxCount: 10,
     swapAnswerGasPriceMultiple: 2,
+    swapAnswerGasLimitMultiple: 1.5,
     minGasPrice: 100000000000,
     maxGasPrice: 180000000000
   },
