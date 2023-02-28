@@ -53,16 +53,19 @@ export default class OrbiterXAccount extends EVMAccount {
       this.logger.error('SwapOK Params error', { calldata, transactionRequest })
     }
     if (!transactionRequest.gasLimit) {
-      const gasLimit = await this.provider.estimateGas({
-        from: transactionRequest.from,
-        to: transactionRequest.to,
-        data: transactionRequest.data,
-        value: transactionRequest.value
-      });
-      transactionRequest.gasLimit = gasLimit;
+      try {
+        const gasLimit = await this.provider.estimateGas({
+          from: transactionRequest.from,
+          to: transactionRequest.to,
+          data: transactionRequest.data,
+          value: transactionRequest.value
+        });
+        transactionRequest.gasLimit = gasLimit;
+      } catch (error) {
+        this.logger.error(`OrbiterX SwapAnswer estimateGas error`, error);
+      }
     }
     this.logger.info("exec swapOK ready send ", { transactionRequest })
-
     const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
     this.logger.info("exec swapOK  send after", { transactionRequest })
     return tx;
