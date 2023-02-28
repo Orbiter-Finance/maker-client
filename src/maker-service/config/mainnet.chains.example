@@ -21,6 +21,7 @@
     "watch": ["rpc", "api"],
     "contracts": ["0xd9d74a29307cc6fc8bf424ee4217f1a587fbc8dc"],
     "xvmList": [],
+    "features": ["EIP1559", "EVM"],
     "tokens": [
       {
         "name": "Dai Stablecoin",
@@ -63,6 +64,7 @@
     ],
     "watch": ["rpc", "api"],
     "xvmList": [],
+    "features": ["EIP1559", "EVM"],
     "contracts": ["0xd9d74a29307cc6fc8bf424ee4217f1a587fbc8dc"],
     "tokens": [
       {
