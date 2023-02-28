@@ -4,66 +4,67 @@ const vars = process.env;
 export default {
   1: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     swapAnswerGasLimitMultiple: 2,
     swapAnswerGasPriceMultiple: 1,
     maxGasPrice: 85000000000,
   },
   2: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 2000000,
     swapAnswerGasLimitMultiple: 1.5,
     maxGasPrice: 180000000000
   },
   22: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 2000000,
     swapAnswerGasLimitMultiple: 1.5,
+    maxGasPrice: 180000000000
+  },
+  16: {
+    maxTxCount: 10,
+    swapAnswerGasLimitMultiple: 1,
+    maxGasPrice: 180000000000
+  },
+  516: {
+    maxTxCount: 10,
+    swapAnswerGasLimitMultiple: 1,
     maxGasPrice: 180000000000
   },
   5: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     swapAnswerGasLimitMultiple: 2,
     swapAnswerGasPriceMultiple: 1,
     maxGasPrice: 85000000000,
   },
   6: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 2,
     minGasPrice: 100000000000,
     maxGasPrice: 180000000000
   },
   66: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 2,
     minGasPrice: 100000000000,
     maxGasPrice: 180000000000
   },
   15: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 1.1,
     minGasPrice: 5500000000,
+    maxGasPrice: 80000000000
   },
   515: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     swapAnswerGasPriceMultiple: 1.1,
     minGasPrice: 5500000000,
+    maxGasPrice: 80000000000
   },
   7: {
     maxTxCount: 10,
-    // swapAnswerGasLimit: 100000,
     maxGasPrice: 180000000000
   },
   77: {
     maxTxCount: 10,
     maxGasPrice: 180000000000
-    // swapAnswerGasLimit: 100000,
-
   },
 
   development: {

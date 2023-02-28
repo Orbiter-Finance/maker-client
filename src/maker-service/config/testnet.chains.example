@@ -215,6 +215,7 @@
         "address": "0x0000000000000000000000000000000000000000"
       },
       "watch": ["rpc", "api"],
+      "features": ["EIP1559", "EVM"],
       "contracts": ["0x40eC19690ebEd534e9b9C58e341727028cF143c0"],
       "xvmList": ["0x2096D6DD537CF7A7ee1662BBbEc8C2809fCf2647"],
       "tokens": [

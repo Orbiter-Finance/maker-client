@@ -96,11 +96,11 @@ export default class StarknetAccount extends OrbiterAccount {
             // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
             provider.waitForTransaction(executeHash.transaction_hash).then(async (tx) => {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
-            }, ({response}) => {
+            }, ({ response }) => {
                 const { tx_status, tx_failure_reason } = response;
                 if (tx_status === 'REJECTED' && tx_failure_reason.error_message.includes('Invalid transaction nonce. Expected: ')) {
                     const nonce = tx_failure_reason.error_message.split('Expected: ')[1].split(',')[0];
-                    this.nonceManager.setNonce(nonce);
+                    this.nonceManager.setNonce(Number(nonce));
                     this.logger.info(`Starknet reset nonce:${nonce}`);
                 }
                 this.logger.error(`waitForTransaction reject:`, { hash: executeHash.transaction_hash, response });
