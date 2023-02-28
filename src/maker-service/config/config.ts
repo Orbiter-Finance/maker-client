@@ -10,12 +10,12 @@ export default {
   },
   2: {
     maxTxCount: 10,
-    swapAnswerGasLimitMultiple: 1.5,
+    swapAnswerGasLimitMultiple: 1.1,
     maxGasPrice: 180000000000
   },
   22: {
     maxTxCount: 10,
-    swapAnswerGasLimitMultiple: 1.5,
+    swapAnswerGasLimitMultiple: 1.1,
     maxGasPrice: 180000000000
   },
   16: {
