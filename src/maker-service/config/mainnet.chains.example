@@ -26,7 +26,7 @@
             "0xd9d74a29307cc6fc8bf424ee4217f1a587fbc8dc"
         ],
         "xvmList":[
-
+            "0x752bc92211d1ecbb31f84e57c9dfc39a15df9cfa"
         ],
         "features":[
             "EIP1559",
@@ -77,7 +77,7 @@
             "api"
         ],
         "xvmList":[
-
+            "0x752bc92211d1ecbb31f84e57c9dfc39a15df9cfa"
         ],
         "features":[
             "EIP1559",
@@ -218,7 +218,7 @@
             "0xd9d74a29307cc6fc8bf424ee4217f1a587fbc8dc"
         ],
         "xvmList":[
-
+            "0x752bc92211d1ecbb31f84e57c9dfc39a15df9cfa"
         ],
         "features":[
             "EIP1559",
@@ -277,7 +277,7 @@
             "0xd9d74a29307cc6fc8bf424ee4217f1a587fbc8dc"
         ],
         "xvmList":[
-
+            "0x752bc92211d1ecbb31f84e57c9dfc39a15df9cfa"
         ],
         "debug":false,
         "tokens":[
