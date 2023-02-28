@@ -53,16 +53,18 @@ export default class EVMAccount extends OrbiterAccount {
     transactionRequest.from = this.wallet.address;
     // get erc20 getLimit
     if (!transactionRequest.gasLimit) {
-      const gasLimit = await this.provider.estimateGas({
-        from: transactionRequest.from,
-        to: token,
-        data,
-        value: transactionRequest.value
-      });
-      console.log('erc20 estimateGas:', gasLimit);
-      transactionRequest.gasLimit = gasLimit;
+      try {
+        const gasLimit = await this.provider.estimateGas({
+          from: transactionRequest.from,
+          to: token,
+          data,
+          value: transactionRequest.value
+        });
+        transactionRequest.gasLimit = gasLimit;
+      } catch (error) {
+        this.logger.error(`evm transferToken estimateGas error`, error);
+      }
     }
-
     const tx = await this.sendTransaction(token, transactionRequest);
     return {
       hash: tx.hash,
@@ -171,13 +173,17 @@ export default class EVMAccount extends OrbiterAccount {
     transactionRequest.from = this.wallet.address;
     // get getLimit
     if (!transactionRequest.gasLimit) {
-      const gasLimit = await this.provider.estimateGas({
-        from: transactionRequest.from,
-        to: transactionRequest.to,
-        value: transactionRequest.value
-      });
-      console.log('main transfer estimateGas:', gasLimit);
-      transactionRequest.gasLimit = gasLimit;
+      try {
+        const gasLimit = await this.provider.estimateGas({
+          from: transactionRequest.from,
+          to: transactionRequest.to,
+          value: transactionRequest.value
+        });
+        transactionRequest.gasLimit = gasLimit;
+      } catch (error) {
+        this.logger.error(`evm transfer estimateGas error`, error);
+      }
+
     }
 
     const tx = await this.sendTransaction(to, transactionRequest);

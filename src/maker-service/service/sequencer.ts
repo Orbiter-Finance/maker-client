@@ -129,6 +129,13 @@ export default class Sequencer {
           }
           if (!this.ctx.validator.checkSenderPrivateKey(order.from)) {
             pendingAllTxs.push(order);
+            this.ctx.logger.error(`${order.from} Please start the private key injection program`);
+            continue;
+          }
+          if (
+            [SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)
+          ) {
+            matchOrders.push(order);
             continue;
           }
           if (order.type === SwapOrderType.CrossToken) {
@@ -140,10 +147,6 @@ export default class Sequencer {
             } else {
               pendingAllTxs.push(order);
             }
-          } else if (
-            [SwapOrderType.UA, SwapOrderType.CrossAddr].includes(order.type)
-          ) {
-            matchOrders.push(order);
           }
         } catch (error) {
           logger.info(`exec submit before order error`, {
@@ -154,7 +157,7 @@ export default class Sequencer {
         }
       }
       logger.info(
-        `start after scan pendingTxs chainId: ${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`
+        `end scan pendingTxs chainId:${chainId},nowPendingCount:${this.pending[chainId].length}, pendingTxsCount: ${pendingTxs.length}, matchOrders:${matchOrders.length}`
       );
       if (matchOrders.length > 0) {
         logger.info(`exec submit before:${matchOrders.length}`);
