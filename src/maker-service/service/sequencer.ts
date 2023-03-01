@@ -1,3 +1,4 @@
+import { BigNumber } from 'bignumber.js';
 import { TransferResponse } from "../account/IAccount";
 import { isEmpty, equals, groupBy } from "orbiter-chaincore/src/utils/core";
 import dayjs from "dayjs";
@@ -12,6 +13,7 @@ import { TransactionResponse } from "../account/IAccount";
 import Caching from "../utils/caching";
 import { LoggerService } from "../utils/logger";
 import OrbiterAccount from "../account/orbiterAccount";
+import { getAmountToSend } from "../lib/oldCore";
 const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
@@ -370,15 +372,18 @@ export default class Sequencer {
         : sendMainTokenValue;
     });
     let contractTransfer: Boolean = false;
-    if (passOrders.length === 1) {
-      if (
-        [SwapOrderType.CrossAddr, SwapOrderType.CrossToken].includes(
-          passOrders[0].type
-        )
-      ) {
-        contractTransfer = ValidatorService.isSupportXVM(chainId);
-      }
-    } else {
+    // if (passOrders.length === 1) {
+    //   if (
+    //     [SwapOrderType.CrossAddr, SwapOrderType.CrossToken].includes(
+    //       passOrders[0].type
+    //     )
+    //   ) {
+    //     contractTransfer = ValidatorService.isSupportXVM(chainId);
+    //   }
+    // } else {
+    //   contractTransfer = ValidatorService.isSupportXVM(chainId);
+    // }
+    if (passOrders.length >= 3) {
       contractTransfer = ValidatorService.isSupportXVM(chainId);
     }
     logger.info(`sequencer get ready submit`, {
@@ -410,7 +415,6 @@ export default class Sequencer {
           }
         );
         logger.info("submit xvm step 6-1 wait");
-        // submitTx && await submitTx.wait();
       } catch (error) {
         isError = true;
         passOrders[0].error = error;
@@ -467,13 +471,26 @@ export default class Sequencer {
         const transferParams =
           (await account.sendCollectionGetParameters(order)) || {};
         try {
+          // send Value + nonce
+          let sendValue = order.value;
+          if (order.type === SwapOrderType.CrossToken) {
+            const fromToken = chains.getTokenByChain(Number(order.calldata.chainId), order.calldata.token);
+            if (!fromToken) {
+              throw new Error(`fromToken not found`);
+            }
+            const response = getAmountToSend(order.calldata.chainId, fromToken.decimals, 0, 0, order.chainId, sendValue, order.calldata.nonce);
+            if (response?.error || !response?.state) {
+              throw new Error('send before getAmountToSend fail');
+            }
+            sendValue = new BigNumber(response.tAmount || 0).toFixed(0);
+          }
           if (chains.inValidMainToken(chainId, order.token)) {
             logger.info("submit step 6-2-1-1", {
               to: order.to,
-              value: order.value,
+              value: sendValue,
               txType
             });
-            submitTx = await account.transfer(order.to, order.value, {
+            submitTx = await account.transfer(order.to, sendValue, {
               type: txType,
               ...transferParams
             });
@@ -482,13 +499,13 @@ export default class Sequencer {
             logger.info("submit step 6-2-1-2", {
               token: order.token,
               to: order.to,
-              value: order.value,
+              value: sendValue,
               txType
             });
             submitTx = await account.transferToken(
               order.token,
               order.to,
-              order.value,
+              sendValue,
               {
                 type: txType,
                 ...transferParams
