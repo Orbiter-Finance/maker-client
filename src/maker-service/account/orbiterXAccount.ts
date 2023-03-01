@@ -61,14 +61,22 @@ export default class OrbiterXAccount extends EVMAccount {
         transactionRequest.gasLimit = gasLimit;
       } catch (error) {
         this.logger.error(`OrbiterX SwapAnswer estimateGas error`, error);
-        let gasLimit  = ethers.BigNumber.from(100000);
-        if (chainCustomConfig.swapAnswerGasLimit) {
-          const addGas = new BigNumber(chainCustomConfig.swapAnswerGasLimit).multipliedBy(Array.isArray(calldata) ? calldata.length : 1)
-          gasLimit = ethers.BigNumber.from(addGas.toFixed(0));
-        };
-        transactionRequest.gasLimit = gasLimit;
       }
     }
+    if (!transactionRequest.gasLimit) {
+      // limit min
+      let gasLimit = ethers.BigNumber.from(100000);
+      if (chainCustomConfig.swapAnswerGasLimit) {
+        if (new BigNumber(gasLimit.toString()).lt(chainCustomConfig.swapAnswerGasLimit)) {
+          gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit)
+        }
+      }
+      if (Array.isArray(calldata)) {
+        gasLimit = ethers.BigNumber.from(new BigNumber(gasLimit.toString()).multipliedBy(calldata.length).toFixed(0));
+      }
+      transactionRequest.gasLimit = gasLimit;
+    }
+
     // gasLimitMultiple
     if (chainCustomConfig.gasLimitMultiple) {
       const newGasLimit = new BigNumber(transactionRequest.gasLimit.toString()).multipliedBy(chainCustomConfig.gasLimitMultiple)
