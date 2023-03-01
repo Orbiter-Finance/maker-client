@@ -49,6 +49,7 @@ export default class OrbiterXAccount extends EVMAccount {
       this.logger.info("exec swapOK Multiple ", { txType })
       transactionRequest.data = data;
     }
+    const chainCustomConfig = config[this.chainConfig.internalId] || {};
     if (!transactionRequest.gasLimit) {
       try {
         const gasLimit = await this.provider.estimateGas({
@@ -60,19 +61,20 @@ export default class OrbiterXAccount extends EVMAccount {
         transactionRequest.gasLimit = gasLimit;
       } catch (error) {
         this.logger.error(`OrbiterX SwapAnswer estimateGas error`, error);
-        const chainCustomConfig = config[this.chainConfig.internalId];
         let gasLimit  = ethers.BigNumber.from(100000);
-        if (chainCustomConfig && chainCustomConfig.swapAnswerGasLimit) {
-          if (Array.isArray(calldata)) {
-            const addGas = new BigNumber(chainCustomConfig.swapAnswerGasLimit).multipliedBy(calldata.length)
-            gasLimit = ethers.BigNumber.from(addGas.toFixed(0));
-          } else {
-            gasLimit = ethers.BigNumber.from(chainCustomConfig.swapAnswerGasLimit);
-          }
+        if (chainCustomConfig.swapAnswerGasLimit) {
+          const addGas = new BigNumber(chainCustomConfig.swapAnswerGasLimit).multipliedBy(Array.isArray(calldata) ? calldata.length : 1)
+          gasLimit = ethers.BigNumber.from(addGas.toFixed(0));
         };
         transactionRequest.gasLimit = gasLimit;
       }
     }
+    // gasLimitMultiple
+    if (chainCustomConfig.gasLimitMultiple) {
+      const newGasLimit = new BigNumber(transactionRequest.gasLimit.toString()).multipliedBy(chainCustomConfig.gasLimitMultiple)
+      transactionRequest.gasLimit = ethers.BigNumber.from(newGasLimit.toFixed(0));
+    }
+
     this.logger.info("exec swapOK ready send ", { transactionRequest })
     const tx = await this.sendTransaction(this.contractAddress, transactionRequest);
     this.logger.info("exec swapOK  send after", { transactionRequest })
