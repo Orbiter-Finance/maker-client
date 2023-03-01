@@ -109,18 +109,21 @@ export default class EVMAccount extends OrbiterAccount {
             this.logger.error(`sendTransaction exec 4 getGasPrice error:`, error);
             return ethers.BigNumber.from(0);
           })
-          // tx.gasPrice = await this.wallet.getGasPrice();
           this.logger.info(`sendTransaction exec 4 getGasPrice ok:${transactionRequest.gasPrice}`);
         }
         this.logger.info(`before 1 gasPrice:${String(transactionRequest.gasPrice)}`);
+        // limit min
         if (chainCustomConfig.minGasPrice) {
-          const gasPrice = ethers.BigNumber.from(String(transactionRequest.gasPrice));
-          const minPrice = ethers.BigNumber.from(chainCustomConfig.minGasPrice || 0);
-          if (gasPrice.lt(minPrice)) {
-            transactionRequest.gasPrice = minPrice;
+          if (new BigNumber(transactionRequest.gasPrice.toString()).lt(chainCustomConfig.minGasPrice)){
+            transactionRequest.gasPrice = ethers.BigNumber.from(chainCustomConfig.minGasPrice);
           }
           this.logger.info(`before 2 gasPrice:${String(transactionRequest.gasPrice)}`);
- 
+        }
+        // limit max
+        if (chainCustomConfig.maxGasPrice) {
+          if (new BigNumber(transactionRequest.gasPrice.toString()).gt(chainCustomConfig.maxGasPrice)){
+            transactionRequest.gasPrice = ethers.BigNumber.from(chainCustomConfig.maxGasPrice);
+          }
         }
         if (chainCustomConfig.gasPriceMultiple) {
           const newGasPrice = new BigNumber(transactionRequest.gasPrice.toString()).multipliedBy(chainCustomConfig.gasPriceMultiple)
@@ -193,8 +196,6 @@ export default class EVMAccount extends OrbiterAccount {
     try {
       // nonce manager
       await this.getGasPrice(tx);
-      this.logger.info(`sendTransaction exec getPrice:`, { tx });
-      this.logger.info(`sendTransaction exec gasLimit:`, { tx });
       // this.logger.error(`evm sendTransaction before error`, error);
       // throw new Error(`=>sendTransaction before error:${error.message}`);
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);
