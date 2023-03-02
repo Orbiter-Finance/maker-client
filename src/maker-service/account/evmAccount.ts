@@ -37,6 +37,7 @@ export default class EVMAccount extends OrbiterAccount {
     }, {
       store: getNonceCacheStore(`${internalId}-${this.wallet.address}`)
     });
+    this.nonceManager.forceRefreshNonce();
     this.logger = LoggerService.getLogger(internalId.toString());
   }
   async transferToken(

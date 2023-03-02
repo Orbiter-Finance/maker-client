@@ -24,6 +24,7 @@ export default class zkSyncAccount extends OrbiterAccount {
     }, {
       store: getNonceCacheStore(`${internalId}-${this.wallet.address}`)
     });
+    this.nonceManager.forceRefreshNonce();
   }
   async transferToken(
     token: string,

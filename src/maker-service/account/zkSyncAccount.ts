@@ -21,6 +21,7 @@ export default class ZKSyncAccount extends OrbiterAccount {
     }, {
       store: getNonceCacheStore(`${internalId}-${l1Wallet.address}`)
     });
+    this.nonceManager.forceRefreshNonce();
   }
   private async getL2Wallet() {
     let l1Provider;

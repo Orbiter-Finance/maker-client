@@ -24,6 +24,7 @@ export default class ZKSpaceAccount extends OrbiterAccount {
         }, {
             store: getNonceCacheStore(`${internalId}-${l1Wallet.address}`)
         });
+        this.nonceManager.forceRefreshNonce();
     }
     public async transfer(
         to: string,
