@@ -29,9 +29,9 @@ describe("ZkSync Test", function () {
         // console.log(result2, '==result2')
         // const fromNonce = getAmountFlag(3, "9980000010000000");
         // console.log(fromNonce, '==fromNonce')
-        const sendTx = await account.transferToken("0x0000000000000000000000000000000000000000", "0x8A3214F28946A797088944396c476f014F88Dd37", "9990000065000000", {
-        });
-        console.log(sendTx, '==sendTx');
+        // const sendTx = await account.transferToken("0x0000000000000000000000000000000000000000", "0x8A3214F28946A797088944396c476f014F88Dd37", "9990000065000000", {
+        // });
+        // console.log(sendTx, '==sendTx');
         
     });
 

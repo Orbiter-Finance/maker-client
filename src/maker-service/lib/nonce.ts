@@ -4,7 +4,7 @@ import Keyv from 'keyv';
 export default class NonceManager {
     private mutex = new Mutex();
     private store: Keyv;
-    constructor(key: string, private readonly refreshNonceFun: Function, option: {
+    constructor(private readonly key: string, private readonly refreshNonceFun: Function, option: {
         initNonce?: number,
         store?: Keyv.Store<any>
     } = {}) {
@@ -12,28 +12,27 @@ export default class NonceManager {
             store: option.store,
             namespace: key
         });
-        this.mutex.runExclusive(async () => {
-            const refreshNonce = await this.refreshNonceFun();
-            const nonce = await this.store.get("nonce") || 0;
-            const initNonce = option.initNonce || 0;
-            const lastNonce = Math.max(refreshNonce, nonce, initNonce);
-            if (lastNonce != nonce) {
-                await this.store.set('nonce', lastNonce);
-            }
-        });
+        this.mutex.acquire()
+            .then(async (release) => {
+                // ...
+                const refreshNonce = await this.refreshNonceFun();
+                const nonce = await this.store.get("nonce") || 0;
+                const initNonce = option.initNonce || 0;
+                const maxNonce = Math.max(refreshNonce, nonce, initNonce);
+                if (maxNonce != nonce)
+                    await this.setNonce(maxNonce);
+                release();
+            });
         this.autoUpdate();
     }
     public async setNonce(nonce: number) {
-        await this.mutex.waitForUnlock();
         await this.store.set('nonce', nonce);
     }
     public async forceRefreshNonce() {
-        await this.mutex.waitForUnlock();
         const nonce = await this.refreshNonceFun();
-        await this.store.set('nonce', nonce);
+        await this.setNonce(nonce);
     }
     public async autoUpdate() {
-        await this.mutex.waitForUnlock();
         const lastUsage = await this.store.get("lastUsage");
         let nonce = await this.store.get("nonce");
         // console.log('autoUpdate nonce,', nonce);

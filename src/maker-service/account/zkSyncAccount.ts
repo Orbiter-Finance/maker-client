@@ -69,7 +69,7 @@ export default class ZKSyncAccount extends OrbiterAccount {
     value: string,
     transactionRequest?: TransactionRequest
   ): Promise<TransferResponse | undefined> {
-    const chainConfig = chains.getChainInfo(this.internalId);
+    // const chainConfig = chains.getChainInfo(this.internalId);
     const { wallet } = await this.getL2Wallet();
     const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
     const amount = zksync.utils.closestPackableTransactionAmount(value);
