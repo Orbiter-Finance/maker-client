@@ -372,20 +372,20 @@ export default class Sequencer {
         : sendMainTokenValue;
     });
     let contractTransfer: Boolean = false;
-    // if (passOrders.length === 1) {
-    //   if (
-    //     [SwapOrderType.CrossAddr, SwapOrderType.CrossToken].includes(
-    //       passOrders[0].type
-    //     )
-    //   ) {
-    //     contractTransfer = ValidatorService.isSupportXVM(chainId);
-    //   }
-    // } else {
-    //   contractTransfer = ValidatorService.isSupportXVM(chainId);
-    // }
-    if (passOrders.length >= 3) {
+    if (passOrders.length === 1) {
+      if (
+        [SwapOrderType.CrossAddr, SwapOrderType.CrossToken].includes(
+          passOrders[0].type
+        )
+      ) {
+        contractTransfer = ValidatorService.isSupportXVM(chainId);
+      }
+    } else {
       contractTransfer = ValidatorService.isSupportXVM(chainId);
     }
+    // if (passOrders.length >= 3) {
+    //   contractTransfer = ValidatorService.isSupportXVM(chainId);
+    // }
     logger.info(`sequencer get ready submit`, {
       passOrders,
       sendMainTokenValue,
@@ -471,18 +471,18 @@ export default class Sequencer {
         const transferParams =
           (await account.sendCollectionGetParameters(order)) || {};
         try {
-          // send Value + nonce
           let sendValue = order.value;
           if (order.type === SwapOrderType.CrossToken) {
             const fromToken = chains.getTokenByChain(Number(order.calldata.chainId), order.calldata.token);
             if (!fromToken) {
               throw new Error(`fromToken not found`);
             }
-            const response = getAmountToSend(order.calldata.chainId, fromToken.decimals, 0, 0, order.chainId, sendValue, order.calldata.nonce);
-            if (response?.error || !response?.state) {
-              throw new Error('send before getAmountToSend fail');
-            }
-            sendValue = new BigNumber(response.tAmount || 0).toFixed(0);
+            // TAG: value + nonce
+            // const response = getAmountToSend(order.calldata.chainId, fromToken.decimals, 0, 0, order.chainId, sendValue, order.calldata.nonce);
+            // if (response?.error || !response?.state) {
+            //   throw new Error('send before getAmountToSend fail');
+            // }
+            // sendValue = new BigNumber(response.tAmount || 0).toFixed(0);
           }
           if (chains.inValidMainToken(chainId, order.token)) {
             logger.info("submit step 6-2-1-1", {
