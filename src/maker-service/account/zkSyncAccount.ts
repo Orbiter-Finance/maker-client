@@ -92,6 +92,9 @@ export default class ZKSyncAccount extends OrbiterAccount {
         this.logger.info(`${this.chainConfig.name} sendTransaction waitForTransaction:`, tx)
       }).catch(err => {
         this.logger.error(`${this.chainConfig.name} sendTransaction Error:`, err)
+        if (err && err.message.includes('Nonce mismatch')) {
+          this.nonceManager.forceRefreshNonce();
+        }
       })
     }
     const txData = response.txData.tx;

@@ -24,6 +24,12 @@ export default class NonceManager {
         this.autoUpdate();
     }
     public async setNonce(nonce: number) {
+        await this.mutex.waitForUnlock();
+        await this.store.set('nonce', nonce);
+    }
+    public async forceRefreshNonce() {
+        await this.mutex.waitForUnlock();
+        const nonce = await this.refreshNonceFun();
         await this.store.set('nonce', nonce);
     }
     public async autoUpdate() {
