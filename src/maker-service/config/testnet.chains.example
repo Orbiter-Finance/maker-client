@@ -635,10 +635,10 @@
             "key":"",
             "intervalTime":10000
         },
-        "chainId":"1442",
-        "networkId":"1442",
+        "chainId":"1422",
+        "networkId":"1422",
         "internalId":"517",
-        "name":"Polygon zkEVM",
+        "name":"Polygon EVM",
         "debug":false,
         "contracts":[
 
