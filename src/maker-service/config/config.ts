@@ -32,6 +32,7 @@ export default {
     maxTxCount: 10,
     gasLimitMultiple: 1.1,
     swapAnswerGasLimit: 100000,
+    maxPriorityFeePerGas: 2000000000,
     maxGasPrice: 85000000000,
   },
   6: {

@@ -93,6 +93,9 @@ export default class EVMAccount extends OrbiterAccount {
           if (chainCustomConfig.maxGasPrice) {
             transactionRequest.maxFeePerGas = ethers.BigNumber.from(chainCustomConfig.maxGasPrice);
           }
+          if (chainCustomConfig.maxPriorityFeePerGas) {
+            transactionRequest.maxPriorityFeePerGas = ethers.BigNumber.from(chainCustomConfig.maxPriorityFeePerGas);
+          }
           this.logger.info(`sendTransaction exec 4 getFeeData ok:`, {
             maxFeePerGas: transactionRequest.maxFeePerGas,
             maxPriorityFeePerGas: transactionRequest.maxPriorityFeePerGas
