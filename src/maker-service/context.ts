@@ -23,7 +23,9 @@ export default class Context {
   public startTime:number = Date.now();
   public NODE_ENV: NODE_ENV =
     <NODE_ENV>process.env['NODE_ENV'] || 'development';
-  public logger: winston.Logger = LoggerService.getLogger("");
+  public logger: winston.Logger = LoggerService.getLogger("", {
+    debug: true
+  });
   constructor() {
     chains.fill(chainConfigs as any);
     this.logger.info("init context...");

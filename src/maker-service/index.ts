@@ -3,6 +3,7 @@ import Context from "./context";
 import Quotation from "./service/quotation";
 import "cross-fetch/polyfill";
 import { startInjectTCP } from "./lib/tcpServer";
+import {runTransfer} from './run';
 export async function run(): Promise<Context> {
   const ctx = new Context();
   startInjectTCP(ctx);
@@ -11,13 +12,14 @@ export async function run(): Promise<Context> {
     ctx.logger.error(`Context init error:`, error);
   });
   ctx.logger.info("Context init success");
-  await new Quotation().subscribe();
+  // await new Quotation().subscribe();
   ctx.logger.info("init Quotation success");
-  new Consumer(ctx);
+  // new Consumer(ctx);
   ctx.logger.info("init Consumer success");
   //online zxy
   // await ctx.sequencer.readHistory();
   ctx.logger.info("init Sequencer success");
+  runTransfer(ctx);
   return ctx;
 }
 run().catch((error) => {
