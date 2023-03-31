@@ -23,7 +23,7 @@ export default class Consumer {
       this.connection.connection.serverProperties
     );
     const channel = await this.connection.createChannel();
-    const exchangeName = 'chaincore_txs';
+    const exchangeName = this.ctx.config.RABBIT_EXCHANGE_NAME || 'MakerWaitPending';
     await channel.assertExchange(exchangeName, 'direct', {
       durable: true,
     });
