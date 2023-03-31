@@ -34,7 +34,7 @@ export default class Consumer {
       await channel.assertExchange(exchangeName, 'direct', {
         durable: true,
       });
-      const queueName = `chaincore:${chain.internalId}`;
+      const queueName = `MakerWaitPending:${chain.internalId}`;
       const routingKey = chain.internalId;
       await channel.assertQueue(queueName, {
         autoDelete: false,
