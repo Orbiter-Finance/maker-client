@@ -23,7 +23,7 @@ export default class Consumer {
       this.connection.connection.serverProperties
     );
     const channel = await this.connection.createChannel();
-    const exchangeName = this.ctx.config.RABBIT_EXCHANGE_NAME || 'MakerWaitPending';
+    const exchangeName = this.ctx.config.RABBIT_EXCHANGE_NAME || 'MakerTxList';
     await channel.assertExchange(exchangeName, 'direct', {
       durable: true,
     });
@@ -34,7 +34,7 @@ export default class Consumer {
       await channel.assertExchange(exchangeName, 'direct', {
         durable: true,
       });
-      const queueName = `MakerWaitPending:${chain.internalId}`;
+      const queueName = `MakerTxList:${chain.internalId}`;
       const routingKey = chain.internalId;
       await channel.assertQueue(queueName, {
         autoDelete: false,
