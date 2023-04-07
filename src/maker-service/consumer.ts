@@ -10,20 +10,17 @@ export default class Consumer {
     void this.connectionMqServer();
   }
   public async connectionMqServer(): Promise<void> {
-    this.connection = await connect({
-      protocol: 'amqp',
-      hostname: this.ctx.config.RABBIT_HOST || 'localhost',
-      port: Number(this.ctx.config.RABBIT_PORT || 5672),
-      vhost: this.ctx.config.RABBIT_VHOST,
-      username: this.ctx.config.RABBIT_USER,
-      password: this.ctx.config.RABBIT_PASSWORD
+    this.connection = await connect(this.ctx.config.RABBIT_URL, {
+      clientProperties: {
+        connection_name: "NewMakerClient",
+      },
     });
     this.ctx.logger.info(
       'RabbitMQ Connection Success:',
       this.connection.connection.serverProperties
     );
     const channel = await this.connection.createChannel();
-    const exchangeName = 'chaincore_txs';
+    const exchangeName = this.ctx.config.RABBIT_EXCHANGE;
     await channel.assertExchange(exchangeName, 'direct', {
       durable: true,
     });
@@ -34,7 +31,7 @@ export default class Consumer {
       await channel.assertExchange(exchangeName, 'direct', {
         durable: true,
       });
-      const queueName = `chaincore:${chain.internalId}`;
+      const queueName = `MakerWaitTransfer-${chain.internalId}`;
       const routingKey = chain.internalId;
       await channel.assertQueue(queueName, {
         autoDelete: false,
