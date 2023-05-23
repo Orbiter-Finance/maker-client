@@ -7,11 +7,12 @@ let limitWaringTime = 0;
 let balanceWaringTime = 0;
 // Alarm interval duration(second)
 const waringInterval = 180;
+// TODO
 // Execute several transactions at once
-const execTaskCount = 10;
+const execTaskCount = 3;
 // Maximum number of transactions to be stacked in the memory pool
-const maxTaskCount: number = 200;
-const expireTime: number = 10 * 60 * 1000;
+const maxTaskCount: number = 5;
+const expireTime: number = 2 * 60 * 1000;
 // lock
 export let starknetLockMap = {};
 
@@ -129,7 +130,7 @@ export async function batchTransferTx(ctx) {
         };
 
         // TODO
-        setInterval(callback, 30 * 1000);
+        setInterval(callback, 120 * 1000);
     };
     const makerDataList = [{
         makerAddress: "0x02379d9a1a1fd2c85d66457c7bc6bfd28215732cde1ba0f9a8f7a30e10bb8489",

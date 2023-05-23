@@ -1,7 +1,7 @@
 import { BigNumberish, ethers } from 'ethers';
 import NonceManager from '../lib/nonce';
 import { Account, Contract, defaultProvider, ec, json, number, Provider, stark, hash, uint256 } from 'starknet';
-import { TransactionRequest, TransferResponse } from './IAccount';
+import { IPoolTx, TransactionRequest, TransferResponse } from './IAccount';
 import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import { StarknetErc20ABI } from '../abi';
@@ -72,7 +72,7 @@ export default class StarknetAccount extends OrbiterAccount {
     ): Promise<TransferResponse | undefined> {
         const nonceInfo = await this.nonceManager.getNextNonce();
         const { nonce } = nonceInfo;
-        return await this.handleTransfer({
+        return await this.handleTransfer([], {
             contractAddress: token,
             entrypoint: 'transfer',
             nonce,
@@ -84,12 +84,7 @@ export default class StarknetAccount extends OrbiterAccount {
     }
 
     public async transferMultiToken(
-        params: {
-            id: string,
-            token: string,
-            to: string,
-            value: string
-        }[],
+        params: IPoolTx[],
         transactionRequest?: TransactionRequest
     ): Promise<TransferResponse | undefined> {
         const nonceInfo = await this.nonceManager.getNextNonce();
@@ -108,13 +103,13 @@ export default class StarknetAccount extends OrbiterAccount {
             });
         }
         this.logger.info(`starknet transfer multi: ${invocationList.length}`);
-        const result = await this.handleTransfer(invocationList, nonceInfo);
+        const result = await this.handleTransfer(params, invocationList, nonceInfo);
         this.logger.info(`starknet transfer hash: ${result.hash}`);
         await this.deleteTx(params.map(item => item.id));
         return result;
     }
 
-    private async handleTransfer(invocation, nonceInfo) {
+    private async handleTransfer(params: IPoolTx[], invocation, nonceInfo) {
         const { nonce, submit, rollback } = nonceInfo;
         const provider = this.getProviderV4();
         let maxFee = number.toBN(0.009 * 10 ** 18);
@@ -156,6 +151,19 @@ export default class StarknetAccount extends OrbiterAccount {
             };
         } catch (error: any) {
             this.logger.error(`rollback nonce:${error.message}`);
+            if (error.message.indexOf('StarkNet Alpha throughput limit reached') !== -1 ||
+                error.message.indexOf('Bad Gateway') !== -1) {
+                await this.storeTx(params);
+            } else if (error.message.indexOf('Invalid transaction nonce. Expected:') !== -1
+                && error.message.indexOf('got:') !== -1) {
+                const arr: string[] = error.message.split(', got: ');
+                const nonce1 = arr[0].replace(/[^0-9]/g, "");
+                const nonce2 = arr[1].replace(/[^0-9]/g, "");
+                if (Number(nonce) !== Number(nonce1) && Number(nonce) !== Number(nonce2)) {
+                    this.logger.error(`starknet sequencer error: ${nonce} != ${nonce1}, ${nonce} != ${nonce2}`);
+                    await this.storeTx(params);
+                }
+            }
             rollback();
             throw error;
         }
