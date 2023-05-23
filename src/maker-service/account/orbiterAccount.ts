@@ -83,7 +83,7 @@ export default class OrbiterAccount extends IAccount {
                     this.logger.error(msg);
                     telegramBot.sendMessage('delete_pool', msg);
                 } else {
-                    this.logger.info(`${this.chainConfig.name} consume pool tx ${deleteTxList.map(item => item.id).join(', ')}`);
+                    this.logger.info(`${this.chainConfig.name} consume pool tx ${deleteTxList.map(item => item.id).join(', ')}, left count ${leftTxList.length}`);
                 }
             }
             return deleteTxList.length;

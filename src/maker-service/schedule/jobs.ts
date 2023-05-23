@@ -2,6 +2,7 @@ import StarknetAccount from "../account/starknetAccount";
 import { IPoolTx } from "../account/IAccount";
 import { telegramBot } from "../lib/telegram";
 import { ethers } from "ethers";
+import { Op } from "sequelize";
 
 let limitWaringTime = 0;
 let balanceWaringTime = 0;
@@ -51,7 +52,7 @@ export async function batchTransferTx(ctx) {
                     // max length limit
                     if (i < txPoolList.length - maxTaskCount) {
                         deleteTxList.push(tx);
-                        starknet.logger.info(`starknet_max_count_limit ${txPoolList.length} > ${maxTaskCount}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
+                        starknet.logger.error(`starknet_max_count_limit ${txPoolList.length} > ${maxTaskCount}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
                         continue;
                     }
                     // expire time limit
@@ -60,7 +61,7 @@ export async function batchTransferTx(ctx) {
                         const formatDate = (timestamp: number) => {
                             return new Date(timestamp).toDateString() + " " + new Date(timestamp).toLocaleTimeString();
                         };
-                        starknet.logger.info(`starknet_expire_time_limit ${formatDate(tx.createTime)} < ${formatDate(new Date().valueOf() - expireTime)}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
+                        starknet.logger.error(`starknet_expire_time_limit ${formatDate(tx.createTime)} < ${formatDate(new Date().valueOf() - expireTime)}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
                         continue;
                     }
                     execTaskList.push(tx);
@@ -93,6 +94,10 @@ export async function batchTransferTx(ctx) {
                         return { code: 1 };
                     }
                 }
+                if (!queueList || !queueList.length) {
+                    starknet.logger.info('There are no consumable queue in the starknet queue');
+                    return { code: 1 };
+                }
                 await starknet.deleteTx(queueList.map(item => item.id));
                 let isTransferSuccess = true;
                 try {
@@ -100,17 +105,22 @@ export async function batchTransferTx(ctx) {
                 } catch (error) {
                     isTransferSuccess = false;
                 }
+                const cnd = queueList.map(item => {
+                    return { hash: item.id };
+                });
+                const status = !isTransferSuccess ? 96 : 97;
                 // change
-                await ctx.db.Transaction.update(
+                const updateRes = await ctx.db.Transaction.update(
                     {
-                        status: isTransferSuccess ? 96 : 97
+                        status
                     },
                     {
                         where: {
-                            hash: order.calldata.hash
+                            [Op.or]: cnd
                         }
                     }
                 );
+                starknet.logger.info(`update transaction set status = ${status} where hash = [${JSON.stringify(cnd.map(item => item.hash))}], ${updateRes}`);
                 starknet.logger.info("submit step 6-2-4");
                 return { code: 1 };
             };

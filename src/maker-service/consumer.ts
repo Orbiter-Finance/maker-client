@@ -66,7 +66,7 @@ export default class Consumer {
         const makerList: string[] = this.ctx.config.makerList;
         if (makerList && makerList.length) {
           if (!makerList.find(item => item.toLocaleLowerCase() === tx.to.toLocaleLowerCase())){
-            this.ctx.logger.info(`Not the maker address ${tx.to.toLocaleLowerCase()}`);
+            this.ctx.logger.info(`Not the maker address ${tx.to.toLocaleLowerCase()} ${tx.hash}`);
             return;
           }
         }

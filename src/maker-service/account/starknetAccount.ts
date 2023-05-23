@@ -5,6 +5,7 @@ import { IPoolTx, TransactionRequest, TransferResponse } from './IAccount';
 import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import { StarknetErc20ABI } from '../abi';
+import { telegramBot } from "../lib/telegram";
 export default class StarknetAccount extends OrbiterAccount {
     public account: Account;
     private nonceManager: NonceManager;
@@ -104,7 +105,6 @@ export default class StarknetAccount extends OrbiterAccount {
         }
         this.logger.info(`starknet transfer multi: ${invocationList.length}`);
         const result = await this.handleTransfer(params, invocationList, nonceInfo);
-        this.logger.info(`starknet transfer hash: ${result.hash}`);
         await this.deleteTx(params.map(item => item.id));
         return result;
     }
@@ -128,7 +128,7 @@ export default class StarknetAccount extends OrbiterAccount {
                     maxFee
                 }
             );
-            this.logger.info('transfer response:', executeHash);
+            this.logger.info(`starknet transfer hash: ${executeHash?.transaction_hash}`);
             // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
             provider.waitForTransaction(executeHash.transaction_hash).then(async (tx) => {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
@@ -139,6 +139,7 @@ export default class StarknetAccount extends OrbiterAccount {
                     this.nonceManager.setNonce(Number(nonce));
                     this.logger.info(`Starknet reset nonce:${nonce}`);
                 }
+                telegramBot.sendMessage('starknet_reject', `waitForTransaction reject: hash ${executeHash.transaction_hash} respone ${JSON.stringify(response)}`);
                 this.logger.error(`waitForTransaction reject:`, { hash: executeHash.transaction_hash, response });
             }).catch(err => {
                 this.logger.error(`waitForTransaction error:`, err);
