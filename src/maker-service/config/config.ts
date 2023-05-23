@@ -2,6 +2,7 @@ import * as dotenv from 'dotenv';
 const dotEnvs = dotenv.config().parsed;
 const vars = process.env;
 export default {
+  makerList: ["0xe06d06887b1a5638b882f1dcb054059c9bfd63ea", "0x050e5ba067562e87b47d87542159e16a627e85b00de331a53b471cee1a4e5a4f"],
   1: {
     maxTxCount: 10,
     gasLimitMultiple: 1.1,
