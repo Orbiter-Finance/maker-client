@@ -26,6 +26,7 @@ export default class StarknetAccount extends OrbiterAccount {
         }, {
             store: getNonceCacheStore(`${internalId}-${address}`)
         });
+        this.accountAddress = this.account.address.toLowerCase();
     }
     public async transfer(
         to: string,
@@ -65,19 +66,53 @@ export default class StarknetAccount extends OrbiterAccount {
         value: string,
         transactionRequest?: TransactionRequest
     ): Promise<TransferResponse | undefined> {
-        const provider = this.getProviderV4();
-        let maxFee = number.toBN(0.009 * 10 ** 18);
-        const { nonce, submit, rollback } = await this.nonceManager.getNextNonce();
-        const invocation = {
+        const nonceInfo = await this.nonceManager.getNextNonce();
+        const { nonce } = nonceInfo;
+        return await this.handleTransfer({
             contractAddress: token,
             entrypoint: 'transfer',
             nonce,
             calldata: stark.compileCalldata({
                 recipient: to,
-                amount: getUint256CalldataFromBN(value),
-                // amount: value
+                amount: getUint256CalldataFromBN(value)
             })
+        }, nonceInfo);
+    }
+
+    public async transferMultiToken(
+        params: {
+            id: string,
+            token: string,
+            to: string,
+            value: string
+        }[],
+        transactionRequest?: TransactionRequest
+    ): Promise<TransferResponse | undefined> {
+        const nonceInfo = await this.nonceManager.getNextNonce();
+        const { nonce } = nonceInfo;
+        const invocationList: any[] = [];
+        for (const param of params) {
+            const { token, to, value } = param;
+            invocationList.push({
+                contractAddress: token,
+                entrypoint: 'transfer',
+                nonce,
+                calldata: stark.compileCalldata({
+                    recipient: to,
+                    amount: getUint256CalldataFromBN(value)
+                })
+            });
         }
+        this.logger.info(`starknet transfer multi: ${invocationList.length}`);
+        const result = await this.handleTransfer(invocationList, nonceInfo);
+        await this.deleteTx(params.map(item => item.id));
+        return result;
+    }
+
+    private async handleTransfer(invocation, nonceInfo) {
+        const { nonce, submit, rollback } = nonceInfo;
+        const provider = this.getProviderV4();
+        let maxFee = number.toBN(0.009 * 10 ** 18);
         try {
             const { suggestedMaxFee } = await this.account.estimateFee(invocation);
             if (suggestedMaxFee.gt(maxFee))
@@ -86,11 +121,12 @@ export default class StarknetAccount extends OrbiterAccount {
             this.logger.error('starknet estimateFee error:', error);
         }
         try {
+            this.logger.info(`starknet_nonce: ${nonce}, maxFee: ${maxFee}`);
             const executeHash = await this.account.execute(
                 invocation, undefined, {
-                nonce,
-                maxFee
-            }
+                    nonce,
+                    maxFee
+                }
             );
             this.logger.info('transfer response:', executeHash);
             // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);

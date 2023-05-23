@@ -3,6 +3,7 @@ import Context from "./context";
 import Quotation from "./service/quotation";
 import "cross-fetch/polyfill";
 import { startInjectTCP } from "./lib/tcpServer";
+import { batchTransferTx } from "./schedule/jobs";
 export async function run(): Promise<Context> {
   const ctx = new Context();
   startInjectTCP(ctx);
@@ -18,6 +19,8 @@ export async function run(): Promise<Context> {
   //online zxy
   // await ctx.sequencer.readHistory();
   ctx.logger.info("init Sequencer success");
+  await batchTransferTx();
+  ctx.logger.info("init batch transfer schedule success");
   return ctx;
 }
 run().catch((error) => {

@@ -17,10 +17,10 @@ export class LoggerService {
       //     node_name: 'maker-client',
       //     host: process.env["logstash.host"],
       // },
-      telegram: {
-        token: process.env["TELEGRAM_TOKEN"],
-        chatId: process.env["TELEGRAM_CHATID"]
-      }
+      // telegram: {
+      //   token: process.env["TELEGRAM_TOKEN"],
+      //   chatId: process.env["TELEGRAM_CHATID"]
+      // }
     }, opts)
     const logger = winstonX.createLogger(opts);
     LoggerService.services[key] = logger;

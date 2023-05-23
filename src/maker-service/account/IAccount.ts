@@ -1,4 +1,11 @@
 import { BigNumber, ethers } from 'ethers';
+export interface IPoolTx {
+    id: string,
+    token: string,
+    to: string,
+    value: string,
+    createTime: number
+};
 export interface TransferResponse {
   hash: string;
   to: string | undefined;
@@ -39,4 +46,20 @@ export default abstract class IAccount {
     value: string,
     transactionRequest?: TransactionRequest | any
   ): Promise<TransferResponse | undefined>;
+  public abstract transferMultiToken(
+      params: {
+        token: string,
+        to: string,
+        value: string
+      }[],
+      transactionRequest?: TransactionRequest | any
+  ): Promise<TransferResponse | undefined>;
+  public abstract storeTx(
+      params: IPoolTx[]
+  ): Promise<number>;
+  public abstract deleteTx(
+      idList: string[],
+      isAlarm?: boolean
+  ): Promise<number>;
+    public abstract getTxPool(): Promise<IPoolTx[]>;
 }

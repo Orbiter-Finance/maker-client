@@ -484,34 +484,50 @@ export default class Sequencer {
             // }
             // sendValue = new BigNumber(response.tAmount || 0).toFixed(0);
           }
-          if (chains.inValidMainToken(chainId, order.token)) {
-            logger.info("submit step 6-2-1-1", {
+          // multi transfer
+          if (chainId === 4 || chainId === 44) {
+            logger.info("submit step 6-2-1-3", {
               to: order.to,
               value: sendValue,
               txType
             });
-            submitTx = await account.transfer(order.to, sendValue, {
-              type: txType,
-              ...transferParams
-            });
-            logger.info("submit step 6-2-1-1 wait", { submitTx });
-          } else {
-            logger.info("submit step 6-2-1-2", {
+            submitTx = await account.storeTx([{
+              id: order.hash,
               token: order.token,
               to: order.to,
-              value: sendValue,
-              txType
-            });
-            submitTx = await account.transferToken(
-              order.token,
-              order.to,
-              sendValue,
-              {
+              value: sendValue
+            }]);
+            logger.info("submit step 6-2-1-3 wait", { submitTx });
+          } else {
+            if (chains.inValidMainToken(chainId, order.token)) {
+              logger.info("submit step 6-2-1-1", {
+                to: order.to,
+                value: sendValue,
+                txType
+              });
+              submitTx = await account.transfer(order.to, sendValue, {
                 type: txType,
                 ...transferParams
-              }
-            );
-            logger.info("submit step 6-2-1-2 wait", { submitTx });
+              });
+              logger.info("submit step 6-2-1-1 wait", { submitTx });
+            } else {
+              logger.info("submit step 6-2-1-2", {
+                token: order.token,
+                to: order.to,
+                value: sendValue,
+                txType
+              });
+              submitTx = await account.transferToken(
+                  order.token,
+                  order.to,
+                  sendValue,
+                  {
+                    type: txType,
+                    ...transferParams
+                  }
+              );
+              logger.info("submit step 6-2-1-2 wait", { submitTx });
+            }
           }
           order.hash = submitTx ? submitTx.hash : "";
           logger.info("submit step 6-2-1-3");
