@@ -65,10 +65,10 @@ export default class Consumer {
         // TODO Change to use MQ queues to differentiate
         const makerList: string[] = this.ctx.config.makerList;
         if (makerList && makerList.length) {
-          if (!makerList.find(item => item.toLocaleLowerCase() === tx.from.toLocaleLowerCase() ||
-              item.toLocaleLowerCase() === tx.to.toLocaleLowerCase()))
-            this.ctx.logger.info(`Not the maker address ${tx.from.toLocaleLowerCase()} ${tx.to.toLocaleLowerCase()}`);
-          return;
+          if (!makerList.find(item => item.toLocaleLowerCase() === tx.to.toLocaleLowerCase())){
+            this.ctx.logger.info(`Not the maker address ${tx.to.toLocaleLowerCase()}`);
+            return;
+          }
         }
         if (Number(tx['pushTime']) > this.ctx.startTime) {
           this.ctx.logger.info(`subscribe tx:`, tx);

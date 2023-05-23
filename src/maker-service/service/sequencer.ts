@@ -470,6 +470,7 @@ export default class Sequencer {
         let submitTx: TransferResponse | undefined;
         const transferParams =
           (await account.sendCollectionGetParameters(order)) || {};
+        const isMultiTransfer = chainId === 4 || chainId === 44;
         try {
           let sendValue = order.value;
           if (order.type === SwapOrderType.CrossToken) {
@@ -485,14 +486,14 @@ export default class Sequencer {
             // sendValue = new BigNumber(response.tAmount || 0).toFixed(0);
           }
           // multi transfer
-          if (chainId === 4 || chainId === 44) {
+          if (isMultiTransfer) {
             logger.info("submit step 6-2-1-3", {
               to: order.to,
               value: sendValue,
               txType
             });
             submitTx = await account.storeTx([{
-              id: order.hash,
+              id: order.calldata.hash,
               token: order.token,
               to: order.to,
               value: sendValue
@@ -560,18 +561,20 @@ export default class Sequencer {
             });
           }
           logger.info("submit step 6-2-3");
-          // change
-          await this.ctx.db.Transaction.update(
-            {
-              status: order.error ? 96 : 97
-            },
-            {
-              where: {
-                hash: order.calldata.hash
-              }
-            }
-          );
-          logger.info("submit step 6-2-4");
+          if (!isMultiTransfer) {
+            // change
+            await this.ctx.db.Transaction.update(
+                {
+                  status: order.error ? 96 : 97
+                },
+                {
+                  where: {
+                    hash: order.calldata.hash
+                  }
+                }
+            );
+            logger.info("submit step 6-2-4");
+          }
         }
       }
     }

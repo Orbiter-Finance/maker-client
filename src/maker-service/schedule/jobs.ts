@@ -19,7 +19,7 @@ export function setStarknetLock(makerAddress: string, status: boolean) {
     starknetLockMap[makerAddress.toLowerCase()] = status;
 }
 
-export async function batchTransferTx() {
+export async function batchTransferTx(ctx) {
     const makerSend = (makerAddress, chainId) => {
         const callback = async () => {
             const sn = async () => {
@@ -28,9 +28,12 @@ export async function batchTransferTx() {
                     return { code: 0 };
                 }
                 setStarknetLock(makerAddress, true);
-                const privateKey = process.env[makerAddress.toLowerCase()];
+                const privateKey = process.env[makerAddress.toLocaleLowerCase()] || ctx.config["keys"][makerAddress.toLocaleLowerCase()];
                 if (!privateKey) {
-                    console.error(`${makerAddress} Waitting for the privateKey ${new Date().toLocaleTimeString()}`);
+                    const msg: string = `${makerAddress} Waitting for the privateKey ${new Date().toLocaleTimeString()}`;
+                    ctx.logger.error(msg);
+                    telegramBot.sendMessage('private_key', msg);
+                    return { code: 1 };
                 }
                 const starknet = new StarknetAccount(chainId, privateKey, makerAddress);
                 const txPoolList: IPoolTx[] = await starknet.getTxPool();
@@ -83,18 +86,31 @@ export async function batchTransferTx() {
                             const alert: string = `starknet ${makerAddress}-${tokenAddress} insufficient balance, ${needPay.toString()} > ${makerBalance.toString()}`;
                             // TODO
                             // doSms(alert);
-                            telegramBot.sendMessage(alert);
+                            telegramBot.sendMessage('insufficient_balance', alert);
                             balanceWaringTime = new Date().valueOf();
                         }
                         return { code: 1 };
                     }
                 }
-
+                await starknet.deleteTx(queueList.map(item => item.id));
+                let isTransferSuccess = true;
                 try {
-                    await starknet.deleteTx(queueList.map(item => item.id));
                     await starknet.transferMultiToken(queueList);
                 } catch (error) {
+                    isTransferSuccess = false;
                 }
+                // change
+                await ctx.db.Transaction.update(
+                    {
+                        status: isTransferSuccess ? 96 : 97
+                    },
+                    {
+                        where: {
+                            hash: order.calldata.hash
+                        }
+                    }
+                );
+                starknet.logger.info("submit step 6-2-4");
                 return { code: 1 };
             };
             if (Number(chainId) === 4 || Number(chainId) === 44) {
@@ -113,10 +129,10 @@ export async function batchTransferTx() {
         };
 
         // TODO
-        setInterval(callback, 120 * 1000);
+        setInterval(callback, 30 * 1000);
     };
     const makerDataList = [{
-        makerAddress: "0x050e5ba067562e87b47d87542159e16a627e85b00de331a53b471cee1a4e5a4f",
+        makerAddress: "0x02379d9a1a1fd2c85d66457c7bc6bfd28215732cde1ba0f9a8f7a30e10bb8489",
         chainId: 44
     }];
     for (let i = 0; i < makerDataList.length; i++) {

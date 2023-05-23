@@ -10,7 +10,7 @@ export class LoggerService {
     opts = Object.assign({
       logDir,
       label: key,
-      debug: true,
+      debug: false,
       // logstash: {
       //     port: process.env["logstash.port"],
       //     level: "info",

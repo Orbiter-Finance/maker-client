@@ -1,6 +1,6 @@
 import { BigNumberish, ethers } from 'ethers';
 import NonceManager from '../lib/nonce';
-import { Account, Contract, defaultProvider, ec, json, number, SequencerProvider, stark, hash, uint256 } from 'starknet';
+import { Account, Contract, defaultProvider, ec, json, number, Provider, stark, hash, uint256 } from 'starknet';
 import { TransactionRequest, TransferResponse } from './IAccount';
 import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
@@ -40,7 +40,11 @@ export default class StarknetAccount extends OrbiterAccount {
         const rpcFirst = this.chainConfig.rpc[0];
         const provider = rpcFirst === undefined ?
             defaultProvider :
-            new SequencerProvider({ baseUrl: rpcFirst });
+            new Provider({
+                sequencer: {
+                    network: <any>(Number(this.chainConfig.internalId) === 4 ? 'mainnet-alpha' : 'georli-alpha'), // for testnet you can use defaultProvider
+                }, rpc: { nodeUrl: rpcFirst }
+            });
         return provider;
     }
     public async getBalance(address?: string, token?: string): Promise<ethers.BigNumber> {
@@ -105,6 +109,7 @@ export default class StarknetAccount extends OrbiterAccount {
         }
         this.logger.info(`starknet transfer multi: ${invocationList.length}`);
         const result = await this.handleTransfer(invocationList, nonceInfo);
+        this.logger.info(`starknet transfer hash: ${result.hash}`);
         await this.deleteTx(params.map(item => item.id));
         return result;
     }
@@ -147,8 +152,6 @@ export default class StarknetAccount extends OrbiterAccount {
             return {
                 hash: executeHash.transaction_hash,
                 from: this.account.address,
-                to,
-                value: ethers.BigNumber.from(value),
                 nonce: nonce,
             };
         } catch (error: any) {

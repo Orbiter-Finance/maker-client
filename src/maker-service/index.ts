@@ -19,7 +19,7 @@ export async function run(): Promise<Context> {
   //online zxy
   // await ctx.sequencer.readHistory();
   ctx.logger.info("init Sequencer success");
-  await batchTransferTx();
+  await batchTransferTx(ctx);
   ctx.logger.info("init batch transfer schedule success");
   return ctx;
 }
