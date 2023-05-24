@@ -156,21 +156,20 @@ export default class StarknetAccount extends OrbiterAccount {
         } catch (error: any) {
             this.logger.error(`rollback nonce:${error.message}`);
             if (retry) {
-                retry(params.map(item => item.id));
+                if (error.message.indexOf('StarkNet Alpha throughput limit reached') !== -1 ||
+                    error.message.indexOf('Bad Gateway') !== -1) {
+                    retry(params.map(item => item.id));
+                } else if (error.message.indexOf('Invalid transaction nonce. Expected:') !== -1
+                    && error.message.indexOf('got:') !== -1) {
+                    const arr: string[] = error.message.split(', got: ');
+                    const nonce1 = arr[0].replace(/[^0-9]/g, "");
+                    const nonce2 = arr[1].replace(/[^0-9]/g, "");
+                    if (Number(nonce) !== Number(nonce1) && Number(nonce) !== Number(nonce2)) {
+                        this.logger.error(`starknet sequencer error: ${nonce} != ${nonce1}, ${nonce} != ${nonce2}`);
+                        retry(params.map(item => item.id));
+                    }
+                }
             }
-            // if (error.message.indexOf('StarkNet Alpha throughput limit reached') !== -1 ||
-            //     error.message.indexOf('Bad Gateway') !== -1) {
-            //     await this.storeTx(params);
-            // } else if (error.message.indexOf('Invalid transaction nonce. Expected:') !== -1
-            //     && error.message.indexOf('got:') !== -1) {
-            //     const arr: string[] = error.message.split(', got: ');
-            //     const nonce1 = arr[0].replace(/[^0-9]/g, "");
-            //     const nonce2 = arr[1].replace(/[^0-9]/g, "");
-            //     if (Number(nonce) !== Number(nonce1) && Number(nonce) !== Number(nonce2)) {
-            //         this.logger.error(`starknet sequencer error: ${nonce} != ${nonce1}, ${nonce} != ${nonce2}`);
-            //         await this.storeTx(params);
-            //     }
-            // }
             rollback();
             throw error;
         }

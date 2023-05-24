@@ -2,7 +2,7 @@ import { BigNumber } from 'bignumber.js';
 import { TransferResponse } from "../account/IAccount";
 import { isEmpty, equals, groupBy } from "orbiter-chaincore/src/utils/core";
 import dayjs from "dayjs";
-import { Op } from "sequelize";
+import sequelize, { Op } from "sequelize";
 import Context from "../context";
 import { Factory } from "../account/factory";
 import orbiterXAccount from "../account/orbiterXAccount";
@@ -16,7 +16,7 @@ import OrbiterAccount from "../account/orbiterAccount";
 import { getAmountToSend } from "../lib/oldCore";
 import StarknetAccount from "../account/starknetAccount";
 import { telegramBot } from "../lib/telegram";
-import JSON = Mocha.reporters.JSON;
+import { sleep } from "../utils";
 const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
@@ -49,7 +49,6 @@ export interface SwapOrder {
   calldata: CalldataType;
   type: SwapOrderType;
   error?: Error | string | unknown;
-  pushTime?:number;
 }
 interface MonitorState {
   [key: number]: {
@@ -115,22 +114,39 @@ export default class Sequencer {
       return undefined;
     }
     const pendingTxs = pendingAllTxs.splice(0, 50);
-    const validPendingAllTxs = pendingTxs.filter(item => item.pushTime > new Date().valueOf() - 3 * 60 * 1000);
+    const validPendingAllTxs = pendingTxs.filter(item => !item.retryTime || item.retryTime > new Date().valueOf() - 3 * 60 * 1000);
     const invalidPendingAllTxs = pendingTxs.filter(item => !validPendingAllTxs.find(tx => tx.calldata.hash === item.calldata.hash));
     if(invalidPendingAllTxs.length){
-        this.ctx.logger.info(`${JSON.stringify(invalidPendingAllTxs)} Transaction has expired`);
-        telegramBot.sendMessage('delete_invalid', `${JSON.stringify(hashList)} Transaction has expired`);
+        this.ctx.logger.info(`${JSON.stringify(invalidPendingAllTxs.map(item=>item.hash))} Transaction has expired`);
+        telegramBot.sendMessage('delete_invalid', `${JSON.stringify(invalidPendingAllTxs.map(item=>item.hash))} Transaction has expired`);
     }
     if(validPendingAllTxs.length <= 0){
         return undefined;
     }
-    const retry = (hashList: string[]) => {
-        this.ctx.logger.info(`retry tx ${JSON.stringify(hashList)}`);
-        telegramBot.sendMessage('retry', `retry tx ${JSON.stringify(hashList)}`);
-        this.pending[chainId].push(
-            ...pendingTxs.filter(tx => hashList.find(hash => hash.toLocaleLowerCase() === tx.calldata.hash.toLocaleLowerCase()))
-        );
-        this.ctx.logger.info(`current pending tx ${this.pending[chainId]}`);
+    const retry = async (hashList: string[]) => {
+      await sleep(2000);
+      this.ctx.logger.info(`retry tx ${JSON.stringify(hashList)}`);
+      telegramBot.sendMessage('retry', `retry tx ${JSON.stringify(hashList)}`);
+      await this.ctx.db.Transaction.update({
+        status: 1
+      }, {
+        where: {
+          hash: hashList.length > 1 ? hashList : hashList[0]
+        }
+      });
+      const cache = Caching.getCache(chainId.toString());
+      for (const hash of hashList) {
+        cache.delete(hash);
+        await this.ctx.db.Sequencer.destroy({
+          where: <any>{
+            [Op.or]: [sequelize.fn('JSON_CONTAINS', sequelize.col('transactions'), sequelize.fn('JSON_Array', hash.toLocaleLowerCase()))]
+          }
+        });
+      }
+      this.pending[chainId].push(
+          ...pendingTxs.filter(tx => hashList.find(hash => hash.toLocaleLowerCase() === tx.calldata.hash.toLocaleLowerCase()))
+      );
+      this.ctx.logger.info(`current pending tx ${JSON.stringify(this.pending[chainId].map(item=>item.calldata.hash))}`);
     };
     const matchOrders: SwapOrder[] = [];
     try {

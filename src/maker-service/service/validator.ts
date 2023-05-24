@@ -102,8 +102,7 @@ export default class ValidatorService {
         timestamp: dayjs(fromTx.timestamp).valueOf(),
         slipPoint: 0,
       },
-      type: SwapOrderType.None,
-      pushTime: fromTx['pushTime']
+      type: SwapOrderType.None
     };
     if (fromTx.extra['xvm']) {
       if (fromTx.extra['xvm']['name'] != 'swap') {
