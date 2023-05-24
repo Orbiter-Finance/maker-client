@@ -47,19 +47,7 @@ export default abstract class IAccount {
     transactionRequest?: TransactionRequest | any
   ): Promise<TransferResponse | undefined>;
   public abstract transferMultiToken(
-      params: {
-        token: string,
-        to: string,
-        value: string
-      }[],
-      transactionRequest?: TransactionRequest | any
+      params: IPoolTx[],
+      retry: any
   ): Promise<TransferResponse | undefined>;
-  public abstract storeTx(
-      params: IPoolTx[]
-  ): Promise<number>;
-  public abstract deleteTx(
-      idList: string[],
-      isAlarm?: boolean
-  ): Promise<number>;
-    public abstract getTxPool(): Promise<IPoolTx[]>;
 }

@@ -15,6 +15,8 @@ import { LoggerService } from "../utils/logger";
 import OrbiterAccount from "../account/orbiterAccount";
 import { getAmountToSend } from "../lib/oldCore";
 import StarknetAccount from "../account/starknetAccount";
+import { telegramBot } from "../lib/telegram";
+import JSON = Mocha.reporters.JSON;
 const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
@@ -47,6 +49,7 @@ export interface SwapOrder {
   calldata: CalldataType;
   type: SwapOrderType;
   error?: Error | string | unknown;
+  pushTime?:number;
 }
 interface MonitorState {
   [key: number]: {
@@ -112,6 +115,23 @@ export default class Sequencer {
       return undefined;
     }
     const pendingTxs = pendingAllTxs.splice(0, 50);
+    const validPendingAllTxs = pendingTxs.filter(item => item.pushTime > new Date().valueOf() - 3 * 60 * 1000);
+    const invalidPendingAllTxs = pendingTxs.filter(item => !validPendingAllTxs.find(tx => tx.calldata.hash === item.calldata.hash));
+    if(invalidPendingAllTxs.length){
+        this.ctx.logger.info(`${JSON.stringify(invalidPendingAllTxs)} Transaction has expired`);
+        telegramBot.sendMessage('delete_invalid', `${JSON.stringify(hashList)} Transaction has expired`);
+    }
+    if(validPendingAllTxs.length <= 0){
+        return undefined;
+    }
+    const retry = (hashList: string[]) => {
+        this.ctx.logger.info(`retry tx ${JSON.stringify(hashList)}`);
+        telegramBot.sendMessage('retry', `retry tx ${JSON.stringify(hashList)}`);
+        this.pending[chainId].push(
+            ...pendingTxs.filter(tx => hashList.find(hash => hash.toLocaleLowerCase() === tx.calldata.hash.toLocaleLowerCase()))
+        );
+        this.ctx.logger.info(`current pending tx ${this.pending[chainId]}`);
+    };
     const matchOrders: SwapOrder[] = [];
     try {
       monitorState.locked = true;
@@ -164,7 +184,7 @@ export default class Sequencer {
       );
       if (matchOrders.length > 0) {
         logger.info(`exec submit before:${matchOrders.length}`);
-        const result = await this.submit(Number(chainId), matchOrders);
+        const result = await this.submit(Number(chainId), matchOrders, retry);
         console.log("submit result:", JSON.stringify(result));
       }
     } catch (error) {
@@ -232,7 +252,8 @@ export default class Sequencer {
 
   async submit(
     chainId: number,
-    pendingTxs: SwapOrder[]
+    pendingTxs: SwapOrder[],
+    retry: any
   ): Promise<submitResponse> {
     // exec send
     try {
@@ -341,7 +362,7 @@ export default class Sequencer {
             continue;
           }
           logger.info("submit step 5-3");
-          await this.swapReply(chainId, account, passOrders);
+          await this.swapReply(chainId, account, passOrders, retry);
           logger.info("sequencer swapReply success");
           logger.info("submit step 5-4");
         } catch (error) {
@@ -357,7 +378,8 @@ export default class Sequencer {
   public async swapReply(
     chainId: number,
     account: OrbiterAccount,
-    passOrders: Array<SwapOrder>
+    passOrders: Array<SwapOrder>,
+    retry
   ) {
     const logger = LoggerService.getLogger(chainId.toString(), {
       label: chainId.toString()
@@ -425,7 +447,7 @@ export default class Sequencer {
           accountType: typeof account
         });
         if (isStarknetMultiTransfer) {
-          submitTx = await (<StarknetAccount>account).transferMultiToken(encodeDatas);
+          submitTx = await (<StarknetAccount>account).transferMultiToken(encodeDatas, retry);
         } else {
           submitTx = await (<orbiterXAccount>account).swapOK(
               encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas,

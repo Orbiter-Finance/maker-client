@@ -7,12 +7,6 @@ import { getNonceCacheStore } from '../utils/caching';
 import { StarknetErc20ABI } from '../abi';
 import { telegramBot } from "../lib/telegram";
 
-// Execute several transactions at once
-const execTaskCount: number = 3;
-// Maximum number of transactions to be stacked in the memory pool
-const maxTaskCount: number = 5;
-const expireTime: number = 10 * 60 * 1000;
-
 export default class StarknetAccount extends OrbiterAccount {
     public account: Account;
     private nonceManager: NonceManager;
@@ -93,9 +87,9 @@ export default class StarknetAccount extends OrbiterAccount {
 
     public async transferMultiToken(
         params: IPoolTx[],
-        transactionRequest?: TransactionRequest
+        retry?: any
     ): Promise<TransferResponse | undefined> {
-        const transferParams:IPoolTx[] = await this.getTransferParams(params)
+        const transferParams: IPoolTx[] = JSON.parse(JSON.stringify(params));
         const nonceInfo = await this.nonceManager.getNextNonce();
         const { nonce } = nonceInfo;
         const invocationList: any[] = [];
@@ -112,57 +106,10 @@ export default class StarknetAccount extends OrbiterAccount {
             });
         }
         this.logger.info(`starknet transfer multi: ${invocationList.length}`);
-        return await this.handleTransfer(transferParams, invocationList, nonceInfo);
+        return await this.handleTransfer(transferParams, invocationList, nonceInfo, retry);
     }
 
-    private async getTransferParams(txList: IPoolTx[]) {
-        const poolList = await this.getTxPool();
-        const txPoolList: IPoolTx[] = [...poolList, ...txList];
-        if (!txPoolList || !txPoolList.length) {
-            this.logger.info('There are no consumable tasks in the this queue');
-            return [];
-        }
-        // Exceeded limit, clear tx
-        const deleteTxList: IPoolTx[] = [];
-        // Meet the limit, execute the tx
-        const execTaskList: IPoolTx[] = [];
-        for (let i = 0; i < txPoolList.length; i++) {
-            const tx = txPoolList[i];
-            // max length limit
-            if (i < txPoolList.length - maxTaskCount) {
-                deleteTxList.push(tx);
-                this.logger.error(`starknet_max_count_limit ${txPoolList.length} > ${maxTaskCount}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
-                continue;
-            }
-            // expire time limit
-            if (tx.createTime < new Date().valueOf() - expireTime) {
-                deleteTxList.push(tx);
-                const formatDate = (timestamp: number) => {
-                    return new Date(timestamp).toDateString() + " " + new Date(timestamp).toLocaleTimeString();
-                };
-                this.logger.error(`starknet_expire_time_limit ${formatDate(tx.createTime)} < ${formatDate(new Date().valueOf() - expireTime)}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
-                continue;
-            }
-            execTaskList.push(tx);
-        }
-        await this.deleteTx(deleteTxList.map(item => item.id), true);
-        await this.deleteTx(execTaskList.map(item => item.id));
-
-        const queueList: IPoolTx[] = [];
-        const retryList: IPoolTx[] = [];
-        for (let i = 0; i < execTaskList.length; i++) {
-            const tx = execTaskList[i];
-            if (i < execTaskCount) {
-                queueList.push(JSON.parse(JSON.stringify(tx)));
-            } else {
-                retryList.push(JSON.parse(JSON.stringify(tx)));
-            }
-        }
-        await this.storeTx(retryList);
-        return queueList;
-    }
-
-    private async handleTransfer(params: IPoolTx[], invocation, nonceInfo) {
+    private async handleTransfer(params: IPoolTx[], invocation, nonceInfo, retry?) {
         const { nonce, submit, rollback } = nonceInfo;
         const provider = this.getProviderV4();
         let maxFee = number.toBN(0.009 * 10 ** 18);
@@ -208,19 +155,22 @@ export default class StarknetAccount extends OrbiterAccount {
             };
         } catch (error: any) {
             this.logger.error(`rollback nonce:${error.message}`);
-            if (error.message.indexOf('StarkNet Alpha throughput limit reached') !== -1 ||
-                error.message.indexOf('Bad Gateway') !== -1) {
-                await this.storeTx(params);
-            } else if (error.message.indexOf('Invalid transaction nonce. Expected:') !== -1
-                && error.message.indexOf('got:') !== -1) {
-                const arr: string[] = error.message.split(', got: ');
-                const nonce1 = arr[0].replace(/[^0-9]/g, "");
-                const nonce2 = arr[1].replace(/[^0-9]/g, "");
-                if (Number(nonce) !== Number(nonce1) && Number(nonce) !== Number(nonce2)) {
-                    this.logger.error(`starknet sequencer error: ${nonce} != ${nonce1}, ${nonce} != ${nonce2}`);
-                    await this.storeTx(params);
-                }
+            if (retry) {
+                retry(params.map(item => item.id));
             }
+            // if (error.message.indexOf('StarkNet Alpha throughput limit reached') !== -1 ||
+            //     error.message.indexOf('Bad Gateway') !== -1) {
+            //     await this.storeTx(params);
+            // } else if (error.message.indexOf('Invalid transaction nonce. Expected:') !== -1
+            //     && error.message.indexOf('got:') !== -1) {
+            //     const arr: string[] = error.message.split(', got: ');
+            //     const nonce1 = arr[0].replace(/[^0-9]/g, "");
+            //     const nonce2 = arr[1].replace(/[^0-9]/g, "");
+            //     if (Number(nonce) !== Number(nonce1) && Number(nonce) !== Number(nonce2)) {
+            //         this.logger.error(`starknet sequencer error: ${nonce} != ${nonce1}, ${nonce} != ${nonce2}`);
+            //         await this.storeTx(params);
+            //     }
+            // }
             rollback();
             throw error;
         }
