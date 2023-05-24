@@ -8,7 +8,7 @@ import { BigNumber } from 'ethers';
 import { SwapOrder } from '../service/sequencer';
 import { telegramBot } from "../lib/telegram";
 export default class OrbiterAccount extends IAccount {
-    public static txPool: { [makerAddress_internalId: string]: any[] } = {};
+    public static txPool: { [makerAddress_internalId: string]: any[] } = {};   // Retrying transaction pools
     public logger: LoggerType;
     public chainConfig!: IChainConfig;
     public accountAddress: string;
@@ -36,11 +36,7 @@ export default class OrbiterAccount extends IAccount {
     public transferToken(token: string, to: string, value: string, transactionRequest?: TransactionRequest | any): Promise<TransferResponse | undefined> {
         throw new Error('Method not implemented.');
     }
-    public transferMultiToken(params:[{
-        token: string,
-        to: string,
-        value: string
-    }], transactionRequest?: TransactionRequest | any): Promise<TransferResponse | undefined> {
+    public transferMultiToken(params: IPoolTx[], transactionRequest?: TransactionRequest | any): Promise<TransferResponse | undefined> {
         throw new Error('Method not implemented.');
     }
     public async sendCollectionGetParameters(order: SwapOrder) {

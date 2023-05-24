@@ -14,6 +14,7 @@ import Caching from "../utils/caching";
 import { LoggerService } from "../utils/logger";
 import OrbiterAccount from "../account/orbiterAccount";
 import { getAmountToSend } from "../lib/oldCore";
+import StarknetAccount from "../account/starknetAccount";
 const submissionInterval = 1000 * 60 * 1;
 export interface submitResponse {
   chainId: number;
@@ -391,30 +392,49 @@ export default class Sequencer {
       sendMainTokenValue,
       contractTransfer
     });
-    if (contractTransfer) {
-      let submitTx: TransactionResponse | undefined;
-      logger.info("submit xvm step 6-1");
-      const encodeDatas = passOrders.map((order) => {
-        return (<orbiterXAccount>account).swapOkEncodeABI(
-          order.calldata.hash,
-          order.token,
-          order.to,
-          order.value
-        );
-      });
+    const isStarknetMultiTransfer = chainId === 4 || chainId === 44;
+    if (contractTransfer || isStarknetMultiTransfer) {
+      let logName, encodeDatas;
+      if (isStarknetMultiTransfer) {
+        logName = "starknet";
+        encodeDatas = passOrders.map(order => {
+          return {
+            id: order.calldata.hash,
+            token: order.token,
+            to: order.to,
+            value: order.value,
+          };
+        })
+      } else {
+        logName = 'orbiterX';
+        encodeDatas = passOrders.map((order) => {
+          return (<orbiterXAccount>account).swapOkEncodeABI(
+              order.calldata.hash,
+              order.token,
+              order.to,
+              order.value
+          );
+        });
+      }
+      let submitTx: { hash?, from?, to? };
+      logger.info(`submit ${logName} step 6-1`);
       let isError = false;
       try {
-        logger.info("submit xvm step 6-1 swapOK", {
+        logger.info(`submit ${logName} step 6-1 swapOK`, {
           encodeDatas,
           accountType: typeof account
         });
-        submitTx = await (<orbiterXAccount>account).swapOK(
-          encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas,
-          {
-            value: sendMainTokenValue
-          }
-        );
-        logger.info("submit xvm step 6-1 wait");
+        if (isStarknetMultiTransfer) {
+          submitTx = await (<StarknetAccount>account).transferMultiToken(encodeDatas);
+        } else {
+          submitTx = await (<orbiterXAccount>account).swapOK(
+              encodeDatas.length === 1 ? encodeDatas[0] : encodeDatas,
+              {
+                value: sendMainTokenValue
+              }
+          );
+        }
+        logger.info(`submit ${logName} step 6-1 wait`);
       } catch (error) {
         isError = true;
         passOrders[0].error = error;
@@ -425,12 +445,12 @@ export default class Sequencer {
           });
         }
         const errmsg = (error as Error).message;
-        logger.error(`${chainId} sequencer xvm submit error:${errmsg}`, error);
+        logger.error(`${chainId} sequencer ${logName} submit error:${errmsg}`, error);
       } finally {
-        logger.info("submit xvm step 6-2");
+        logger.info(`submit ${logName} step 6-2`);
         const passHashList = passOrders.map((tx) => tx.calldata.hash);
         if (submitTx) {
-          logger.info(`sequencer xvm submit success`, {
+          logger.info(`sequencer ${logName} submit success`, {
             toHash: submitTx.hash,
             fromHashList: passHashList
           });
@@ -449,28 +469,26 @@ export default class Sequencer {
         }
         // change
         await this.ctx.db.Transaction.update(
-          {
-            status: isError ? 96 : 97
-          },
-          {
-            where: {
-              hash: passHashList.length > 1 ? passHashList : passHashList[0]
+            {
+              status: isError ? 96 : 97
+            },
+            {
+              where: {
+                hash: passHashList.length > 1 ? passHashList : passHashList[0]
+              }
             }
-          }
         );
       }
-    }
-    if (!contractTransfer) {
+    } else {
       logger.info("submit step 6-2");
       // ua
       const txType = (chainConfig["features"] || []).includes("EIP1559")
-        ? 2
-        : 0;
+          ? 2
+          : 0;
       for (const order of passOrders) {
         let submitTx: TransferResponse | undefined;
         const transferParams =
-          (await account.sendCollectionGetParameters(order)) || {};
-        const isMultiTransfer = chainId === 4 || chainId === 44;
+            (await account.sendCollectionGetParameters(order)) || {};
         try {
           let sendValue = order.value;
           if (order.type === SwapOrderType.CrossToken) {
@@ -485,50 +503,34 @@ export default class Sequencer {
             // }
             // sendValue = new BigNumber(response.tAmount || 0).toFixed(0);
           }
-          // multi transfer
-          if (isMultiTransfer) {
-            logger.info("submit step 6-2-1-3", {
+          if (chains.inValidMainToken(chainId, order.token)) {
+            logger.info("submit step 6-2-1-1", {
               to: order.to,
               value: sendValue,
               txType
             });
-            submitTx = await account.storeTx([{
-              id: order.calldata.hash,
+            submitTx = await account.transfer(order.to, sendValue, {
+              type: txType,
+              ...transferParams
+            });
+            logger.info("submit step 6-2-1-1 wait", { submitTx });
+          } else {
+            logger.info("submit step 6-2-1-2", {
               token: order.token,
               to: order.to,
-              value: sendValue
-            }]);
-            logger.info("submit step 6-2-1-3 wait", { submitTx });
-          } else {
-            if (chains.inValidMainToken(chainId, order.token)) {
-              logger.info("submit step 6-2-1-1", {
-                to: order.to,
-                value: sendValue,
-                txType
-              });
-              submitTx = await account.transfer(order.to, sendValue, {
-                type: txType,
-                ...transferParams
-              });
-              logger.info("submit step 6-2-1-1 wait", { submitTx });
-            } else {
-              logger.info("submit step 6-2-1-2", {
-                token: order.token,
-                to: order.to,
-                value: sendValue,
-                txType
-              });
-              submitTx = await account.transferToken(
-                  order.token,
-                  order.to,
-                  sendValue,
-                  {
-                    type: txType,
-                    ...transferParams
-                  }
-              );
-              logger.info("submit step 6-2-1-2 wait", { submitTx });
-            }
+              value: sendValue,
+              txType
+            });
+            submitTx = await account.transferToken(
+                order.token,
+                order.to,
+                sendValue,
+                {
+                  type: txType,
+                  ...transferParams
+                }
+            );
+            logger.info("submit step 6-2-1-2 wait", { submitTx });
           }
           order.hash = submitTx ? submitTx.hash : "";
           logger.info("submit step 6-2-1-3");
@@ -539,8 +541,8 @@ export default class Sequencer {
           });
           const errmsg = (error as Error).message;
           logger.error(
-            `${chainConfig.name} ${order.calldata.hash} sequencer submit error:${errmsg}`,
-            error
+              `${chainConfig.name} ${order.calldata.hash} sequencer submit error:${errmsg}`,
+              error
           );
           order.error = error;
         } finally {
@@ -561,20 +563,18 @@ export default class Sequencer {
             });
           }
           logger.info("submit step 6-2-3");
-          if (!isMultiTransfer) {
-            // change
-            await this.ctx.db.Transaction.update(
-                {
-                  status: order.error ? 96 : 97
-                },
-                {
-                  where: {
-                    hash: order.calldata.hash
-                  }
+          // change
+          await this.ctx.db.Transaction.update(
+              {
+                status: order.error ? 96 : 97
+              },
+              {
+                where: {
+                  hash: order.calldata.hash
                 }
-            );
-            logger.info("submit step 6-2-4");
-          }
+              }
+          );
+          logger.info("submit step 6-2-4");
         }
       }
     }

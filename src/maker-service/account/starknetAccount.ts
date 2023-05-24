@@ -6,6 +6,13 @@ import OrbiterAccount from './orbiterAccount';
 import { getNonceCacheStore } from '../utils/caching';
 import { StarknetErc20ABI } from '../abi';
 import { telegramBot } from "../lib/telegram";
+
+// Execute several transactions at once
+const execTaskCount: number = 3;
+// Maximum number of transactions to be stacked in the memory pool
+const maxTaskCount: number = 5;
+const expireTime: number = 10 * 60 * 1000;
+
 export default class StarknetAccount extends OrbiterAccount {
     public account: Account;
     private nonceManager: NonceManager;
@@ -88,10 +95,11 @@ export default class StarknetAccount extends OrbiterAccount {
         params: IPoolTx[],
         transactionRequest?: TransactionRequest
     ): Promise<TransferResponse | undefined> {
+        const transferParams:IPoolTx[] = await this.getTransferParams(params)
         const nonceInfo = await this.nonceManager.getNextNonce();
         const { nonce } = nonceInfo;
         const invocationList: any[] = [];
-        for (const param of params) {
+        for (const param of transferParams) {
             const { token, to, value } = param;
             invocationList.push({
                 contractAddress: token,
@@ -104,9 +112,54 @@ export default class StarknetAccount extends OrbiterAccount {
             });
         }
         this.logger.info(`starknet transfer multi: ${invocationList.length}`);
-        const result = await this.handleTransfer(params, invocationList, nonceInfo);
-        await this.deleteTx(params.map(item => item.id));
-        return result;
+        return await this.handleTransfer(transferParams, invocationList, nonceInfo);
+    }
+
+    private async getTransferParams(txList: IPoolTx[]) {
+        const poolList = await this.getTxPool();
+        const txPoolList: IPoolTx[] = [...poolList, ...txList];
+        if (!txPoolList || !txPoolList.length) {
+            this.logger.info('There are no consumable tasks in the this queue');
+            return [];
+        }
+        // Exceeded limit, clear tx
+        const deleteTxList: IPoolTx[] = [];
+        // Meet the limit, execute the tx
+        const execTaskList: IPoolTx[] = [];
+        for (let i = 0; i < txPoolList.length; i++) {
+            const tx = txPoolList[i];
+            // max length limit
+            if (i < txPoolList.length - maxTaskCount) {
+                deleteTxList.push(tx);
+                this.logger.error(`starknet_max_count_limit ${txPoolList.length} > ${maxTaskCount}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
+                continue;
+            }
+            // expire time limit
+            if (tx.createTime < new Date().valueOf() - expireTime) {
+                deleteTxList.push(tx);
+                const formatDate = (timestamp: number) => {
+                    return new Date(timestamp).toDateString() + " " + new Date(timestamp).toLocaleTimeString();
+                };
+                this.logger.error(`starknet_expire_time_limit ${formatDate(tx.createTime)} < ${formatDate(new Date().valueOf() - expireTime)}, id: ${tx.id}, token: ${tx.token}, value: ${tx.value}`);
+                continue;
+            }
+            execTaskList.push(tx);
+        }
+        await this.deleteTx(deleteTxList.map(item => item.id), true);
+        await this.deleteTx(execTaskList.map(item => item.id));
+
+        const queueList: IPoolTx[] = [];
+        const retryList: IPoolTx[] = [];
+        for (let i = 0; i < execTaskList.length; i++) {
+            const tx = execTaskList[i];
+            if (i < execTaskCount) {
+                queueList.push(JSON.parse(JSON.stringify(tx)));
+            } else {
+                retryList.push(JSON.parse(JSON.stringify(tx)));
+            }
+        }
+        await this.storeTx(retryList);
+        return queueList;
     }
 
     private async handleTransfer(params: IPoolTx[], invocation, nonceInfo) {
@@ -129,6 +182,8 @@ export default class StarknetAccount extends OrbiterAccount {
                 }
             );
             this.logger.info(`starknet transfer hash: ${executeHash?.transaction_hash}`);
+            // TODO test
+            telegramBot.sendMessage('starknet_hash', `https://testnet.starkscan.co/tx/${executeHash?.transaction_hash}`);
             // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
             provider.waitForTransaction(executeHash.transaction_hash).then(async (tx) => {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
@@ -148,6 +203,7 @@ export default class StarknetAccount extends OrbiterAccount {
             return {
                 hash: executeHash.transaction_hash,
                 from: this.account.address,
+                to: "",
                 nonce: nonce,
             };
         } catch (error: any) {

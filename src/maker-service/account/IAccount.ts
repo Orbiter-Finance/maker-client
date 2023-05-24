@@ -4,7 +4,7 @@ export interface IPoolTx {
     token: string,
     to: string,
     value: string,
-    createTime: number
+    createTime?: number
 };
 export interface TransferResponse {
   hash: string;

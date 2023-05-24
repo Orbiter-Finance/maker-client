@@ -16,11 +16,11 @@ export class Telegram {
         if (!process.env["TELEGRAM_TOKEN"] || !process.env["TELEGRAM_CHATID"]) {
             console.error("Telegram Token null");
         }
-        const now = new Date().valueOf();
-        if (now - (this.lastSendTimeRecord[type] || 0) < 10 * 60 * 1000) {
-            return;
-        }
-        this.lastSendTimeRecord[type] = now;
+        // const now = new Date().valueOf();
+        // if (now - (this.lastSendTimeRecord[type] || 0) < 10 * 60 * 1000) {
+        //     return;
+        // }
+        // this.lastSendTimeRecord[type] = now;
         const requestData = {
             chat_id: this.opts?.chatId,
             text: `[MK] ${messageText}`,
