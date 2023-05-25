@@ -114,9 +114,9 @@ export default class Sequencer {
       return undefined;
     }
     const pendingTxs = pendingAllTxs.splice(0, 50);
-    const validPendingAllTxs = pendingTxs.filter(item => !item.retryTime || item.retryTime > new Date().valueOf() - 3 * 60 * 1000);
+    const validPendingAllTxs = pendingTxs.filter(item => !item.retryTime || item.retryTime > new Date().valueOf() - 10 * 60 * 1000);
     const invalidPendingAllTxs = pendingTxs.filter(item => !validPendingAllTxs.find(tx => tx.calldata.hash === item.calldata.hash));
-    if(invalidPendingAllTxs.length){
+    if (invalidPendingAllTxs.length) {
         this.ctx.logger.info(`${JSON.stringify(invalidPendingAllTxs.map(item=>item.hash))} Transaction has expired`);
         telegramBot.sendMessage('delete_invalid', `${JSON.stringify(invalidPendingAllTxs.map(item=>item.hash))} Transaction has expired`);
     }
@@ -144,7 +144,12 @@ export default class Sequencer {
         });
       }
       this.pending[chainId].push(
-          ...pendingTxs.filter(tx => hashList.find(hash => hash.toLocaleLowerCase() === tx.calldata.hash.toLocaleLowerCase()))
+          ...pendingTxs.filter(tx => hashList.find(hash => hash.toLocaleLowerCase() === tx.calldata.hash.toLocaleLowerCase())).map(item => {
+            if (item.retryTime) {
+              return item;
+            }
+            return { ...item, retryTime: new Date().valueOf() };
+          })
       );
       this.ctx.logger.info(`current pending tx ${JSON.stringify(this.pending[chainId].map(item=>item.calldata.hash))}`);
     };
