@@ -128,9 +128,8 @@ export default class StarknetAccount extends OrbiterAccount {
                     maxFee
                 }
             );
-            this.logger.info(`starknet transfer hash: ${executeHash?.transaction_hash}`);
-            // TODO test
-            telegramBot.sendMessage('starknet_hash', `https://testnet.starkscan.co/tx/${executeHash?.transaction_hash}`);
+            this.logger.info(`starknet transfer fromHash: ${JSON.stringify(params.map(item => item.id))}`);
+            this.logger.info(`starknet transfer toHash: ${executeHash?.transaction_hash}`);
             // console.log(`Waiting for Tx to be Accepted on Starknet - Transfer...`, executeHash.transaction_hash);
             provider.waitForTransaction(executeHash.transaction_hash).then(async (tx) => {
                 this.logger.info(`waitForTransaction SUCCESS:`, tx);
