@@ -83,6 +83,7 @@ export class Factory {
       case 520:
       case 521:
       case 522:
+      case 523:
         if (ValidatorService.isSupportXVM(toChainId)) {
           wallet = new XVMAccount(toChainId, privateKey);
         } else {
