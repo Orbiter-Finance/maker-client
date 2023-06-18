@@ -74,6 +74,9 @@ export default {
     maxGasPrice: 180000000000,
     swapAnswerGasLimit: 100000,
   },
+  522: {
+    gasPriceMultiple: 2
+  },
 
   development: {
     dialect: 'mysql',
