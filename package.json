@@ -50,7 +50,8 @@
     "web3": "^1.8.1",
     "winston": "^3.8.2",
     "zksync": "^0.13.1",
-    "zksync-web3": "^0.12.1"
+    "zksync-web3": "^0.12.1",
+    "consul": "^1.2.0"
   },
   "dependencies": {
     "@imtbl/core-sdk": "^1.0.1",
