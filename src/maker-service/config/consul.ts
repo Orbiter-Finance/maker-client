@@ -60,10 +60,8 @@ async function watchMakerConfig(ctx: Context, key: string) {
     });
 }
 
-import localChain from './chains.json';
-
 function convertChainConfig(env_prefix: string, chainList?: any[]): any[] {
-    const chainConfigList = (chainList ? chainList : localChain);
+    const chainConfigList = chainList;
     for (const chain of chainConfigList) {
         chain.rpc = chain.rpc || [];
         const apiKey =
