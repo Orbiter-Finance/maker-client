@@ -16,7 +16,7 @@ export const consul = process.env["CONSUL_HOST"]
 export async function watchConsulConfig(ctx: Context) {
     console.log("======== consul config init begin ========");
     const keys = [
-        ...(await consul.kv.keys("maker/rule/config/common")),
+        ...(await consul.kv.keys("common")),
     ];
     for (const key of keys) {
         try {
@@ -41,7 +41,7 @@ async function watchMakerConfig(ctx: Context, key: string) {
             if (data.Value) {
                 try {
                     const config = JSON.parse(data.Value);
-                    if (key === "maker/rule/config/common/chain.json") {
+                    if (key === "common/chain.json") {
                         updateChain(ctx, config);
                     }
                     resolve(config);
