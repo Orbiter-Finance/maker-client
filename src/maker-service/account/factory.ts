@@ -55,6 +55,12 @@ export class Factory {
               privateKey
             );
             break;
+      case 512:
+        wallet = new ZKSpaceAccount(
+            toChainId,
+            privateKey
+        );
+        break;
       case 1:
       case 2:
       case 22:
@@ -84,20 +90,20 @@ export class Factory {
       case 521:
       case 522:
       case 523:
+      case 524:
+      case 525:
         if (ValidatorService.isSupportXVM(toChainId)) {
           wallet = new XVMAccount(toChainId, privateKey);
         } else {
           wallet = new EVMAccount(toChainId, privateKey);
         }
         break;
-      case 512:
-        wallet = new ZKSpaceAccount(
-          toChainId,
-          privateKey
-        );
-        break;
         default:
-          throw new Error('Chain Not implemented')
+          if (ValidatorService.isSupportXVM(toChainId)) {
+            wallet = new XVMAccount(toChainId, privateKey);
+          } else {
+            wallet = new EVMAccount(toChainId, privateKey);
+          }
           break;
     }
     Factory.wallets[walletId] = wallet;
