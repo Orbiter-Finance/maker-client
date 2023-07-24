@@ -53,20 +53,7 @@ export default class EVMAccount extends OrbiterAccount {
     transactionRequest.value = ethers.BigNumber.from(0);
     transactionRequest.from = this.wallet.address;
     // get erc20 getLimit
-    if (!transactionRequest.gasLimit) {
-      try {
-        const gasLimit = await this.provider.estimateGas({
-          from: transactionRequest.from,
-          to: token,
-          data,
-          value: transactionRequest.value
-        });
-        transactionRequest.gasLimit = gasLimit;
-      } catch (error) {
-        this.logger.error(`evm transferToken estimateGas error`, error);
-        transactionRequest.gasLimit = ethers.BigNumber.from(100000);
-      }
-    }
+    await this.getGasPrice(transactionRequest);
     const tx = await this.sendTransaction(token, transactionRequest);
     return {
       hash: tx.hash,
@@ -75,64 +62,71 @@ export default class EVMAccount extends OrbiterAccount {
       to: to,
       token,
       value: ethers.BigNumber.from(value),
+      _response: tx
     };
   }
   async getGasPrice(transactionRequest: ethers.providers.TransactionRequest = {}) {
     try {
       const chainCustomConfig = config[this.chainConfig.internalId] || {};
-      if (transactionRequest.type === 2) {
+
+      if (!transactionRequest.gasLimit) {
+        try {
+          const gasLimit = await this.provider.estimateGas({
+            from: transactionRequest.from,
+            to: transactionRequest.to,
+            data: transactionRequest.data,
+            value: transactionRequest.value
+          });
+          transactionRequest.gasLimit = gasLimit;
+        } catch (error) {
+          this.logger.error(`evm transfer estimateGas error`, error);
+          transactionRequest.gasLimit = ethers.BigNumber.from(100000);
+        }
+      }
+      let isEIP1559 = false;
+      const feeData = await this.provider.getFeeData();
+      if (transactionRequest.type === 0) {
+        isEIP1559 = false;
+      } else if(transactionRequest.type === 2) {
+        isEIP1559 = true;
+      } else {
+        if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
+          isEIP1559 = true;
+        }
+        console.log(`自动识别发送交易类型:isEIP1559=${isEIP1559}`)
+      }
+      if (isEIP1559) {
+        let maxFeePerGas = chainCustomConfig.minFeePerGas || 0;
+        let maxPriorityFeePerGas = chainCustomConfig.minPriorityFeePerGas || 0;
         if (!transactionRequest.maxFeePerGas || !transactionRequest.maxPriorityFeePerGas) {
           this.logger.info(`sendTransaction exec 4 getFeeData:`);
-          const feeData = await this.provider.getFeeData();
           if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
-            transactionRequest.maxFeePerGas = feeData.maxFeePerGas.toHexString();
-            // fix 1.5gwei
-            transactionRequest.maxPriorityFeePerGas =
-              feeData.maxPriorityFeePerGas.toHexString();
+            maxFeePerGas = feeData.maxFeePerGas.toNumber();
+            maxPriorityFeePerGas = feeData.maxPriorityFeePerGas.toNumber();
           }
-          if (chainCustomConfig.maxGasPrice) {
-            transactionRequest.maxFeePerGas = ethers.BigNumber.from(chainCustomConfig.maxGasPrice);
-          }
-          if (chainCustomConfig.maxPriorityFeePerGas) {
-            transactionRequest.maxPriorityFeePerGas = ethers.BigNumber.from(chainCustomConfig.maxPriorityFeePerGas);
-          }
+          transactionRequest.type =2;
+          transactionRequest.maxFeePerGas = Math.max(chainCustomConfig.minFeePerGas, maxFeePerGas);
+          transactionRequest.maxPriorityFeePerGas = Math.max(chainCustomConfig.minPriorityFeePerGas, maxPriorityFeePerGas);
           this.logger.info(`sendTransaction exec 4 getFeeData ok:`, {
             maxFeePerGas: transactionRequest.maxFeePerGas,
             maxPriorityFeePerGas: transactionRequest.maxPriorityFeePerGas
           });
         }
-        delete transactionRequest.gasPrice;
-      }
-
-      if (transactionRequest.type === 0) {
-        if (!transactionRequest.gasPrice) {
-          this.logger.info(`sendTransaction exec 4 getGasPrice:${transactionRequest.gasPrice}`);
-          const feeData = await this.provider.getFeeData();
-          this.logger.info(`sendTransaction exec 4 feeData:`, feeData);
-          transactionRequest.gasPrice = await this.provider.getGasPrice().catch(error => {
+        // delete transactionRequest.gasPrice;
+      } else {
+        let maxFeePerGas = transactionRequest.gasPrice || ethers.BigNumber.from(0);
+        if (!maxFeePerGas || +maxFeePerGas.toString()<=0) {
+          this.logger.info(`sendTransaction exec 4 getGasPrice:${maxFeePerGas}`);
+          maxFeePerGas = await this.provider.getGasPrice().catch(error => {
             this.logger.error(`sendTransaction exec 4 getGasPrice error:`, error);
-            return ethers.BigNumber.from(0);
+            return 0;
           })
-          this.logger.info(`sendTransaction exec 4 getGasPrice ok:${transactionRequest.gasPrice}`);
+          this.logger.info(`sendTransaction exec 4 getGasPrice ok:${maxFeePerGas}`);
         }
+        transactionRequest.type  = 0;
+        transactionRequest.gasPrice = Math.max(chainCustomConfig.minFeePerGas, +maxFeePerGas.toString());
         this.logger.info(`before 1 gasPrice:${String(transactionRequest.gasPrice)}`);
-        // limit min
-        if (chainCustomConfig.minGasPrice) {
-          if (new BigNumber(transactionRequest.gasPrice.toString()).lt(chainCustomConfig.minGasPrice)){
-            transactionRequest.gasPrice = ethers.BigNumber.from(chainCustomConfig.minGasPrice);
-          }
-          this.logger.info(`before 2 gasPrice:${String(transactionRequest.gasPrice)}`);
-        }
-        // limit max
-        if (chainCustomConfig.maxGasPrice) {
-          if (new BigNumber(transactionRequest.gasPrice.toString()).gt(chainCustomConfig.maxGasPrice)){
-            transactionRequest.gasPrice = ethers.BigNumber.from(chainCustomConfig.maxGasPrice);
-          }
-        }
-        if (chainCustomConfig.gasPriceMultiple) {
-          const newGasPrice = new BigNumber(transactionRequest.gasPrice.toString()).multipliedBy(chainCustomConfig.gasPriceMultiple)
-          transactionRequest.gasPrice = ethers.BigNumber.from(newGasPrice.toFixed(0));
-        }
+
         this.logger.info(`after 3 gasPrice:${String(transactionRequest.gasPrice)}`);
       }
     } catch (error) {
@@ -150,29 +144,16 @@ export default class EVMAccount extends OrbiterAccount {
     transactionRequest.value = ethers.BigNumber.from(value);
     transactionRequest.from = this.wallet.address;
     // get getLimit
-    if (!transactionRequest.gasLimit) {
-      try {
-        const gasLimit = await this.provider.estimateGas({
-          from: transactionRequest.from,
-          to: transactionRequest.to,
-          value: transactionRequest.value
-        });
-        transactionRequest.gasLimit = gasLimit;
-      } catch (error) {
-        this.logger.error(`evm transfer estimateGas error`, error);
-        transactionRequest.gasLimit = ethers.BigNumber.from(100000);
-      }
 
-    }
-
+    await this.getGasPrice(transactionRequest);
     const tx = await this.sendTransaction(to, transactionRequest);
-
     return {
       hash: tx.hash,
       nonce: tx.nonce,
       from: tx.from,
       to: tx.to,
       value: tx.value,
+      _response: tx
     };
   }
   async sendTransaction(
@@ -199,7 +180,6 @@ export default class EVMAccount extends OrbiterAccount {
     this.logger.info(`sendTransaction exec 2:`, { to });
     try {
       // nonce manager
-      await this.getGasPrice(tx);
       // this.logger.error(`evm sendTransaction before error`, error);
       // throw new Error(`=>sendTransaction before error:${error.message}`);
       // logger.info(`${chainConfig.name} sendTransaction before nonce:${this.nonceManager._deltaCount}`);

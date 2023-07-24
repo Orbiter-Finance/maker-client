@@ -1,4 +1,5 @@
 export interface Config {
+  MYSQL:string;
   RABBIT_URL: string;
   RABBIT_EXCHANGE: string;
   // RABBIT_PORT?: number;

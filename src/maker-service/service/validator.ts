@@ -11,7 +11,7 @@ import { LoggerService } from '../utils/logger';
 import { getChainLinkPrice } from './quotation';
 import { SwapOrder, SwapOrderType } from './sequencer';
 
-export const orderTimeoutMS = 1000 * 60 * 30;
+export const orderTimeoutMS = 1000 * 60 * 30 * 9999999999999999;
 export default class ValidatorService {
   constructor(private readonly ctx: Context) { }
   public static transactionTimeValid(timestamp: number) {
@@ -29,16 +29,16 @@ export default class ValidatorService {
     //   logger.error(`${fromTx.hash} chain ${fromTx.memo} Payment collection is not supported`);
     //   return undefined;
     // }
-    if (this.ctx.NODE_ENV !== 'development' && this.ctx.NODE_ENV !== 'test') {
-      if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
-        logger.warn(`${fromTx.hash} not OrbiterX tx 1`);
-        return;
-      }
-      if (!(fromTx.extra && fromTx.extra['xvm'] && fromTx.extra['xvm']['name'] == 'swap')) {
-        logger.warn(`${fromTx.hash} not OrbiterX tx 2`);
-        return;
-      }
-    }
+    // if (this.ctx.NODE_ENV !== 'development' && this.ctx.NODE_ENV !== 'test') {
+    //   if (fromTx.source != 'xvm' || !fromTx.extra || isEmpty(fromTx.extra['xvm'])) {
+    //     logger.warn(`${fromTx.hash} not OrbiterX tx 1`);
+    //     return;
+    //   }
+    //   if (!(fromTx.extra && fromTx.extra['xvm'] && fromTx.extra['xvm']['name'] == 'swap')) {
+    //     logger.warn(`${fromTx.hash} not OrbiterX tx 2`);
+    //     return;
+    //   }
+    // }
 
     const side = fromTx.side;
     if (side !== 0) {
@@ -55,7 +55,7 @@ export default class ValidatorService {
       return undefined;
     }
     if (!fromTx.extra) {
-      logger.error(`${fromTx.hash} extra not found`);
+      logger.error(`${fromTx.hash} extra is null`);
       return undefined;
     }
     if (!fromTx.expectValue) {
@@ -250,17 +250,17 @@ export default class ValidatorService {
     }
 
     // veify 
-    const sequencerExist = await this.ctx.db.Sequencer.findOne({
-      attributes: ["id"],
-      raw: true,
-      where: <any>{
-        [Op.or]: [sequelize.fn('JSON_CONTAINS', sequelize.col('transactions'), sequelize.fn('JSON_Array', swapOrder.calldata.hash.toLocaleLowerCase()))]
-      }
-    });
-    if (sequencerExist && sequencerExist.id) {
-      logger.error(`${swapOrder.calldata.hash} verifyToTx Find Sequencer Tx Exist`);
-      return undefined;
-    }
+    // const sequencerExist = await this.ctx.db.Sequencer.findOne({
+    //   attributes: ["id"],
+    //   raw: true,
+    //   where: <any>{
+    //     [Op.or]: [sequelize.fn('JSON_CONTAINS', sequelize.col('transactions'), sequelize.fn('JSON_Array', swapOrder.calldata.hash.toLocaleLowerCase()))]
+    //   }
+    // });
+    // if (sequencerExist && sequencerExist.id) {
+    //   logger.error(`${swapOrder.calldata.hash} verifyToTx Find Sequencer Tx Exist`);
+    //   return undefined;
+    // }
     //
     const sourceTx = await this.ctx.db.Transaction.findOne({
       attributes: ['id'],

@@ -3853,7 +3853,7 @@ async-mutex@^0.2.6:
 
 async-mutex@^0.4.0:
   version "0.4.0"
-  resolved "https://registry.yarnpkg.com/async-mutex/-/async-mutex-0.4.0.tgz#ae8048cd4d04ace94347507504b3cf15e631c25f"
+  resolved "https://registry.npmjs.org/async-mutex/-/async-mutex-0.4.0.tgz#ae8048cd4d04ace94347507504b3cf15e631c25f"
   integrity sha512-eJFZ1YhRR8UN8eBLoNzcDPcy/jqjsg6I1AP+KvWQX80BqOSW1oJPJXDylPUEeMr2ZQvHgnQ//Lp6f3RQ1zI7HA==
   dependencies:
     tslib "^2.4.0"
@@ -9530,10 +9530,10 @@ ora@^5.3.0, ora@^5.4.1:
     strip-ansi "^6.0.0"
     wcwidth "^1.0.1"
 
-orbiter-chaincore@1.3.9-23:
-  version "1.3.9-23"
-  resolved "https://registry.yarnpkg.com/orbiter-chaincore/-/orbiter-chaincore-1.3.9-23.tgz#548af23afed0d2d957dd59389a114cbabdf0fc22"
-  integrity sha512-u5giaC4pKGcIu+qnt6QgF7O1mbqTxe7ei25IvvhFVFSQDY+cuSy/qrYp14PmAPWkJB5rmfbJcbeqe09Sx4tAiQ==
+orbiter-chaincore@1.3.9-29:
+  version "1.3.9-29"
+  resolved "https://registry.npmjs.org/orbiter-chaincore/-/orbiter-chaincore-1.3.9-29.tgz#638be37940a9c96231adc3192f215d775a14803f"
+  integrity sha512-n2c7MsPvSt/bgrNS4Kh4m+v3pGewh01ktagnvtUPhjkhlUz/TPVJ12sSFzMC2JDM/laOuRcJ/k6vFSjDWtIKgg==
   dependencies:
     "@alch/alchemy-web3" "^1.4.6"
     "@dydxprotocol/v3-client" "^1.9.1"
@@ -10449,6 +10449,11 @@ rlp@^2.0.0, rlp@^2.2.3, rlp@^2.2.4:
   integrity sha512-d5gdPmgQ0Z+AklL2NVXr/IoSjNZFfTVvQWzL/AM2AOcSzYP2xjlb0AC8YyCLc41MSNf6P6QVtjgPdmVtzb+4lQ==
   dependencies:
     bn.js "^5.2.0"
+
+rlp@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/rlp/-/rlp-3.0.0.tgz#5a60725ca4314a3a165feecca1836e4f2c1e2343"
+  integrity sha512-PD6U2PGk6Vq2spfgiWZdomLvRGDreBLxi5jv5M8EpRo3pU6VEm31KO+HFxE18Q3vgqfDrQ9pZA3FP95rkijNKw==
 
 roarr@^2.15.3:
   version "2.15.4"

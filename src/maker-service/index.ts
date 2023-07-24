@@ -13,10 +13,10 @@ export async function run(): Promise<Context> {
   ctx.logger.info("Context init success");
   await new Quotation().subscribe();
   ctx.logger.info("init Quotation success");
-  new Consumer(ctx);
-  ctx.logger.info("init Consumer success");
+  // new Consumer(ctx);
+  // ctx.logger.info("init Consumer success");
   //online zxy
-  // await ctx.sequencer.readHistory();
+  await ctx.sequencer.readHistory();
   ctx.logger.info("init Sequencer success");
   return ctx;
 }

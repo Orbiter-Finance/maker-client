@@ -7,9 +7,11 @@ export interface TransferResponse {
   gasLimit?: BigNumber;
   gasPrice?: BigNumber;
   fee?: BigNumber,
+  symbol?: string;
   token?: string;
   data?: string;
   value: BigNumber;
+  _response?: any
 };
 export interface TransactionResponse extends ethers.providers.TransactionResponse {
 };
@@ -27,7 +29,7 @@ export default abstract class IAccount {
     to: string,
     value: string,
     transactionRequest?: TransactionRequest | any
-  ): Promise<TransferResponse | undefined>;
+    ): Promise<TransferResponse | undefined>;
   public abstract getBalance(to?: string, token?: string): Promise<ethers.BigNumber>;
   public abstract getTokenBalance(
     token: string,
@@ -38,5 +40,5 @@ export default abstract class IAccount {
     to: string,
     value: string,
     transactionRequest?: TransactionRequest | any
-  ): Promise<TransferResponse | undefined>;
+    ): Promise<TransferResponse | undefined>;
 }
