@@ -1,15 +1,46 @@
-import { Global, Injectable } from '@nestjs/common';
+import { Global, Inject, Injectable, Logger } from '@nestjs/common';
+import { ConfigService, registerAs } from '@nestjs/config';
+import { equals, isEmpty } from 'src/utils';
+import * as yaml from 'js-yaml';
+import { join } from 'path';
+import { writeFileSync, readFileSync } from 'fs';
+import { isEqual } from 'lodash';
+import { ConsulService } from 'src/consul/consul.service';
+const YAML_CONFIG_FILENAME = 'chains.json';
+const NAME_SPACE = 'Chains';
+export function ChainConfigRegister() {
+    return registerAs(NAME_SPACE, () => {
+        try {
+            const configContent = readFileSync(YAML_CONFIG_FILENAME, 'utf8');
+            return JSON.parse(configContent)
+        } catch (error) {
+            console.error(`init load ${YAML_CONFIG_FILENAME} fail ${error.message}`);
+            return {}
+        }
+    });
+}
 
-import chains from './chains.json';
-import { equals } from 'src/utils';
-@Global()
 @Injectable()
 export class ChainConfigService {
 
     private static configs: Array<IChainConfig> = [];
-    constructor() {
-        // TODO: ChainService
-        this.fill(chains as any)
+    private readonly logger = new Logger(ChainConfigService.name);
+    constructor(private readonly configService: ConfigService, private readonly consul: ConsulService) {
+        ChainConfigService.configs = this.configService.get("Chains");
+        try {
+            setInterval(() => {
+                const configs = this.consul.configs['maker-client/chains.json'];
+                if (configs) {
+                    const data = configs.yamlToJSON();
+                    if (!isEqual(data, ChainConfigService.configs)) {
+                        ChainConfigService.configs = data;
+                        this.write();
+                    }
+                }
+            }, 500);
+        } catch (error) {
+            this.logger.error(`watch config change error ${error.message}`, error);
+        }
     }
     fill(configList: Array<IChainConfig>) {
         const chains = configList.map((chain: IChainConfig) => {
@@ -19,7 +50,7 @@ export class ChainConfigService {
             chain.internalId = +chain.internalId;
             chain.tokens =
                 chain.tokens?.map((row: Token) => {
-                    row.mainCoin = equals(row.address, chain.nativeCurrency.address);
+                    row.isNative = equals(row.address, chain.nativeCurrency.address);
                     return row;
                 }) || [];
             if (
@@ -33,7 +64,7 @@ export class ChainConfigService {
                     symbol: chain.nativeCurrency.symbol,
                     decimals: chain.nativeCurrency.decimals,
                     address: chain.nativeCurrency.address,
-                    mainCoin: true,
+                    isNative: true,
                 });
             }
             chain.features = chain.features || [];
@@ -166,6 +197,33 @@ export class ChainConfigService {
         );
         return chain;
     }
+    getChainTokenByKeyValue(
+        chainId: string | number,
+        key: keyof Token,
+        value: any,
+    ): Token | undefined {
+        const chain = this.getChainInfo(chainId);
+        if (equals(chain.nativeCurrency[key], value)) {
+            const token = chain.nativeCurrency;
+            token.isNative = true;
+            return token;
+        }
+        const token = chain.tokens.find(t => equals(t[key], value));
+        return token;
+    }
+
+
+    async write() {
+        if (isEmpty(ChainConfigService.configs)) {
+            throw new Error('MAKER_CONFIG ISEmpty');
+        }
+        if (ChainConfigService.configs) {
+            const data = JSON.stringify(ChainConfigService.configs);
+            const filePath = join(__dirname, YAML_CONFIG_FILENAME);
+            await writeFileSync(filePath, data)
+        }
+
+    }
 }
 
 
@@ -180,7 +238,7 @@ export interface Token {
     symbol: string;
     decimals: 18;
     address: string;
-    mainCoin?: boolean;
+    isNative?: boolean;
 }
 export type IChainConfigWorkingStatus = "running" | "pause" | "stop";
 export interface IChainConfig {

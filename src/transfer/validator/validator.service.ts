@@ -2,20 +2,21 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { isAddress } from 'ethers';
 import BigNumber from 'bignumber.js';
-import { ChainConfigService } from 'src/config/chainconfig.service';
+import { ChainConfigService } from 'src/config/chainConfig.service';
 import { ConfigService } from '@nestjs/config';
 import { equals, isEmpty } from 'src/utils';
 import { ChainLinkService } from 'src/service/chainlink.service';
 import { SwapOrder, SwapOrderType } from '../sequencer/sequencer.interface';
 import { getMakerConfig } from 'src/config/makerConfig.service';
-import { Factory } from 'src/account/factory';
 import { bridge_transaction } from '@prisma/client';
+import { AccountFactoryService } from 'src/account/factory';
 
 @Injectable()
 export class ValidatorService {
     private logger = new Logger(ValidatorService.name);
     constructor(private chainConfigService: ChainConfigService,
-        private chainLinkService: ChainLinkService, private configService: ConfigService) {
+        private chainLinkService: ChainLinkService, private configService: ConfigService, private readonly accountFactoryService: AccountFactoryService
+    ) {
     }
     public transactionTimeValid(chainId: number, timestamp: number) {
         const timeout = Date.now() - dayjs(timestamp).valueOf();
@@ -73,7 +74,7 @@ export class ValidatorService {
                 errmsg: `${tx.sourceId} Please collect manually if the transaction exceeds the specified time`
             };
         }
-        const account = Factory.createMakerAccount(
+        const account = this.accountFactoryService.createMakerAccount(
             tx.targetMaker,
             tx.targetChain
         );
@@ -93,7 +94,7 @@ export class ValidatorService {
             // token: '',
             symbol: tx.targetSymbol,
             value: tx.targetAmount,
-            nonce:0n,
+            nonce: 0n,
             calldata: {
                 id: tx.id,
                 chainId: tx.sourceChain,
@@ -116,7 +117,7 @@ export class ValidatorService {
         //     };
         // }
         return {
-            errno:0,
+            errno: 0,
             data: swapOrder
         }
     }
@@ -195,7 +196,7 @@ export class ValidatorService {
                 errno: -1
             };
         }
-        const account = Factory.createMakerAccount(
+        const account = this.accountFactoryService.createMakerAccount(
             swapOrder.from,
             swapOrder.chainId
         );

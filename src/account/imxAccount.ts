@@ -5,7 +5,7 @@ import OrbiterAccount from './orbiterAccount';
 import { TransactionRequest, TransferResponse } from './IAccount';
 import { generateLegacyStarkPrivateKey } from '@imtbl/core-sdk';
 import { equals } from 'src/utils';
-import { IChainConfig } from 'src/config/chainconfig.service';
+import { IChainConfig } from 'src/config/chainConfig.service';
 export default class IMXAccount extends OrbiterAccount {
     private L1Wallet: ethers.Wallet;
     private client: ImmutableX;

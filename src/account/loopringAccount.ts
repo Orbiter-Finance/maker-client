@@ -13,7 +13,7 @@ import { outputJSONSync } from 'fs-extra';
 import Web3 from 'web3';
 import PrivateKeyProvider from 'truffle-privatekey-provider';
 import { LoopringSendTokenRequest } from '../types';
-import { ChainConfigService, IChainConfig } from 'src/config/chainconfig.service';
+import { ChainConfigService, IChainConfig } from 'src/config/chainConfig.service';
 import { SwapOrder } from 'src/transfer/sequencer/sequencer.interface';
 export default class LoopringAccount extends OrbiterAccount {
     private L1Wallet: ethers.Wallet;

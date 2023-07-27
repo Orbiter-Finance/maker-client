@@ -1,26 +1,30 @@
 
 // import BaseAccount from './IAccount';
 import EVMAccount from './evmAccount';
+import { Global, Inject, Injectable } from '@nestjs/common';
 // import StarknetAccount from './starknetAccount';
 // import ZKSyncAccount from './zkSyncAccount';
 // import ZKSpaceAccount from './zksAccount';
 import IMXAccount from './imxAccount';
 import LoopringAccount from './loopringAccount'
-import { ChainConfigService } from 'src/config/chainconfig.service';
+import { ChainConfigService } from 'src/config/chainConfig.service';
 import OrbiterAccount from './orbiterAccount';
-export class Factory {
+@Injectable()
+export class AccountFactoryService {
+  constructor(private chainService: ChainConfigService) {
+  }
   private static wallets: { [key: string]: OrbiterAccount } = {}; // key = pk + chainId
-  static createMakerAccount<T extends OrbiterAccount>(
+  createMakerAccount<T extends OrbiterAccount>(
     makerAddress: string,
     toChainId: number,
   ): T {
-    const chainService = new ChainConfigService();
-    const chainConfig = chainService.getChainInfo(toChainId);
+    // const chainService = new ChainConfigService();
+    const chainConfig = this.chainService.getChainInfo(toChainId);
     if (!chainConfig) {
       throw new Error(`${toChainId} chain not found`)
     }
     const walletId = (`${makerAddress}${chainConfig.chainId}`).toLocaleLowerCase();
-    let wallet: OrbiterAccount = Factory.wallets[walletId];
+    let wallet: OrbiterAccount = AccountFactoryService.wallets[walletId];
     if (wallet) {
       return wallet as T;
     }
@@ -99,7 +103,7 @@ export class Factory {
         throw new Error('Chain Not implemented')
         break;
     }
-    Factory.wallets[walletId] = wallet;
+    AccountFactoryService.wallets[walletId] = wallet;
     return wallet as T;
   }
 }

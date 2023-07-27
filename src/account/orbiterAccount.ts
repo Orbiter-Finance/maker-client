@@ -1,7 +1,7 @@
 import { Inject, Logger } from '@nestjs/common';
 import { TransactionRequest, TransferResponse } from './IAccount';
 import IAccount from './IAccount';
-import { IChainConfig } from 'src/config/chainconfig.service';
+import { IChainConfig } from 'src/config/chainConfig.service';
 import { Level } from 'level';
 import { SwapOrder } from 'src/transfer/sequencer/sequencer.interface';
 export default class OrbiterAccount extends IAccount {

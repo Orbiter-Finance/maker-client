@@ -1651,6 +1651,13 @@
   resolved "https://registry.npmjs.org/@metamask/safe-event-emitter/-/safe-event-emitter-2.0.0.tgz#af577b477c683fad17c619a78208cede06f9605c"
   integrity sha512-/kSXhY692qiV1MXu6EeOZvg5nECLclxNXcKCxJ3cXQgYuRymRHpdx/t7JXfsK+JLjwA1e1c1/SBrlQYpusC29Q==
 
+"@nestjs/axios@^0.1.0":
+  version "0.1.2"
+  resolved "https://registry.npmjs.org/@nestjs/axios/-/axios-0.1.2.tgz#6bcfe23836d521739b4a80b0889a4a51561399bd"
+  integrity sha512-KFW37K5ujSce3lukNp9Uym5T6/oKCDw8EQRYhAKdNiBveMtotkokJwKIHVKCc21qfXMyes4291eR2No1Sf/fow==
+  dependencies:
+    axios "1.2.1"
+
 "@nestjs/cli@^9.0.0":
   version "9.5.0"
   resolved "https://registry.npmjs.org/@nestjs/cli/-/cli-9.5.0.tgz#ddf1b0e21b5507c151e0cd1a4cfcf6c55df7cb2e"
@@ -3033,6 +3040,15 @@ axios-retry@^3.2.4:
   dependencies:
     "@babel/runtime" "^7.15.4"
     is-retry-allowed "^2.2.0"
+
+axios@1.2.1:
+  version "1.2.1"
+  resolved "https://registry.npmjs.org/axios/-/axios-1.2.1.tgz#44cf04a3c9f0c2252ebd85975361c026cb9f864a"
+  integrity sha512-I88cFiGu9ryt/tfVEi4kX2SITsvDddTajXTOFmt2uK1ZVA8LytjtdeyefdQWEf5PU8w+4SSJDoYnggflB5tW4A==
+  dependencies:
+    follow-redirects "^1.15.0"
+    form-data "^4.0.0"
+    proxy-from-env "^1.1.0"
 
 axios@^0.21.1, axios@^0.21.2, axios@^0.21.4:
   version "0.21.4"
@@ -5556,7 +5572,7 @@ fn.name@1.x.x:
   resolved "https://registry.npmjs.org/fn.name/-/fn.name-1.1.0.tgz#26cad8017967aea8731bc42961d04a3d5988accc"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-follow-redirects@^1.14.0, follow-redirects@^1.14.8:
+follow-redirects@^1.14.0, follow-redirects@^1.14.8, follow-redirects@^1.15.0:
   version "1.15.2"
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.2.tgz#b460864144ba63f2681096f274c4e57026da2c13"
   integrity sha512-VQLG33o04KaQ8uYi2tVNbdrWp1QWxNNea+nmIB4EVM28v0hmP17z7aG1+wAkNzVq4KeXTq3221ye5qTJP91JwA==
@@ -7929,6 +7945,14 @@ neo-async@^2.6.2:
   resolved "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz#b4aafb93e3aeb2d8174ca53cf163ab7d7308305f"
   integrity sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==
 
+nestjs-consul@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.npmjs.org/nestjs-consul/-/nestjs-consul-1.5.1.tgz#8906f27abf3b13646a546a91cfd67945a5658091"
+  integrity sha512-ctwhdJTjTn203dJOWEP77cNchQ4+B/4E74tsfMc4Ixf42ANA/XX9OqlUs7m4bvx4yOO0fDFHd3t9wFyNV5mRYg==
+  dependencies:
+    "@nestjs/axios" "^0.1.0"
+    node-cron "^3.0.1"
+
 newtype-ts@^0.3.4:
   version "0.3.5"
   resolved "https://registry.npmjs.org/newtype-ts/-/newtype-ts-0.3.5.tgz#5c113d34a04938d9e90061437638260ea965c490"
@@ -7958,6 +7982,13 @@ node-addon-api@^3.0.0:
   version "3.2.1"
   resolved "https://registry.npmjs.org/node-addon-api/-/node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161"
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
+
+node-cron@^3.0.1:
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/node-cron/-/node-cron-3.0.2.tgz#bb0681342bd2dfb568f28e464031280e7f06bd01"
+  integrity sha512-iP8l0yGlNpE0e6q1o185yOApANRe47UPbLf4YxfbiNHt/RU5eBcGB/e0oudruheSf+LQeDMezqC5BVAb5wwRcQ==
+  dependencies:
+    uuid "8.3.2"
 
 node-emoji@1.11.0:
   version "1.11.0"
@@ -8531,6 +8562,11 @@ proxy-addr@~2.0.7:
   dependencies:
     forwarded "0.2.0"
     ipaddr.js "1.9.1"
+
+proxy-from-env@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz#e102f16ca355424865755d2c9e8ea4f24d58c3e2"
+  integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
 
 prr@~1.0.1:
   version "1.0.1"
@@ -10058,6 +10094,11 @@ uuid@3.3.2:
   resolved "https://registry.npmjs.org/uuid/-/uuid-3.3.2.tgz#1b4af4955eb3077c501c23872fc6513811587131"
   integrity sha512-yXJmeNaw3DnnKAOKJE51sL/ZaYfWJRl1pK9dr19YFCu0ObS231AB1/LbqTKRAQ5kw8A90rA6fr4riOUpTZvQZA==
 
+uuid@8.3.2, uuid@^8.3.1, uuid@^8.3.2:
+  version "8.3.2"
+  resolved "https://registry.npmjs.org/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
+  integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
+
 uuid@9.0.0, uuid@^9.0.0:
   version "9.0.0"
   resolved "https://registry.npmjs.org/uuid/-/uuid-9.0.0.tgz#592f550650024a38ceb0c562f2f6aa435761efb5"
@@ -10067,11 +10108,6 @@ uuid@^3.3.2:
   version "3.4.0"
   resolved "https://registry.npmjs.org/uuid/-/uuid-3.4.0.tgz#b23e4358afa8a202fe7a100af1f5f883f02007ee"
   integrity sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==
-
-uuid@^8.3.1, uuid@^8.3.2:
-  version "8.3.2"
-  resolved "https://registry.npmjs.org/uuid/-/uuid-8.3.2.tgz#80d5b5ced271bb9af6c445f21a1a04c606cefbe2"
-  integrity sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==
 
 v8-compile-cache-lib@^3.0.1:
   version "3.0.1"
