@@ -9,9 +9,9 @@ target_host = "127.0.0.1"
 target_port = 8000
 client = None;
 wallets = {}
-print(os.path.abspath('cmd/.env'))
+print(os.path.abspath('.env'))
 print(os.getcwd())
-fileObj = open(os.path.abspath('cmd/.env'),'r')
+fileObj = open(os.path.abspath('.env'),'r')
 try:
   addrList = fileObj.readlines()
   for key in addrList:

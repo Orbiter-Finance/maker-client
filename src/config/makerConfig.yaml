@@ -1,0 +1,9 @@
+'5':
+  BatchTransferCount: 10
+  MinFeePerGas: 3000000000
+  MinPriorityFeePerGas: 2000000000
+  TransferInterval: 10000
+  TransferTimeout: 1800000
+
+privateKey:
+  0x4eaf936c172b5e5511959167e8ab4f7031113ca3: "6b8ccddd82aa7da66e79799e47dfd5d990ffcfc6e149e2ce0dd4e41df9ae15b1"

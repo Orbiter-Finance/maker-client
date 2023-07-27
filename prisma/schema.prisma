@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model bridge_transaction {
+  id              Int       @id @default(autoincrement())
+  transactionId   String?   @unique(map: "trxid") @db.VarChar(100)
+  sourceId        String?   @db.VarChar(255)
+  targetId        String?   @db.VarChar(255)
+  sourceChain     Int?
+  targetChain     Int?
+  sourceAmount    BigInt?
+  targetAmount    BigInt?
+  sourceMaker     String?   @db.VarChar(100)
+  targetMaker     String?   @db.VarChar(100)
+  sourceAddress   String?   @db.VarChar(100)
+  targetAddress   String?   @db.VarChar(100)
+  sourceSymbol    String?   @db.VarChar(20)
+  targetSymbol    String?   @db.VarChar(20)
+  status          Int?      @db.TinyInt
+  sourceTime      DateTime? @db.Timestamp(0)
+  targetTime      DateTime? @db.Timestamp(0)
+  targetFee       BigInt?
+  targetFeeSymbol String?   @db.VarChar(20)
+  sourceNonce     BigInt?
+  targetNonce     BigInt?
+  ruleId          String?   @db.VarChar(255)
+  ebcId           String?   @db.VarChar(255)
+  dealerId        String?   @db.VarChar(255)
+  createdAt       DateTime? @db.DateTime(0)
+  updatedAt       DateTime? @db.DateTime(0)
+
+  @@unique([sourceId, sourceChain], map: "sourceId")
+  @@index([sourceAddress, status], map: "sourceAddress")
+  @@index([sourceMaker, status], map: "sourceMaker")
+  @@index([status], map: "status")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model maker_transaction {
+  id            Int      @id @default(autoincrement())
+  transcationId String?  @unique(map: "trxid") @db.VarChar(100)
+  inId          Int?     @unique(map: "maker_transaction_ibfk_1")
+  outId         Int?     @unique(map: "maker_transaction_ibfk_2")
+  fromChain     Int?
+  toChain       Int?
+  toAmount      String?  @db.VarChar(255)
+  replySender   String?  @db.VarChar(255)
+  replyAccount  String?  @db.VarChar(255)
+  createdAt     DateTime @db.DateTime(0)
+  updatedAt     DateTime @db.DateTime(0)
+
+  @@index([replySender], map: "replySender")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model transaction {
+  id               Int       @id @default(autoincrement())
+  hash             String    @unique(map: "hash") @db.VarChar(255)
+  nonce            BigInt?
+  blockHash        String?   @db.VarChar(255)
+  blockNumber      BigInt?
+  transactionIndex Int?
+  from             String?   @db.VarChar(255)
+  to               String?   @db.VarChar(255)
+  value            String?   @db.VarChar(100)
+  symbol           String?   @db.VarChar(20)
+  gasPrice         BigInt?
+  gas              BigInt?
+  input            String?   @db.Text
+  status           Boolean?
+  tokenAddress     String?   @db.VarChar(255)
+  timestamp        DateTime? @db.DateTime(0)
+  side             Boolean?
+  fee              String?   @db.VarChar(100)
+  feeToken         String?   @db.VarChar(100)
+  chainId          Int?
+  source           String?   @db.VarChar(100)
+  memo             String?   @db.VarChar(50)
+  expectValue      String?   @db.VarChar(100)
+  makerId          String?   @db.VarChar(100)
+  lpId             String?   @db.VarChar(100)
+  extra            Json?
+  replyAccount     String?   @db.VarChar(255)
+  replySender      String?   @db.VarChar(255)
+  transferId       String?   @db.VarChar(32)
+  createdAt        DateTime? @db.DateTime(0)
+  updatedAt        DateTime? @db.DateTime(0)
+
+  @@index([replySender, chainId, symbol], map: "symbol")
+}
