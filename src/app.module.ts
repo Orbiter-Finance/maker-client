@@ -14,10 +14,7 @@ import { ChainConfigRegister } from './config/chainConfig.service';
   imports: [
     GlobalModule,
     ScheduleModule.forRoot(),
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [MakerConfigRegister(),ChainConfigRegister()]
-    }), TransferModule],
+    TransferModule],
   controllers: [AppController],
   providers: [AppService],
 })
