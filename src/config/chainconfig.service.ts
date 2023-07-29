@@ -1,7 +1,6 @@
-import { Global, Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService, registerAs } from '@nestjs/config';
 import { equals, isEmpty } from 'src/utils';
-import * as yaml from 'js-yaml';
 import { join } from 'path';
 import { writeFileSync, readFileSync } from 'fs';
 import { isEqual } from 'lodash';

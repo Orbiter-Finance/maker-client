@@ -1,14 +1,17 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ChainConfigService } from 'src/config/chainConfig.service';
-import { MakerConfigService } from 'src/config/makerConfig.service';
+import { ChainConfigRegister, ChainConfigService } from 'src/config/chainConfig.service';
+import { MakerConfigRegister, MakerConfigService } from 'src/config/makerConfig.service';
 import { ConsulModule } from 'src/consul/consul.module';
-import { ConsulService } from 'src/consul/consul.service';
 import { ChainLinkService } from 'src/service/chainlink.service';
 import { PrismaService } from 'src/service/prisma.service';
 @Global()
 @Module({
     imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            load: [MakerConfigRegister(), ChainConfigRegister()]
+        }),
         ConsulModule.forRootAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
