@@ -1,6 +1,6 @@
 import { Global, Injectable } from '@nestjs/common';
 import { BigNumber } from 'bignumber.js';
-import { JsonRpcProvider, ethers } from "ethers";
+import { JsonRpcProvider, ethers } from 'ethers6';;
 import abis from '../abi';
 @Injectable()
 export class ChainLinkService {
@@ -24,7 +24,6 @@ export class ChainLinkService {
         const id = `${source}/${target}`.toLocaleLowerCase();
         const addr = this.pairs[id];
         if  (!addr) {
-            console.error(`ChainLink Not found pairs ${source}=>${target}`);
             return new BigNumber(0);
         }
         const provider = new JsonRpcProvider("https://ethereum.publicnode.com");

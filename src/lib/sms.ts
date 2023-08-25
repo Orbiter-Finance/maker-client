@@ -13,7 +13,6 @@ export class SMSService {
     async sendAlert(templateId: keyof typeof SMSTemplate, params: any = {}) {
         const compiled = template(SMSTemplate[templateId]);
         const smsText = compiled(params);
-        console.log('smsText ：', smsText);
         const Key = process.env['sms_key'];
         const smsMob = process.env['sms_numbers'];
         if (!Key || !smsMob) {

@@ -7,6 +7,7 @@ import { join } from 'path';
 import { clone, isEmpty } from 'src/utils';
 import { ConsulService } from 'src/consul/consul.service';
 import { isEqual } from 'lodash';
+import { KeyValueResult } from 'src/consul/keyValueResult';
 const YAML_CONFIG_FILENAME = 'config.yaml';
 const NAME_SPACE = 'MakerConfig';
 export function MakerConfigRegister() {
@@ -33,18 +34,15 @@ export class MakerConfigService {
   ) {
     MakerConfigService.configs = this.configService.get(`${NAME_SPACE}`);
     try {
-      setInterval(() => {
-        const configs = this.consul.configs['maker-client/config.yaml'];
-        if (configs) {
-          const data = configs.yamlToJSON();
-          if (!isEqual(data, MakerConfigService.configs)) {
-            MakerConfigService.configs = data;
-            this.write();
-          }
+      this.consul.watchKey("maker-client/config.yaml", (config: KeyValueResult) => {
+        const data = config.yamlToJSON();
+        if (!isEqual(data, MakerConfigService.configs)) {
+          MakerConfigService.configs = data;
+          this.write();
         }
-      }, 500);
+      })
     } catch (error) {
-      this.logger.error(`watch config change error ${error.message}`, error);
+      this.logger.error(`watch config change error ${error.message}`, error.stack);
     }
 
   }

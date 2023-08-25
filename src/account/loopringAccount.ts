@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers } from 'ethers6';
 import OrbiterAccount from './orbiterAccount';
 import { TransferResponse } from './IAccount';
 import {
@@ -71,7 +71,7 @@ export default class LoopringAccount extends OrbiterAccount {
     }
     public async getTokenBalance(token: string, address?: string): Promise<bigint> {
         address = address || this.L1Wallet.address;
-        const tokenInfo = this.chainConfigService.getTokenByChain(this.internalId, token);
+        const tokenInfo = this.chainConfigService.getTokenByChain(this.chainConfig.chainId, token);
         if (!tokenInfo) {
             throw new Error(`${token} token not found`);
         }
@@ -92,7 +92,7 @@ export default class LoopringAccount extends OrbiterAccount {
         value: bigint,
         transactionRequest?: LoopringSendTokenRequest
     ): Promise<TransferResponse | undefined> {
-        const tokenInfo = this.chainConfigService.getTokenByChain(this.internalId, token);
+        const tokenInfo = this.chainConfigService.getTokenByChain(this.chainConfig.chainId, token);
         if (!tokenInfo) {
             throw new Error(`${token} token not found`);
         }
@@ -104,7 +104,7 @@ export default class LoopringAccount extends OrbiterAccount {
         if (!accInfo) {
             throw Error('account unlocked')
         }
-        const providerChain = this.chainConfigService.getChainInfo(this.chainConfig.networkId);
+        const providerChain = this.chainConfigService.getChainInfo(this.chainConfig.chainId);
         if (!providerChain || !providerChain.rpc || providerChain.rpc.length <= 0) {
             throw new Error('LoopringAccount not config rpc');
         }
@@ -166,7 +166,7 @@ export default class LoopringAccount extends OrbiterAccount {
             apiKey: apiKey,
             isHWAddr: false,
         })
-        this.logger.log('transfer response:', transactionResult);
+        this.logger.info('transfer response:', transactionResult);
         if (transactionResult) {
             return {
                 hash: transactionResult['hash'],

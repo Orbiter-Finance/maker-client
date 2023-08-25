@@ -101,6 +101,20 @@ export function isEmpty(obj: any) {
   }
   return false;
 }
+
+export function arePropertyValuesConsistent<T>(objects: T[], propertyName: keyof T): boolean {
+  if (objects.length === 0) {
+      return true; // No objects to compare, so it's consistent
+  }
+  const referenceValue = objects[0][propertyName]; // Using the first object's property value as the reference
+  for (const obj of objects) {
+      if (obj[propertyName] !== referenceValue) {
+          return false; // If any property value is different, it's not consistent
+      }
+  }
+
+  return true; // All property values are the same, so it's consistent
+}
 export {
   groupBy,
   orderBy,

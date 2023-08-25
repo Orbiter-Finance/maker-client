@@ -23,3 +23,16 @@ export class TransactionSendBeforeError extends TransactionError {
         this.name = 'TransactionSendBeforeError';
     }
 }
+export class TransactionSendAfterError extends TransactionError {
+    constructor(message: string) {
+        super(message);
+        this.name = 'TransactionSendAfterError';
+    }
+}
+
+export class TransactionSendIgError extends TransactionError {
+    constructor(message: string) {
+        super(message);
+        this.name = 'TransactionIgError';
+    }
+}

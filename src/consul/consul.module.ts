@@ -1,52 +1,41 @@
-import { HttpModule, HttpService } from '@nestjs/axios';
-import { Module, DynamicModule, Provider, Global } from '@nestjs/common';
+import { Module, DynamicModule, Provider } from '@nestjs/common';
 import { ConsulService } from './consul.service';
-import { IConsulConfig, IConsulAsyncConfig } from './interfaces/consul-config.interface';
+import { CONSUL_MODULE_OPTIONS, CONSUL_OPTIONS } from './consul.constants';
+import { ConsulOptions,ConsulModuleAsyncOptions } from './consul.interface';
 
-@Global()
-@Module({})
+@Module({
+})
 export class ConsulModule {
-	static forRoot<T>(config: IConsulConfig<T>): DynamicModule {
-		const consulServiceProvider: Provider = {
-			provide: ConsulService,
-			useFactory: async () => {
-				const consulService = new ConsulService<T>(config, new HttpService());
-				if (config.keys) {
-					await consulService.update();
-				}
-				return consulService;
-			},
-		};
-		return {
-			module: ConsulModule,
-			providers: [consulServiceProvider],
-			exports: [consulServiceProvider],
-			imports: [HttpModule]
-		};
-	}
-
-	static forRootAsync<T>(options: IConsulAsyncConfig<T>): DynamicModule {
-		const consulServiceProvider = this.createAsyncOptionsProvider<T>(options);
-		return {
-			module: ConsulModule,
-			imports: options.imports,
-			providers: [consulServiceProvider],
-			exports: [consulServiceProvider]
-		};
-	}
-
-	private static createAsyncOptionsProvider<T>(
-		options: IConsulAsyncConfig<T>,
+  static registerAsync(options:ConsulModuleAsyncOptions):DynamicModule {
+    const provider = this.createAsyncOptionsProvider(options);
+    return {
+      module: ConsulModule,
+      imports: options.imports,
+      providers: [provider],
+      exports: [provider],
+    };
+  }
+  static register(options: ConsulOptions): DynamicModule {
+    return {
+      module: ConsulModule,
+      providers: [
+        {
+          provide: CONSUL_OPTIONS,
+          useValue: options,
+        },
+        ConsulService,
+      ],
+      exports: [ConsulService],
+    };
+  }
+  private static createAsyncOptionsProvider<T>(
+		options: ConsulModuleAsyncOptions,
 	): Provider {
 		return {
 			provide: ConsulService,
-			useFactory: async (...args: any[]) => {
+      useFactory: async (...args: any[]) => {
 				const config = await options.useFactory(...args);
-				const consulService = new ConsulService<T>(config, new HttpService());
-				if (config.keys) {
-					await consulService.update();
-				}
-				return consulService;
+			  return new ConsulService(config);
 			},
 			inject: options.inject || [],
 		};

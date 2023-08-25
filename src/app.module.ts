@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaService } from './service/prisma.service';
 import { TransferModule } from './transfer/transfer.module';
 import { ConfigModule } from '@nestjs/config';
 import { ChainConfigService } from './config/chainConfig.service';

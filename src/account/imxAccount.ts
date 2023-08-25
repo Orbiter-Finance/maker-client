@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import { ethers } from 'ethers6';
 import { ImmutableX, Config } from '@imtbl/core-sdk';
 import { createStarkSigner } from '@imtbl/core-sdk';
 import OrbiterAccount from './orbiterAccount';
@@ -66,7 +66,7 @@ export default class IMXAccount extends OrbiterAccount {
         const starkSigner = await createStarkSigner(starkKey);
         const walletConnection: any = { ethSigner: this.L1Wallet, starkSigner };
         const response = await this.client.transfer(walletConnection, unsignedTransferRequest);
-        this.logger.log('transfer response:', response);
+        this.logger.info('transfer response:', response);
         return {
             hash: String(response.transfer_id),
             from: this.L1Wallet.address,

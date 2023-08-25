@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService, registerAs } from '@nestjs/config';
-import { equals, isEmpty } from 'src/utils';
+import { equals, isEmpty } from '../utils';
 import { join } from 'path';
 import { writeFileSync, readFileSync } from 'fs';
 import { isEqual } from 'lodash';
-import { ConsulService } from 'src/consul/consul.service';
-const YAML_CONFIG_FILENAME = 'chains.json';
+import { ConsulService } from '../consul/consul.service';
+import { Level } from 'level';
+import { Cron } from '@nestjs/schedule';
+import { KeyValueResult } from '../consul/keyValueResult';
+const YAML_CONFIG_FILENAME = join(__dirname, 'chains.json');
 const NAME_SPACE = 'Chains';
 export function ChainConfigRegister() {
     return registerAs(NAME_SPACE, () => {
@@ -21,26 +24,23 @@ export function ChainConfigRegister() {
 
 @Injectable()
 export class ChainConfigService {
-
     private static configs: Array<IChainConfig> = [];
     private readonly logger = new Logger(ChainConfigService.name);
     constructor(private readonly configService: ConfigService, private readonly consul: ConsulService) {
         ChainConfigService.configs = this.configService.get("Chains");
         try {
-            setInterval(() => {
-                const configs = this.consul.configs['maker-client/chains.json'];
-                if (configs) {
-                    const data = configs.yamlToJSON();
-                    if (!isEqual(data, ChainConfigService.configs)) {
-                        ChainConfigService.configs = data;
-                        this.write();
-                    }
+            this.consul.watchKey("maker-client/chains.json", (config: KeyValueResult) => {
+                const data = config.toJSON();
+                if (!isEqual(data, ChainConfigService.configs)) {
+                    ChainConfigService.configs = data;
+                    this.write();
                 }
-            }, 500);
+            })
         } catch (error) {
-            this.logger.error(`watch config change error ${error.message}`, error);
+            this.logger.error(`watch config change error ${error.message}`, error.stack);
         }
     }
+
     fill(configList: Array<IChainConfig>) {
         const chains = configList.map((chain: IChainConfig) => {
             if (!chain.workingStatus) {
@@ -95,8 +95,16 @@ export class ChainConfigService {
             return undefined;
         }
         if (typeof addrOrId === "string") {
+            if (equals(chain.nativeCurrency.address, addrOrId)) {
+                chain.nativeCurrency.isNative = true;
+                return chain.nativeCurrency;
+            }
             return chain.tokens.find(t => equals(t.address, addrOrId));
         } else if (typeof addrOrId === "number") {
+            if (equals(chain.nativeCurrency.id, addrOrId)) {
+                chain.nativeCurrency.isNative = true;
+                return chain.nativeCurrency;
+            }
             return chain.tokens.find(t => equals(t.id, addrOrId));
         }
     }
@@ -115,31 +123,11 @@ export class ChainConfigService {
         if (!chain) {
             return undefined;
         }
-
-        return chain.tokens.find(t => equals(t.symbol, symbol));
-    }
-
-    getInjectChain(chainId: string): IChainConfig | undefined {
-        const chain: IChainConfig | undefined = ChainConfigService.configs.find(x =>
-            equals(x.chainId, chainId),
-        );
-        if (!chain || typeof chain === "undefined") {
-            return undefined;
+        if (equals(chain.nativeCurrency.symbol, symbol)) {
+            chain.nativeCurrency.isNative = true;
+            return chain.nativeCurrency;
         }
-        return chain;
-    }
-
-    /**
-     * @deprecated
-     * Get the injected public chain configuration according to the platform internal ID
-     * @param internalId ID
-     * @returns IChainConfig
-     */
-    getChainByInternalId(
-        internalId: IChainConfig["internalId"],
-    ): IChainConfig | undefined {
-        const chain = this.getChainByKeyValue("internalId", internalId);
-        return chain;
+        return chain.tokens.find(t => equals(t.symbol, symbol));
     }
     /**
      * Get By Chain Main Token
@@ -148,7 +136,7 @@ export class ChainConfigService {
      */
     getChainMainToken(chainId: string | number) {
         const chain = this.getChainInfo(chainId);
-        return chain && chain.nativeCurrency.address;
+        return chain && chain.nativeCurrency;
     }
     /**
      * Valid is MainToken
@@ -160,29 +148,7 @@ export class ChainConfigService {
         const chainInfo = this.getChainInfo(chainId);
         return equals(chainInfo?.nativeCurrency.address, tokenAddress);
     }
-    /**
-     * @deprecated
-     * @param internalId
-     * @returns
-     */
-    inValidInternalId(internalId: IChainConfig["internalId"]) {
-        const index = ChainConfigService.configs.findIndex(row =>
-            equals(row.internalId, internalId),
-        );
-        return index >= 0;
-    }
-    /**
-     * @deprecated
-     * Get the injected public chain configuration according to the platform Chain ID
-     * @param internalId ID
-     * @returns IChainConfig
-     */
-    getChainByChainId(
-        chainId: IChainConfig["chainId"],
-    ): IChainConfig | undefined {
-        const chain = this.getInjectChain(chainId);
-        return chain;
-    }
+
     getAllChains(): IChainConfig[] {
         return ChainConfigService.configs || [];
     }
@@ -218,7 +184,7 @@ export class ChainConfigService {
         }
         if (ChainConfigService.configs) {
             const data = JSON.stringify(ChainConfigService.configs);
-            const filePath = join(__dirname, YAML_CONFIG_FILENAME);
+            const filePath = join(YAML_CONFIG_FILENAME);
             await writeFileSync(filePath, data)
         }
 
@@ -257,10 +223,12 @@ export interface IChainConfig {
     debug: boolean;
     features: Array<string>;
     nativeCurrency: Token;
+    targetConfirmation?: number;
     watch: Array<string>;
     explorers: IExplorerConfig[];
     tokens: Array<Token>;
     contracts: Array<string>;
     xvmList: Array<string>;
     workingStatus: IChainConfigWorkingStatus;
+    service: { [key: string]: string }
 }

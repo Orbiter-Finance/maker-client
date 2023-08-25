@@ -1,17 +1,19 @@
-import { Inject, Logger } from '@nestjs/common';
 import { TransactionRequest, TransferResponse } from './IAccount';
 import IAccount from './IAccount';
 import { IChainConfig } from 'src/config/chainConfig.service';
-import { Level } from 'level';
-import { SwapOrder } from 'src/transfer/sequencer/sequencer.interface';
+import { SwapOrder, TransferAmountTransaction } from 'src/transfer/sequencer/sequencer.interface';
+import { createLoggerByName } from '../lib/logger';
+import winston from 'winston'
+import { StoreService } from '../transfer/store/store.service'
 export default class OrbiterAccount extends IAccount {
-    public logger = new Logger(OrbiterAccount.name);
-    public levelDB: Level;
+    public logger!: winston.Logger;
+    public store: StoreService;
     constructor(
         protected readonly chainConfig: IChainConfig
     ) {
-        super(+chainConfig.internalId);
-        this.levelDB = new Level(`/Users/kakui/projects/maker-client/runtime/transfer/${chainConfig.internalId}`);
+        super(chainConfig.chainId);
+        this.logger = createLoggerByName(`${this.chainConfig.chainId}`);
+        this.store = new StoreService(chainConfig.chainId)
     }
     async connect(_privateKey: string) {
         return this;
@@ -34,23 +36,18 @@ export default class OrbiterAccount extends IAccount {
     public transferToken(token: string, to: string, value: bigint, transactionRequest?: TransactionRequest | any): Promise<TransferResponse | undefined> {
         throw new Error('Method not implemented.');
     }
-    public async paymentBefore(orders: SwapOrder | SwapOrder[], transactionRequest: TransactionRequest = {}) {
+    public waitForTransactionConfirmation(transactionHash: string): Promise<any> {
+        throw new Error('waitForTransactionConfirmation Method not implemented.');
+    }
+    public async pregeneratedRequestParameters(orders: TransferAmountTransaction | TransferAmountTransaction[], transactionRequest: TransactionRequest = {}) {
         if (Array.isArray(orders)) {
             transactionRequest.serialId = [];
             for (const order of orders) {
-                transactionRequest.serialId.push(order.calldata.hash);
+                transactionRequest.serialId.push(order.sourceId);
             }
         } else {
-            transactionRequest.serialId = orders.calldata.hash;
+            transactionRequest.serialId = orders.sourceId;
         }
         return transactionRequest
-    }
-    public async getSerialRecord(serialId: string) {
-        try {
-            const data = await this.levelDB.get(serialId);
-            return data;
-        } catch (error) {
-            return null;
-        }
     }
 }

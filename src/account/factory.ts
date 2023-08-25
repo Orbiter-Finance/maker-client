@@ -16,7 +16,7 @@ export class AccountFactoryService {
   private static wallets: { [key: string]: OrbiterAccount } = {}; // key = pk + chainId
   createMakerAccount<T extends OrbiterAccount>(
     makerAddress: string,
-    toChainId: number,
+    toChainId: string,
   ): T {
     // const chainService = new ChainConfigService();
     const chainConfig = this.chainService.getChainInfo(toChainId);
@@ -28,7 +28,7 @@ export class AccountFactoryService {
     if (wallet) {
       return wallet as T;
     }
-    switch (toChainId) {
+    switch (+toChainId) {
       case 3:
       case 33:
         // wallet = new ZKSyncAccount(

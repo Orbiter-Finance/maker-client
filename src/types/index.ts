@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ethers } from 'ethers6';;
 import { TransactionRequest } from "../account/IAccount";
 
 export interface JsonMap {

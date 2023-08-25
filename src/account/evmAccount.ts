@@ -1,4 +1,4 @@
-import { ethers, Interface, isError, JsonRpcProvider, keccak256, Wallet } from 'ethers';
+import { ethers, Interface, isError, JsonRpcProvider, keccak256, Wallet } from 'ethers6';
 import abis from '../abi'
 const ERC20Abi = abis['ERC20Abi'];
 import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
@@ -6,26 +6,26 @@ import OrbiterAccount from './orbiterAccount';
 import NonceManager from '../lib/nonce';
 import BigNumber from 'bignumber.js';
 import { ChainConfigService, IChainConfig } from 'src/config/chainConfig.service';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { TransactionFailedError, TransactionSendBeforeError } from './IAccount.interface';
+import { TransactionFailedError, TransactionSendBeforeError, TransactionSendIgError } from './IAccount.interface';
 import { getMakerConfig } from 'src/config/makerConfig.service';
+import OrbiterProvider from './provider/orbiterPrvoider6';
 import { JSONStringify } from 'src/utils';
-export const RPC_NETWORK: { [key: string]: number } = {};
 export default class EVMAccount extends OrbiterAccount {
   protected wallet: Wallet;
   public nonceManager: NonceManager;
   public provider: JsonRpcProvider;
   public chainConfigService: ChainConfigService;
+  public address:string;
   constructor(
     protected chainConfig: IChainConfig
   ) {
     super(chainConfig);
-    this.logger = new Logger(`${this.chainConfig.name} - ${this.chainConfig.internalId}`);
     const rpc = this.chainConfig.rpc[0];
-    this.provider = new JsonRpcProvider(rpc);
+    this.provider = new OrbiterProvider(rpc);
   }
   async connect(privateKey: string) {
     this.wallet = new ethers.Wallet(privateKey).connect(this.provider);
+    this.address = this.wallet.address;
     if (!this.nonceManager) {
       this.nonceManager = new NonceManager(this.wallet.address, async () => {
         const nonce = await this.wallet.getNonce("pending");
@@ -137,15 +137,8 @@ export default class EVMAccount extends OrbiterAccount {
     } catch (error) {
       throw new TransactionSendBeforeError(error.message);
     }
-    const tx = await this.sendTransaction(to, transactionRequest);
-    return {
-      hash: tx.hash,
-      nonce: tx.nonce,
-      from: tx.from,
-      to: tx.to,
-      value: tx.value,
-      _response: tx
-    };
+    const response = await this.sendTransaction(to, transactionRequest);
+    return response;
   }
 
   async transfers(tos: string[], values: bigint[], transactionRequest: TransactionRequest = {}) {
@@ -154,7 +147,7 @@ export default class EVMAccount extends OrbiterAccount {
       if (tos.length !== values.length) {
         throw new TransactionSendBeforeError(`to and values are inconsistent in length`);
       }
-      router = Object.keys(this.chainConfig.contract).find((addr) => this.chainConfig.contract[addr] === 'OrbiterXRouter');
+      router = Object.keys(this.chainConfig.contract|| {}).find((addr) => this.chainConfig.contract[addr] === 'OrbiterXRouter');
       if (!router) {
         throw new TransactionSendBeforeError(`transferTokens router not config`);
       }
@@ -175,8 +168,8 @@ export default class EVMAccount extends OrbiterAccount {
     } catch (error) {
       throw new TransactionSendBeforeError(error.message);
     }
-    const tx = await this.sendTransaction(router, transactionRequest);
-    return tx;
+    const response = await this.sendTransaction(router, transactionRequest);
+    return response;
   }
 
   public async transferTokens(token: string, tos: string[], values: bigint[], transactionRequest: TransactionRequest = {}): Promise<TransferResponse | undefined> {
@@ -185,7 +178,7 @@ export default class EVMAccount extends OrbiterAccount {
       if (tos.length !== values.length) {
         throw new TransactionSendBeforeError(`to and values are inconsistent in length`);
       }
-      router = Object.keys(this.chainConfig.contract).find((addr) => this.chainConfig.contract[addr] === 'OrbiterXRouter');
+      router = Object.keys(this.chainConfig.contract || {}).find((addr) => this.chainConfig.contract[addr] === 'OrbiterXRouter');
       if (!router) {
         throw new TransactionSendBeforeError(`transferTokens router not config`);
       }
@@ -205,32 +198,20 @@ export default class EVMAccount extends OrbiterAccount {
     } catch (error) {
       throw new TransactionSendBeforeError(error.message);
     }
-    const tx = await this.sendTransaction(router, transactionRequest);
-    return tx;
+    const response = await this.sendTransaction(router, transactionRequest);
+    return response;
+  }
+  async waitForTransactionConfirmation(transactionHash) {
+    const receipt = await this.provider.waitForTransaction(transactionHash);
+    return receipt
   }
   async sendTransaction(
     to: string,
     transactionRequest: TransactionRequest = {}
   ): Promise<TransactionResponse> {
-
-    let serialIds = [];
-    if (transactionRequest.serialId) {
-      serialIds = typeof transactionRequest.serialId === 'string' ? [transactionRequest.serialId] : transactionRequest.serialId;
-      for (const serialId of serialIds) {
-        const result = await this.getSerialRecord(serialId);
-        if (result) {
-          throw new Error(`${serialId} There are running records value = ${result}`);
-        }
-      }
-    }
-    let chainId: number | undefined =
-      Number(transactionRequest.chainId || RPC_NETWORK[this.internalId]);
-    if (!chainId) {
-      chainId = +this.chainConfig.chainId;
-      // chainId = await this.wallet.getChainId();
-      // const network = await this.wallet.provider.getNetwork();
-      RPC_NETWORK[this.internalId] = chainId;
-    }
+    const  serialIds = typeof transactionRequest.serialId === 'string' ? [transactionRequest.serialId] : transactionRequest.serialId;
+    const chainId: number | undefined =
+      Number(transactionRequest.chainId || this.chainConfig.chainId);
 
     const tx: TransactionRequest = {
       chainId,
@@ -245,22 +226,13 @@ export default class EVMAccount extends OrbiterAccount {
       if (tx.value) {
         tx.value = new BigNumber(String(tx.value)).toFixed(0);
       }
-      this.logger.log(`${this.chainConfig.name} sendTransaction:`, tx);
+      this.logger.info(`${this.chainConfig.name} sendTransaction:${JSONStringify(tx)}`);
       const signedTx = await this.wallet.signTransaction(tx);
       txHash = keccak256(signedTx);
       const response = await this.provider.broadcastTransaction(signedTx);
-      this.logger.log(`${this.chainConfig.name} sendTransaction txHash:${txHash}`);
-
-      for (const serialId of serialIds) {
-        await this.levelDB.put(serialId, txHash);
-      }
-
+      this.logger.info(`${this.chainConfig.name} sendTransaction txHash:${txHash}`);
+      await this.store.saveSerialRelTxHash(serialIds, txHash)
       submit();
-      response.wait().then(tx => {
-        this.logger.log(`evm ${this.chainConfig.name} sendTransaction waitForTransaction: ${JSONStringify(tx)}`)
-      }).catch(err => {
-        this.logger.error(`evm ${this.chainConfig.name} sendTransaction waitForTransaction:`, err)
-      })
       return response;
     } catch (error) {
       this.logger.error(`broadcastTransaction tx error:${txHash} - ${error.message}`, error);

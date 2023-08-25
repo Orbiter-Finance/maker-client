@@ -1,4 +1,4 @@
-import { TransactionRequest as ETransactionRequest,TransactionResponse as ETransactionResponse, ethers } from 'ethers';
+import { TransactionRequest as ETransactionRequest,TransactionResponse as ETransactionResponse, ethers } from 'ethers6';
 export interface TransferResponse {
   hash: string;
   to: string | undefined;
@@ -27,7 +27,8 @@ export interface ZKSpaceSendTokenRequest extends Partial<TransactionRequest>{
   fee: BigInt
 };
 export default abstract class IAccount {
-  constructor(protected internalId: number) { }
+  public address:string;
+  constructor(protected chainId: string) { }
   public abstract transfer(
     to: string,
     value: BigInt,
@@ -38,7 +39,6 @@ export default abstract class IAccount {
     token: string,
     to: string
   ): Promise<BigInt>;
-  
   public abstract transferToken(
     token: string,
     to: string,
