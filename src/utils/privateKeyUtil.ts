@@ -25,7 +25,7 @@ export function decryptPrivateKey(encryptedPrivateKey:string, passphrase:string,
     return decryptedPrivateKey;
 }
 
-const privateKey = '6b8ccddd82aa7da66e79799e47dfd5d990ffcfc6e149e2ce0dd4e41df9ae15b1';
+const privateKey = 'the is privateKey';
 
 const passphrase = 'my_secret_passphrase';
 

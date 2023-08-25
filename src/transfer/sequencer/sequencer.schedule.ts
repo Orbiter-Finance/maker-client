@@ -34,7 +34,7 @@ export class SequencerScheduleService {
     }
     @Cron('*/5 * * * * *')
     private checkDBTransactionRecords() {
-        const owners = ['0xafcfbb382b28dae47b76224f24ee29be2c823648', '0xe4edb277e41dc89ab076a1f049f4a3efa700bce8']
+        const owners = this.makerConfig.get("MAKERS") || [];
         for (const chain of this.chainConfigService.getAllChains()) {
             for (const owner of owners) {
                 // targetChainId + owner
@@ -66,12 +66,13 @@ export class SequencerScheduleService {
                 status: 0,
                 targetChain: store.chainId,
                 sourceMaker: owner,
-                // version: "2-0",
+                version: "2-0",
                 id: {
                     [Op.gt]: store.lastId
                 }
             }
         });
+        console.log(records, '==records')
         if (records.length > 0) {
             for (const tx of records) {
                 const result = await store.addTransactions(tx as any);

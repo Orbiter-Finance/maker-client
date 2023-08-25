@@ -1,0 +1,27 @@
+version: '3.8'
+networks:
+  app-network:
+    driver: bridge
+services:
+  maker-client:
+    build: .
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 500M
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: '${DATABASE_URL}'
+      CONSUL_HOST: '${CONSUL_HOST}'
+      CONSUL_PORT: '${CONSUL_PORT}'
+      CONSUL_TOKEN: '${CONSUL_TOKEN}'
+    ports:
+      - '3001:3001'
+    networks:
+      - app-network
+    volumes:
+      - './runtime:/app/runtime'
+      - './logs:/app/logs'

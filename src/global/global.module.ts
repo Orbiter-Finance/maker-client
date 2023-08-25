@@ -5,14 +5,23 @@ import { ChainConfigRegister, ChainConfigService } from 'src/config/chainConfig.
 import { MakerConfigRegister, MakerConfigService } from 'src/config/makerConfig.service';
 import { TransfersModel, BridgeTransactionModel } from 'src/models';
 import { ChainLinkService } from 'src/service/chainlink.service';
-import {ConsulModule} from '../consul/consul.module'
+import { ConsulModule } from '../consul/consul.module'
+import { sleep } from 'src/utils';
 @Global()
 @Module({
     imports: [
         SequelizeModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (config: ConfigService) => {
-                const connectionString = config.get("DATABASE_URL");
+            inject: [ConfigService, MakerConfigService],
+            useFactory: async (config: ConfigService, makerConfig: MakerConfigService) => {
+                let connectionString = '';
+                while (true) {
+                    connectionString = await makerConfig.get("DATABASE_URL");
+                    if (connectionString) {
+                        break;
+                    }
+                    console.log('Database connection not obtained');
+                    await sleep(1000);
+                }
                 const parsedUrl = new URL(connectionString);
                 return {
                     dialect: parsedUrl.protocol.replace(':', ''),
@@ -23,7 +32,13 @@ import {ConsulModule} from '../consul/consul.module'
                     port: parsedUrl.port,
                     autoLoadModels: true,
                     logging: false,
-                    models: [TransfersModel,BridgeTransactionModel],
+                    models: [TransfersModel, BridgeTransactionModel],
+                    dialectOptions: {
+                        ssl: {
+                            require: true,
+                            rejectUnauthorized: false  // You might want to set this to true in production for security reasons
+                        }
+                    }
                 } as any;
             }
         }),

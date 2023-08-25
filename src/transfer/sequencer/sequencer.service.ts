@@ -87,7 +87,7 @@ export class SequencerService {
       transaction && await transaction.rollback();
       throw error;
     }
-    transfer.targetAddress = '0xEFc6089224068b20197156A91D50132b2A47b908';
+    // transfer.targetAddress = '0xEFc6089224068b20197156A91D50132b2A47b908';
     let transferResult: TransferResponse;
     try {
       const transferAmount = new BigNumber(transfer.targetAmount).times(10 ** transferToken.decimals);

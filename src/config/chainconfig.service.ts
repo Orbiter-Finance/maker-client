@@ -8,7 +8,8 @@ import { ConsulService } from '../consul/consul.service';
 import { Level } from 'level';
 import { Cron } from '@nestjs/schedule';
 import { KeyValueResult } from '../consul/keyValueResult';
-const YAML_CONFIG_FILENAME = join(__dirname, 'chains.json');
+const YAML_CONFIG_FILENAME = 'chains.json';
+// const YAML_CONFIG_FILENAME = join(__dirname, 'chains.json');
 const NAME_SPACE = 'Chains';
 export function ChainConfigRegister() {
     return registerAs(NAME_SPACE, () => {
