@@ -6,7 +6,7 @@ import { Global, Inject, Injectable } from '@nestjs/common';
 // import ZKSyncAccount from './zkSyncAccount';
 // import ZKSpaceAccount from './zksAccount';
 import IMXAccount from './imxAccount';
-// import LoopringAccount from './loopringAccount'
+import LoopringAccount from './loopringAccount'
 import { ChainConfigService } from 'src/config/chainConfig.service';
 import OrbiterAccount from './orbiterAccount';
 @Injectable()
@@ -52,9 +52,9 @@ export class AccountFactoryService {
         break;
       case 9:
       case 99:
-        // wallet = new LoopringAccount(
-        //   chainConfig,
-        // );
+        wallet = new LoopringAccount(
+          chainConfig,
+        );
         break;
       case 1:
       case 2:

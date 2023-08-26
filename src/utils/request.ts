@@ -1,6 +1,6 @@
 import { stringify } from "qs";
 // import axios from "axios";
-import fetch from "cross-fetch";
+// import fetch from "cross-fetch";
 export function HttpGet(url: string, params?: any, headers = {}): Promise<any> {
   return new Promise(async (resolve, reject) => {
     const AbortController = globalThis.AbortController;
