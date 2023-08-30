@@ -58,7 +58,7 @@ export class SequencerService {
       );
       if (!success) {
         throw new TransactionSendBeforeError(
-          `validatingValueMatches Trading with loss and risk ${transfer.sourceAmount}-${transfer.sourceSymbol} To ${transfer.targetAmount}-${transfer.targetSymbol}`
+          `validatingValueMatches Trading with loss and risk ${transfer.sourceAmount} ${transfer.sourceSymbol} To ${transfer.targetAmount} ${transfer.targetSymbol}`
         );
       }
       if (!transferToken) {
@@ -231,9 +231,11 @@ export class SequencerService {
         );
         try {
           const senderAddress = wallet.address.toLocaleLowerCase();
+          this.logger.info(`ready for sending step1 ${senderAddress} ${transfer.sourceId} ${transfer.targetAmount} ${transfer.targetSymbol}`);
           const result = await store.accountRunExclusive(
             senderAddress,
             async () => {
+              this.logger.info(`ready for sending step2 ${senderAddress} ${transfer.sourceId} ${transfer.targetAmount} ${transfer.targetSymbol}`);
               await this.execSingleTransfer(transfer, wallet.account, store);
             }
           );
@@ -243,14 +245,14 @@ export class SequencerService {
             await rollback();
           }
           this.logger.error(
-            `sequencer.schedule singleSendTransaction ${hash} error`,
+            `sequencer.schedule singleSendTransaction ${hash} error ${error.message}`,
             error.stack
           );
         }
       }
     } catch (error) {
       this.logger.error(
-        `singleSendTransactionByTransfer ${hash} error`,
+        `singleSendTransactionByTransfer ${hash} error ${error.message}`,
         error.stack
       );
     }

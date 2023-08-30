@@ -2,6 +2,7 @@ import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { SequelizeModule } from "@nestjs/sequelize";
 import { ScheduleModule } from "@nestjs/schedule";
+import { SequelizeModuleOptions } from '@nestjs/sequelize';
 
 import {
   ConfigRegister as ChainConfigRegister,
@@ -21,36 +22,39 @@ import { sleep } from "src/utils";
     SequelizeModule.forRootAsync({
       inject: [ConfigService, ENVConfigService],
       useFactory: async (config: ConfigService, env: ENVConfigService) => {
-        let connectionString = "";
+        let connectionString = '';
         while (true) {
           connectionString =
-            (await env.get("DATABASE_URL")) ||
-            (await config.get("DATABASE_URL"));
+            (await env.get('DATABASE_URL')) ||
+            (await config.get('DATABASE_URL'));
           if (connectionString) {
-            console.log("Database get config");
+            console.log('Database get config');
             break;
           }
-          console.log("Database connection not obtained");
+          console.log('Database connection not obtained');
           await sleep(1000);
         }
         const parsedUrl = new URL(connectionString);
-        return {
-          dialect: parsedUrl.protocol.replace(":", ""),
+        const result: SequelizeModuleOptions = {
+          dialect: 'postgres',
           host: parsedUrl.hostname,
-          database: parsedUrl.pathname.replace("/", ""),
+          database: parsedUrl.pathname.replace('/', ''),
           username: parsedUrl.username,
           password: parsedUrl.password,
-          port: parsedUrl.port,
+          port: +parsedUrl.port,
           autoLoadModels: true,
           logging: false,
           models: [TransfersModel, BridgeTransactionModel],
-          dialectOptions: {
+        };
+        if (connectionString.includes('.rds.')) {
+          result['dialectOptions'] = {
             ssl: {
               require: true,
               rejectUnauthorized: false, // You might want to set this to true in production for security reasons
             },
-          },
-        } as any;
+          };
+        }
+        return result;
       },
     }),
     ConsulModule.registerAsync({
