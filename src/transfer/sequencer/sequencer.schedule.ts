@@ -31,8 +31,7 @@ export class SequencerScheduleService {
     @InjectModel(BridgeTransactionModel)
     private readonly bridgeTransactionModel: typeof BridgeTransactionModel,
     private readonly sequencerService: SequencerService,
-    private readonly makerConfig: ENVConfigService,
-    private readonly accountFactoryService: AccountFactoryService
+    private readonly envConfig: ENVConfigService
   ) {
     this.checkDBTransactionRecords();
     // this.validatorService.validatingValueMatches("ETH", "1", "ETH", "2")
@@ -40,7 +39,7 @@ export class SequencerScheduleService {
 
   @Cron("*/5 * * * * *")
   private checkDBTransactionRecords() {
-    const owners = this.makerConfig.get("MAKERS") || [];
+    const owners = this.envConfig.get("MAKERS") || [];
     for (const chain of this.chainConfigService.getAllChains()) {
       for (const owner of owners) {
         // targetChainId + owner
@@ -68,6 +67,18 @@ export class SequencerScheduleService {
   }
 
   private async readDBTransactionRecords(store: StoreService, owner: string) {
+    const where = {
+        status: 0,
+        targetChain: store.chainId,
+        sourceMaker: owner,
+        version: "2-0",
+        id: {
+          [Op.gt]: store.lastId,
+        },
+        sourceTime: {
+          [Op.gte]: dayjs().subtract(24, "hour").toISOString(),
+        },
+    }
     const records = await this.bridgeTransactionModel.findAll({
       raw: true,
       attributes: [
@@ -90,20 +101,8 @@ export class SequencerScheduleService {
         "targetToken",
         "responseMaker",
       ],
-      where: {
-        status: 0,
-        targetChain: store.chainId,
-        sourceMaker: owner,
-        version: "2-0",
-        id: {
-          [Op.gt]: store.lastId,
-        },
-        sourceTime: {
-          [Op.gte]: dayjs().subtract(24, "hour").toISOString(),
-        },
-      },
+      where,
     });
-    console.log(records, "==records");
     if (records.length > 0) {
       for (const tx of records) {
         const result = await store.addTransactions(tx as any);
@@ -131,7 +130,7 @@ export class SequencerScheduleService {
 
   private async checkStoreReadySend(key: string, store: StoreService) {
     const batchTransferCount =
-      this.makerConfig.get(`${store.chainId}.BatchTransferCount`) || 1;
+      this.envConfig.get(`${store.chainId}.BatchTransferCount`) || 1;
     const lock: Mutex = this.storesState[key].lock;
     if (lock.isLocked()) {
       return;

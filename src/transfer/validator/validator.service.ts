@@ -16,7 +16,7 @@ export class ValidatorService {
   private readonly logger = createLoggerByName(ValidatorService.name);
   constructor(
     private readonly chainConfigService: ChainConfigService,
-    private readonly makerConfig: ENVConfigService,
+    private readonly envConfig: ENVConfigService,
     private readonly chainLinkService: ChainLinkService,
     private readonly configService: ConfigService,
     private readonly accountFactoryService: AccountFactoryService
@@ -24,7 +24,7 @@ export class ValidatorService {
 
   public transactionTimeValid(chainId: string, timestamp: number) {
     const timeout = Date.now() - dayjs(timestamp).valueOf();
-    if (timeout >= this.makerConfig.get(`${chainId}.TransferTimeout`)) {
+    if (timeout >= this.envConfig.get(`${chainId}.TransferTimeout`)) {
       return false; // 'Please collect manually if the transaction exceeds the specified time'
     }
     return true;
@@ -105,7 +105,7 @@ export class ValidatorService {
       throw new Error(`${token} transferToken not found`);
     }
     const batchTransferCount =
-      this.makerConfig.get(`${chainId}.BatchTransferCount`) || 1;
+      this.envConfig.get(`${chainId}.BatchTransferCount`) || 1;
     const transferWalletRelAmount = {};
     for (const key in groupData) {
       const makers = key.split(",");
@@ -173,6 +173,9 @@ export class ValidatorService {
     const privateKey =
       process.env[from.toLocaleLowerCase()] ||
       this.configService.get[from.toLocaleLowerCase()];
+      if (!privateKey) {
+        return this.envConfig.get(from.toLocaleLowerCase());
+      }
     return privateKey;
   }
 
@@ -200,13 +203,8 @@ export class ValidatorService {
       targetSymbol,
       "usd"
     );
-    console.log(
-      sourceAmountValue.toString(),
-      "==sourceAmountValue",
-      targetAmountValue.toString()
-    );
     const diffRate = targetAmountValue.div(sourceAmountValue).times(100);
-    const riskRatio = Number(this.makerConfig.get("riskRatio") || 98);
+    const riskRatio = Number(this.envConfig.get("riskRatio") || 99);
     if (diffRate.gte(riskRatio)) {
       return false;
       // throw new Error(`validatingValueMatches Trading with loss and risk ${sourceAmount}-${sourceSymbol} To ${targetAmount}-${targetSymbol}`)

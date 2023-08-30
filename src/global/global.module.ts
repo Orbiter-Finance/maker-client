@@ -1,6 +1,8 @@
 import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { SequelizeModule } from "@nestjs/sequelize";
+import { ScheduleModule } from "@nestjs/schedule";
+
 import {
   ConfigRegister as ChainConfigRegister,
   ChainConfigService,
@@ -69,6 +71,7 @@ import { sleep } from "src/utils";
       isGlobal: true,
       load: [ENVConfigRegister(), ChainConfigRegister()],
     }),
+    ScheduleModule.forRoot()
   ],
   providers: [
     ChainConfigService,
