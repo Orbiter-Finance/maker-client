@@ -24,13 +24,9 @@ export class SequencerService {
   constructor(
     private readonly chainConfigService: ChainConfigService,
     private readonly validatorService: ValidatorService,
-    private readonly makerConfig: ENVConfigService,
-    private readonly accountService: AccountFactoryService,
-    @InjectModel(TransfersModel)
-    private readonly transfersModel: typeof TransfersModel,
     @InjectModel(BridgeTransactionModel)
     private readonly bridgeTransactionModel: typeof BridgeTransactionModel
-  ) {}
+  ) { }
 
   async execSingleTransfer(
     transfer: TransferAmountTransaction,
@@ -48,7 +44,7 @@ export class SequencerService {
     );
     const transaction =
       await this.bridgeTransactionModel.sequelize.transaction();
-    let sourceTx;
+    let sourceTx: BridgeTransactionModel;
     try {
       const success = await this.validatorService.validatingValueMatches(
         transfer.sourceSymbol,
@@ -158,6 +154,7 @@ export class SequencerService {
         );
       }
       sourceTx.status = 98;
+      sourceTx.targetId = transferResult.hash;
       const updateRes = await sourceTx.save({
         transaction,
       });
@@ -172,6 +169,7 @@ export class SequencerService {
         await transaction.rollback();
       } else {
         sourceTx.status = 97;
+        sourceTx.targetId = transferResult && transferResult.hash;
         await sourceTx.save({
           transaction,
         });
@@ -188,7 +186,6 @@ export class SequencerService {
           await this.bridgeTransactionModel.update(
             {
               status: 99,
-              targetId: tx.hash,
             },
             {
               where: {
@@ -380,14 +377,28 @@ export class SequencerService {
           requestParams
         );
       }
+      // CHANGE 98
+      await this.bridgeTransactionModel.update(
+        {
+          status: 98,
+          targetId: transferResult && transferResult.hash
+        },
+        {
+          where: {
+            sourceId: sourecIds,
+          },
+          transaction,
+        }
+      );
       await transaction.commit();
     } catch (error) {
       if (error instanceof TransactionSendBeforeError) {
         await transaction.rollback();
       } else {
-        this.bridgeTransactionModel.update(
+        await this.bridgeTransactionModel.update(
           {
             status: 97,
+            targetId: transferResult && transferResult.hash
           },
           {
             where: {
