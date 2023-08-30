@@ -20,7 +20,7 @@ export class ValidatorService {
     private readonly chainLinkService: ChainLinkService,
     private readonly configService: ConfigService,
     private readonly accountFactoryService: AccountFactoryService
-  ) {}
+  ) { }
 
   public transactionTimeValid(chainId: string, timestamp: number) {
     const timeout = Date.now() - dayjs(timestamp).valueOf();
@@ -170,12 +170,13 @@ export class ValidatorService {
   }
 
   public getSenderPrivateKey(from: string) {
+    from = from.toLocaleLowerCase();
     const privateKey =
-      process.env[from.toLocaleLowerCase()] ||
-      this.configService.get[from.toLocaleLowerCase()];
-      if (!privateKey) {
-        return this.envConfig.get(from.toLocaleLowerCase());
-      }
+      process.env[from] ||
+      this.configService.get[from];
+    if (!privateKey) {
+      return this.envConfig.get(from);
+    }
     return privateKey;
   }
 
@@ -204,7 +205,7 @@ export class ValidatorService {
       "usd"
     );
     const diffRate = targetAmountValue.div(sourceAmountValue).times(100);
-    const riskRatio = Number(this.envConfig.get("riskRatio") || 99);
+    const riskRatio = Number(this.envConfig.get("riskRatio") || 101);
     if (diffRate.gte(riskRatio)) {
       return false;
       // throw new Error(`validatingValueMatches Trading with loss and risk ${sourceAmount}-${sourceSymbol} To ${targetAmount}-${targetSymbol}`)
