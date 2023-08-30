@@ -1,11 +1,11 @@
-import { Mutex } from "async-mutex";
+import { type Mutex } from "async-mutex";
 
-export interface Sequencer { }
+export interface Sequencer {}
 
 export interface submitResponse {
   chainId: number;
   error?: Error | string;
-  makerDeal?: Array<SwapOrder>;
+  makerDeal?: SwapOrder[];
 }
 export interface CalldataType {
   id?: number;
@@ -23,7 +23,7 @@ export enum SwapOrderType {
   None,
   UA,
   CrossAddr,
-  CrossToken
+  CrossToken,
 }
 export interface SwapOrder {
   chainId: string;
@@ -39,9 +39,9 @@ export interface SwapOrder {
   error?: Error | string | unknown;
 }
 export interface MonitorState {
-    lock: Mutex,
-    // locked: boolean;
-    lastSubmit: number;
+  lock: Mutex;
+  // locked: boolean;
+  lastSubmit: number;
 }
 
 export interface TransferAmountTransaction {
@@ -61,5 +61,5 @@ export interface TransferAmountTransaction {
   sourceNonce: string;
   sourceToken: string;
   targetToken: string;
-  responseMaker:string[]
+  responseMaker: string[];
 }

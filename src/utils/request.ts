@@ -1,8 +1,12 @@
 import { stringify } from "qs";
 // import axios from "axios";
 // import fetch from "cross-fetch";
-export function HttpGet(url: string, params?: any, headers = {}): Promise<any> {
-  return new Promise(async (resolve, reject) => {
+export async function HttpGet(
+  url: string,
+  params?: any,
+  headers = {}
+): Promise<any> {
+  return await new Promise(async (resolve, reject) => {
     const AbortController = globalThis.AbortController;
     const controller = new AbortController();
     const timeout = setTimeout(() => {
@@ -15,7 +19,7 @@ export function HttpGet(url: string, params?: any, headers = {}): Promise<any> {
     }
     try {
       const response = await fetch(url, {
-        headers: headers,
+        headers,
         signal: controller.signal,
       });
       clearTimeout(timeout);
@@ -26,12 +30,12 @@ export function HttpGet(url: string, params?: any, headers = {}): Promise<any> {
     }
   });
 }
-export function HttpPost(
+export async function HttpPost(
   url: string,
   data: any = {},
-  headers = {},
+  headers = {}
 ): Promise<any> {
-  return new Promise(async (resolve, reject) => {
+  return await new Promise(async (resolve, reject) => {
     const AbortController = globalThis.AbortController;
     const controller = new AbortController();
     const timeout = setTimeout(() => {
@@ -45,7 +49,7 @@ export function HttpPost(
           "Content-Type": "application/json",
           ...headers,
         },
-        //make sure to serialize your JSON body
+        // make sure to serialize your JSON body
         body: JSON.stringify(data),
       });
       clearTimeout(timeout);

@@ -1,29 +1,29 @@
-
 // import BaseAccount from './IAccount';
-import EVMAccount from './evmAccount';
-import { Global, Inject, Injectable } from '@nestjs/common';
+import EVMAccount from "./evmAccount";
+import { Injectable } from "@nestjs/common";
 // import StarknetAccount from './starknetAccount';
 // import ZKSyncAccount from './zkSyncAccount';
 // import ZKSpaceAccount from './zksAccount';
-import IMXAccount from './imxAccount';
-import LoopringAccount from './loopringAccount'
-import { ChainConfigService } from 'src/config/chainsConfig.service';
-import OrbiterAccount from './orbiterAccount';
+import IMXAccount from "./imxAccount";
+import LoopringAccount from "./loopringAccount";
+import { ChainConfigService } from "src/config/chainsConfig.service";
+import type OrbiterAccount from "./orbiterAccount";
 @Injectable()
 export class AccountFactoryService {
-  constructor(private chainService: ChainConfigService) {
-  }
-  private static wallets: { [key: string]: OrbiterAccount } = {}; // key = pk + chainId
+  constructor(private readonly chainService: ChainConfigService) {}
+
+  private static wallets: Record<string, OrbiterAccount> = {}; // key = pk + chainId
   createMakerAccount<T extends OrbiterAccount>(
     makerAddress: string,
-    toChainId: string,
+    toChainId: string
   ): T {
     // const chainService = new ChainConfigService();
     const chainConfig = this.chainService.getChainInfo(toChainId);
     if (!chainConfig) {
-      throw new Error(`${toChainId} chain not found`)
+      throw new Error(`${toChainId} chain not found`);
     }
-    const walletId = (`${makerAddress}${chainConfig.chainId}`).toLocaleLowerCase();
+    const walletId =
+      `${makerAddress}${chainConfig.chainId}`.toLocaleLowerCase();
     let wallet: OrbiterAccount = AccountFactoryService.wallets[walletId];
     if (wallet) {
       return wallet as T;
@@ -46,15 +46,11 @@ export class AccountFactoryService {
         break;
       case 8:
       case 88:
-        wallet = new IMXAccount(
-          chainConfig,
-        );
+        wallet = new IMXAccount(chainConfig);
         break;
       case 9:
       case 99:
-        wallet = new LoopringAccount(
-          chainConfig,
-        );
+        wallet = new LoopringAccount(chainConfig);
         break;
       case 1:
       case 2:
@@ -100,7 +96,7 @@ export class AccountFactoryService {
         // );
         break;
       default:
-        throw new Error('Chain Not implemented')
+        throw new Error("Chain Not implemented");
         break;
     }
     AccountFactoryService.wallets[walletId] = wallet;

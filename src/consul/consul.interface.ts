@@ -1,15 +1,14 @@
-import { ModuleMetadata } from '@nestjs/common/interfaces';
+import { type ModuleMetadata } from "@nestjs/common/interfaces";
 
 export interface ConsulOptions {
-  name?:string;
+  name?: string;
   host: string;
   port: number;
-  defaults?: any
+  defaults?: any;
 }
 
-export interface ConsulModuleAsyncOptions extends Pick<ModuleMetadata, 'imports'> {
-  useFactory?: (
-    ...args: any[]
-  ) => ConsulOptions | Promise<ConsulOptions>
+export interface ConsulModuleAsyncOptions
+  extends Pick<ModuleMetadata, "imports"> {
+  useFactory?: (...args: any[]) => ConsulOptions | Promise<ConsulOptions>;
   inject?: any[];
 }

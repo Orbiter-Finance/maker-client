@@ -1,20 +1,19 @@
-const fs = require('fs');
-const path = require('path');
+import fs from "fs";
+import path from "path";
 import("../abi/ERC20Abi.json");
 import("../abi/OrbiterXRouter.json");
 import("../abi/OBSource.json");
 import("../abi/ChainLinkAggregatorV3.json");
 import("../abi/starknet-erc20.json");
 import("../abi/starknet-account.json");
-const abis = {
-}
+const abis: any = {};
 function loadJsonFiles(directoryPath) {
   const files = fs.readdirSync(directoryPath);
-  files.forEach(async(file) => {
+  files.forEach(async (file) => {
     const filePath = path.join(directoryPath, file);
     const fileName = path.parse(file).name;
-    if (path.extname(file) === '.json') {
-      const fileContent = fs.readFileSync(filePath, 'utf8');
+    if (path.extname(file) === ".json") {
+      const fileContent = fs.readFileSync(filePath, "utf8");
       abis[fileName] = JSON.parse(fileContent);
     }
   });

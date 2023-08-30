@@ -1,12 +1,14 @@
-import { Module, DynamicModule, Provider } from '@nestjs/common';
-import { ConsulService } from './consul.service';
-import { CONSUL_MODULE_OPTIONS, CONSUL_OPTIONS } from './consul.constants';
-import { ConsulOptions,ConsulModuleAsyncOptions } from './consul.interface';
+import { Module, type DynamicModule, type Provider } from "@nestjs/common";
+import { ConsulService } from "./consul.service";
+import { CONSUL_OPTIONS } from "./consul.constants";
+import {
+  type ConsulOptions,
+  type ConsulModuleAsyncOptions,
+} from "./consul.interface";
 
-@Module({
-})
+@Module({})
 export class ConsulModule {
-  static registerAsync(options:ConsulModuleAsyncOptions):DynamicModule {
+  static registerAsync(options: ConsulModuleAsyncOptions): DynamicModule {
     const provider = this.createAsyncOptionsProvider(options);
     return {
       module: ConsulModule,
@@ -15,6 +17,7 @@ export class ConsulModule {
       exports: [provider],
     };
   }
+
   static register(options: ConsulOptions): DynamicModule {
     return {
       module: ConsulModule,
@@ -28,16 +31,17 @@ export class ConsulModule {
       exports: [ConsulService],
     };
   }
+
   private static createAsyncOptionsProvider<T>(
-		options: ConsulModuleAsyncOptions,
-	): Provider {
-		return {
-			provide: ConsulService,
+    options: ConsulModuleAsyncOptions
+  ): Provider {
+    return {
+      provide: ConsulService,
       useFactory: async (...args: any[]) => {
-				const config = await options.useFactory(...args);
-			  return new ConsulService(config);
-			},
-			inject: options.inject || [],
-		};
-	}
+        const config = await options.useFactory(...args);
+        return new ConsulService(config);
+      },
+      inject: options.inject || [],
+    };
+  }
 }

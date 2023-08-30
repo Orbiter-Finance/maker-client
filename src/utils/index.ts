@@ -1,10 +1,10 @@
-import { groupBy, padStart, uniqBy,clone } from "lodash";
-import JSONbig from 'json-bigint';
-export function JSONStringify(data:any) {
+import { groupBy, padStart, uniqBy } from "lodash";
+import JSONbig from "json-bigint";
+export function JSONStringify(data: any) {
   return JSONbig.stringify(data);
 }
 export async function sleep(ms: number) {
-  return new Promise(resolve => {
+  return await new Promise((resolve) => {
     setTimeout(() => {
       resolve(null);
     }, ms);
@@ -20,12 +20,12 @@ export function equals<T, U extends T>(val1: T, val2: U, ignoreCase = true) {
   return false;
 }
 
-export function oldMarketConvertScanChainConfig(makerList: Array<any>) {
+export function oldMarketConvertScanChainConfig(makerList: any[]) {
   const c1List = uniqBy(
     makerList,
     (row: { c1ID: string; makerAddress: string }) => {
       return row.c1ID + row.makerAddress;
-    },
+    }
   ).map((row: { c1ID: string; makerAddress: string }) => {
     return {
       intranetId: row.c1ID,
@@ -36,7 +36,7 @@ export function oldMarketConvertScanChainConfig(makerList: Array<any>) {
     makerList,
     (row: { c2ID: string; makerAddress: string }) => {
       return row.c2ID + row.makerAddress;
-    },
+    }
   ).map((row: { c2ID: string; makerAddress: string }) => {
     return {
       intranetId: row.c2ID,
@@ -47,7 +47,7 @@ export function oldMarketConvertScanChainConfig(makerList: Array<any>) {
     [...c1List, ...c2List],
     (row: { intranetId: string; address: string }) => {
       return row.intranetId + row.address;
-    },
+    }
   );
   return groupBy(result, "intranetId");
 }
@@ -102,15 +102,18 @@ export function isEmpty(obj: any) {
   return false;
 }
 
-export function arePropertyValuesConsistent<T>(objects: T[], propertyName: keyof T): boolean {
+export function arePropertyValuesConsistent<T>(
+  objects: T[],
+  propertyName: keyof T
+): boolean {
   if (objects.length === 0) {
-      return true; // No objects to compare, so it's consistent
+    return true; // No objects to compare, so it's consistent
   }
   const referenceValue = objects[0][propertyName]; // Using the first object's property value as the reference
   for (const obj of objects) {
-      if (obj[propertyName] !== referenceValue) {
-          return false; // If any property value is different, it's not consistent
-      }
+    if (obj[propertyName] !== referenceValue) {
+      return false; // If any property value is different, it's not consistent
+    }
   }
 
   return true; // All property values are the same, so it's consistent
@@ -124,5 +127,5 @@ export {
   flatten,
   uniq,
   clone,
-  cloneDeep
+  cloneDeep,
 } from "lodash";

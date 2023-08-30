@@ -1,28 +1,44 @@
-import { ethers, Interface, isError, JsonRpcProvider, keccak256, Wallet } from 'ethers6';
-import abis from '../abi'
-const ERC20Abi = abis['ERC20Abi'];
-import { TransactionRequest, TransactionResponse, TransferResponse } from './IAccount';
-import OrbiterAccount from './orbiterAccount';
-import NonceManager from '../lib/nonce';
-import BigNumber from 'bignumber.js';
-import { ChainConfigService, IChainConfig } from 'src/config/chainsConfig.service';
-import { TransactionFailedError, TransactionSendBeforeError, TransactionSendIgError } from './IAccount.interface';
-import { getMakerConfig } from 'src/config/makerConfig.service';
-import OrbiterProvider from './provider/orbiterPrvoider6';
-import { JSONStringify } from 'src/utils';
+import {
+  ethers,
+  Interface,
+  isError,
+  type JsonRpcProvider,
+  keccak256,
+  type Wallet,
+} from "ethers6";
+import abis from "../abi";
+import {
+  type TransactionRequest,
+  type TransactionResponse,
+  type TransferResponse,
+} from "./IAccount";
+import OrbiterAccount from "./orbiterAccount";
+import NonceManager from "../lib/nonce";
+import BigNumber from "bignumber.js";
+import {
+  type ChainConfigService,
+  type IChainConfig,
+} from "src/config/chainsConfig.service";
+import {
+  TransactionFailedError,
+  TransactionSendBeforeError,
+} from "./IAccount.interface";
+import { getENVConfig } from "src/config/envConfigService";
+import OrbiterProvider from "./provider/orbiterPrvoider6";
+import { JSONStringify } from "src/utils";
+const ERC20Abi = abis["ERC20Abi"];
 export default class EVMAccount extends OrbiterAccount {
   protected wallet: Wallet;
   public nonceManager: NonceManager;
   public provider: JsonRpcProvider;
   public chainConfigService: ChainConfigService;
-  public address:string;
-  constructor(
-    protected chainConfig: IChainConfig
-  ) {
+  public address: string;
+  constructor(protected chainConfig: IChainConfig) {
     super(chainConfig);
     const rpc = this.chainConfig.rpc[0];
     this.provider = new OrbiterProvider(rpc);
   }
+
   async connect(privateKey: string) {
     this.wallet = new ethers.Wallet(privateKey).connect(this.provider);
     this.address = this.wallet.address;
@@ -35,6 +51,7 @@ export default class EVMAccount extends OrbiterAccount {
     }
     return this;
   }
+
   async transferToken(
     token: string,
     to: string,
@@ -44,10 +61,12 @@ export default class EVMAccount extends OrbiterAccount {
     try {
       const balance = await this.getTokenBalance(token);
       if (balance < value) {
-        throw new TransactionSendBeforeError(`The sender ${token} has insufficient balance`);
+        throw new TransactionSendBeforeError(
+          `The sender ${token} has insufficient balance`
+        );
       }
       const ifa = new Interface(ERC20Abi);
-      const data = ifa.encodeFunctionData('transfer', [to, value]);
+      const data = ifa.encodeFunctionData("transfer", [to, value]);
       transactionRequest.data = data;
       transactionRequest.to = token;
       transactionRequest.value = 0n;
@@ -62,21 +81,23 @@ export default class EVMAccount extends OrbiterAccount {
       hash: tx.hash,
       nonce: tx.nonce,
       from: tx.from,
-      to: to,
+      to,
       token,
       value,
-      _response: tx
+      _response: tx,
     };
   }
+
   async getGasPrice(transactionRequest: TransactionRequest = {}) {
     try {
-      const chainCustomConfig = getMakerConfig(this.chainConfig.internalId.toString()) || {};
+      const chainCustomConfig =
+        getENVConfig(this.chainConfig.internalId.toString()) || {};
       if (!transactionRequest.gasLimit) {
         const gasLimit = await this.provider.estimateGas({
           from: transactionRequest.from,
           to: transactionRequest.to,
           data: transactionRequest.data,
-          value: transactionRequest.value
+          value: transactionRequest.value,
         });
         transactionRequest.gasLimit = gasLimit;
       }
@@ -94,14 +115,23 @@ export default class EVMAccount extends OrbiterAccount {
       if (isEIP1559) {
         let maxFeePerGas = chainCustomConfig.MinFeePerGas || 0;
         let maxPriorityFeePerGas = chainCustomConfig.MinPriorityFeePerGas || 0;
-        if (!transactionRequest.maxFeePerGas || !transactionRequest.maxPriorityFeePerGas) {
+        if (
+          !transactionRequest.maxFeePerGas ||
+          !transactionRequest.maxPriorityFeePerGas
+        ) {
           if (feeData.maxFeePerGas && feeData.maxPriorityFeePerGas) {
             maxFeePerGas = Number(feeData.maxFeePerGas);
             maxPriorityFeePerGas = Number(feeData.maxPriorityFeePerGas);
           }
           transactionRequest.type = 2;
-          transactionRequest.maxFeePerGas = Math.max(chainCustomConfig.MinFeePerGas, maxFeePerGas);
-          transactionRequest.maxPriorityFeePerGas = Math.max(chainCustomConfig.MinPriorityFeePerGas, maxPriorityFeePerGas);
+          transactionRequest.maxFeePerGas = Math.max(
+            chainCustomConfig.MinFeePerGas,
+            maxFeePerGas
+          );
+          transactionRequest.maxPriorityFeePerGas = Math.max(
+            chainCustomConfig.MinPriorityFeePerGas,
+            maxPriorityFeePerGas
+          );
         }
         // delete transactionRequest.gasPrice;
       } else {
@@ -110,7 +140,10 @@ export default class EVMAccount extends OrbiterAccount {
           maxFeePerGas = feeData.gasPrice;
         }
         transactionRequest.type = 0;
-        transactionRequest.gasPrice = Math.max(chainCustomConfig.MinFeePerGas, +maxFeePerGas.toString());
+        transactionRequest.gasPrice = Math.max(
+          chainCustomConfig.MinFeePerGas,
+          +maxFeePerGas.toString()
+        );
       }
       return transactionRequest;
     } catch (error) {
@@ -126,14 +159,15 @@ export default class EVMAccount extends OrbiterAccount {
     try {
       const balance = await this.getBalance();
       if (balance < value) {
-        throw new TransactionSendBeforeError(`The sender has insufficient balance`);
+        throw new TransactionSendBeforeError(
+          "The sender has insufficient balance"
+        );
       }
       transactionRequest.to = to;
       transactionRequest.value = value as any;
       transactionRequest.from = this.wallet.address;
       // get getLimit
       await this.getGasPrice(transactionRequest);
-
     } catch (error) {
       throw new TransactionSendBeforeError(error.message);
     }
@@ -141,29 +175,47 @@ export default class EVMAccount extends OrbiterAccount {
     return response;
   }
 
-  async transfers(tos: string[], values: bigint[], transactionRequest: TransactionRequest = {}) {
+  async transfers(
+    tos: string[],
+    values: bigint[],
+    transactionRequest: TransactionRequest = {}
+  ) {
     let router;
     try {
       if (tos.length !== values.length) {
-        throw new TransactionSendBeforeError(`to and values are inconsistent in length`);
+        throw new TransactionSendBeforeError(
+          "to and values are inconsistent in length"
+        );
       }
-      router = Object.keys(this.chainConfig.contract|| {}).find((addr) => this.chainConfig.contract[addr] === 'OrbiterXRouter');
+      router = Object.keys(this.chainConfig.contract || {}).find(
+        (addr) => this.chainConfig.contract[addr] === "OrbiterXRouter"
+      );
       if (!router) {
-        throw new TransactionSendBeforeError(`transferTokens router not config`);
+        throw new TransactionSendBeforeError(
+          "transferTokens router not config"
+        );
       }
-      const totalValue = values.reduce((accumulator, currentValue) => accumulator + currentValue, 0n);
-      // 
+      const totalValue = values.reduce(
+        (accumulator, currentValue) => accumulator + currentValue,
+        0n
+      );
+      //
       const balance = await this.getBalance();
       if (balance < totalValue) {
-        throw new TransactionSendBeforeError(`The sender has insufficient balance`);
+        throw new TransactionSendBeforeError(
+          "The sender has insufficient balance"
+        );
       }
-      if (!abis['OrbiterXRouter']) {
-        throw new TransactionSendBeforeError(`OrbiterXRouter ABI Not Found`);
+      if (!abis.OrbiterXRouter) {
+        throw new TransactionSendBeforeError("OrbiterXRouter ABI Not Found");
       }
-      const ifa = new Interface(abis['OrbiterXRouter']);
+      const ifa = new Interface(abis.OrbiterXRouter);
       transactionRequest.value = totalValue;
       transactionRequest.to = router;
-      transactionRequest.data = ifa.encodeFunctionData('transfers', [tos, values]);
+      transactionRequest.data = ifa.encodeFunctionData("transfers", [
+        tos,
+        values,
+      ]);
       await this.getGasPrice(transactionRequest);
     } catch (error) {
       throw new TransactionSendBeforeError(error.message);
@@ -172,26 +224,46 @@ export default class EVMAccount extends OrbiterAccount {
     return response;
   }
 
-  public async transferTokens(token: string, tos: string[], values: bigint[], transactionRequest: TransactionRequest = {}): Promise<TransferResponse | undefined> {
+  public async transferTokens(
+    token: string,
+    tos: string[],
+    values: bigint[],
+    transactionRequest: TransactionRequest = {}
+  ): Promise<TransferResponse | undefined> {
     let router;
     try {
       if (tos.length !== values.length) {
-        throw new TransactionSendBeforeError(`to and values are inconsistent in length`);
+        throw new TransactionSendBeforeError(
+          "to and values are inconsistent in length"
+        );
       }
-      router = Object.keys(this.chainConfig.contract || {}).find((addr) => this.chainConfig.contract[addr] === 'OrbiterXRouter');
+      router = Object.keys(this.chainConfig.contract || {}).find(
+        (addr) => this.chainConfig.contract[addr] === "OrbiterXRouter"
+      );
       if (!router) {
-        throw new TransactionSendBeforeError(`transferTokens router not config`);
+        throw new TransactionSendBeforeError(
+          "transferTokens router not config"
+        );
       }
-      const totalValue = values.reduce((accumulator, currentValue) => accumulator + currentValue, 0n);
+      const totalValue = values.reduce(
+        (accumulator, currentValue) => accumulator + currentValue,
+        0n
+      );
       const balance = await this.getTokenBalance(token);
       if (balance < totalValue) {
-        throw new TransactionSendBeforeError(`The sender ${token} has insufficient balance`);
+        throw new TransactionSendBeforeError(
+          `The sender ${token} has insufficient balance`
+        );
       }
-      if (!abis['OrbiterXRouter']) {
-        throw new TransactionSendBeforeError(`OrbiterXRouter ABI Not Found`);
+      if (!abis.OrbiterXRouter) {
+        throw new TransactionSendBeforeError("OrbiterXRouter ABI Not Found");
       }
-      const ifa = new Interface(abis['OrbiterXRouter']);
-      const data = ifa.encodeFunctionData('transferTokens', [token, tos, values]);
+      const ifa = new Interface(abis.OrbiterXRouter);
+      const data = ifa.encodeFunctionData("transferTokens", [
+        token,
+        tos,
+        values,
+      ]);
       transactionRequest.data = data;
       transactionRequest.to = router;
       await this.getGasPrice(transactionRequest);
@@ -201,17 +273,23 @@ export default class EVMAccount extends OrbiterAccount {
     const response = await this.sendTransaction(router, transactionRequest);
     return response;
   }
+
   async waitForTransactionConfirmation(transactionHash) {
     const receipt = await this.provider.waitForTransaction(transactionHash);
-    return receipt
+    return receipt;
   }
+
   async sendTransaction(
     to: string,
     transactionRequest: TransactionRequest = {}
   ): Promise<TransactionResponse> {
-    const  serialIds = typeof transactionRequest.serialId === 'string' ? [transactionRequest.serialId] : transactionRequest.serialId;
-    const chainId: number | undefined =
-      Number(transactionRequest.chainId || this.chainConfig.chainId);
+    const serialIds =
+      typeof transactionRequest.serialId === "string"
+        ? [transactionRequest.serialId]
+        : transactionRequest.serialId;
+    const chainId: number | undefined = Number(
+      transactionRequest.chainId || this.chainConfig.chainId
+    );
 
     const tx: TransactionRequest = {
       chainId,
@@ -226,43 +304,65 @@ export default class EVMAccount extends OrbiterAccount {
       if (tx.value) {
         tx.value = new BigNumber(String(tx.value)).toFixed(0);
       }
-      this.logger.info(`${this.chainConfig.name} sendTransaction:${JSONStringify(tx)}`);
+      this.logger.info(
+        `${this.chainConfig.name} sendTransaction:${JSONStringify(tx)}`
+      );
       const signedTx = await this.wallet.signTransaction(tx);
       txHash = keccak256(signedTx);
       const response = await this.provider.broadcastTransaction(signedTx);
-      this.logger.info(`${this.chainConfig.name} sendTransaction txHash:${txHash}`);
-      await this.store.saveSerialRelTxHash(serialIds, txHash)
+      this.logger.info(
+        `${this.chainConfig.name} sendTransaction txHash:${txHash}`
+      );
+      await this.store.saveSerialRelTxHash(serialIds, txHash);
       submit();
       return response;
     } catch (error) {
-      this.logger.error(`broadcastTransaction tx error:${txHash} - ${error.message}`, error);
+      this.logger.error(
+        `broadcastTransaction tx error:${txHash} - ${error.message}`,
+        error
+      );
       // rollback()
-      if (isError(error, 'NONCE_EXPIRED')) {
+      if (isError(error, "NONCE_EXPIRED")) {
         throw new TransactionSendBeforeError(error.message);
       }
       throw new TransactionFailedError(error.message);
     }
   }
-  public async approve(token: string, spender: string, value: string | BigNumber) {
-    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
-    return await erc20['approve'](spender, value);
+
+  public async approve(
+    token: string,
+    spender: string,
+    value: string | BigNumber
+  ) {
+    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(
+      this.wallet
+    );
+    return await erc20["approve"](spender, value);
   }
+
   public async allowance(token: string, spender: string) {
-    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(this.wallet);
-    return await erc20['allowance'](this.wallet.address, spender);
+    const erc20 = new ethers.Contract(token, ERC20Abi, this.provider).connect(
+      this.wallet
+    );
+    return await erc20["allowance"](this.wallet.address, spender);
   }
+
   public async getBalance(address?: string, token?: string): Promise<bigint> {
     if (token && token != this.chainConfig.nativeCurrency.address) {
       // is native
       // const chainId = await this.wallet.getChainId();
       // const issMainToken = await chains.inValidMainToken(String(chainId), token);
-      return this.getTokenBalance(token, address);
+      return await this.getTokenBalance(token, address);
     } else {
-      return this.provider.getBalance(address || this.wallet.address);
+      return await this.provider.getBalance(address || this.wallet.address);
     }
   }
-  public async getTokenBalance(token: string, address?: string): Promise<bigint> {
+
+  public async getTokenBalance(
+    token: string,
+    address?: string
+  ): Promise<bigint> {
     const erc20 = new ethers.Contract(token, ERC20Abi, this.provider);
-    return erc20.balanceOf(address || this.wallet.address);
+    return await erc20.balanceOf(address || this.wallet.address);
   }
 }
