@@ -3,7 +3,7 @@ import { Mutex } from 'async-mutex';
 import { ValidatorService } from '../validator/validator.service';
 import OrbiterAccount from 'src/account/orbiterAccount';
 import { TransferResponse } from 'src/account/IAccount';
-import { ChainConfigService } from 'src/config/chainConfig.service';
+import { ChainConfigService } from 'src/config/chainsConfig.service';
 import { JSONStringify, clone, equals, isEmpty } from 'src/utils';
 import { MonitorState, SwapOrder, TransferAmountTransaction } from './sequencer.interface';
 import { Cron } from '@nestjs/schedule';
@@ -14,7 +14,7 @@ import { AccountFactoryService } from 'src/account/factory';
 import { InjectModel } from '@nestjs/sequelize';
 import { TransfersModel, BridgeTransactionModel } from 'src/models';
 import BigNumber from 'bignumber.js';
-import { Token } from '../../config/chainConfig.service'
+import { Token } from '../../config/chainsConfig.service'
 import { StoreService } from '../store/store.service';
 import { createLoggerByName } from 'src/lib/logger';
 @Injectable()
@@ -29,7 +29,6 @@ export class SequencerService {
     @InjectModel(BridgeTransactionModel) private bridgeTransactionModel: typeof BridgeTransactionModel,
   ) {
   }
-
 
   async execSingleTransfer(transfer: TransferAmountTransaction, wallet: OrbiterAccount, store: StoreService) {
     const sourceChainId = transfer.sourceChain;

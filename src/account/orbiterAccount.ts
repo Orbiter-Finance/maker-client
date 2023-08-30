@@ -1,6 +1,6 @@
 import { TransactionRequest, TransferResponse } from './IAccount';
 import IAccount from './IAccount';
-import { IChainConfig } from 'src/config/chainConfig.service';
+import { IChainConfig } from 'src/config/chainsConfig.service';
 import { SwapOrder, TransferAmountTransaction } from 'src/transfer/sequencer/sequencer.interface';
 import { createLoggerByName } from '../lib/logger';
 import winston from 'winston'

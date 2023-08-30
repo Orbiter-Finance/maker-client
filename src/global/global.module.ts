@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { ChainConfigRegister, ChainConfigService } from 'src/config/chainConfig.service';
+import { ChainConfigRegister, ChainConfigService } from 'src/config/chainsConfig.service';
 import { MakerConfigRegister, MakerConfigService } from 'src/config/makerConfig.service';
 import { TransfersModel, BridgeTransactionModel } from 'src/models';
 import { ChainLinkService } from 'src/service/chainlink.service';

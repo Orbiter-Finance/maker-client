@@ -5,7 +5,7 @@ import { TransactionRequest, TransactionResponse, TransferResponse } from './IAc
 import OrbiterAccount from './orbiterAccount';
 import NonceManager from '../lib/nonce';
 import BigNumber from 'bignumber.js';
-import { ChainConfigService, IChainConfig } from 'src/config/chainConfig.service';
+import { ChainConfigService, IChainConfig } from 'src/config/chainsConfig.service';
 import { TransactionFailedError, TransactionSendBeforeError, TransactionSendIgError } from './IAccount.interface';
 import { getMakerConfig } from 'src/config/makerConfig.service';
 import OrbiterProvider from './provider/orbiterPrvoider6';

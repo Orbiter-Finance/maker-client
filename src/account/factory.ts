@@ -7,7 +7,7 @@ import { Global, Inject, Injectable } from '@nestjs/common';
 // import ZKSpaceAccount from './zksAccount';
 import IMXAccount from './imxAccount';
 import LoopringAccount from './loopringAccount'
-import { ChainConfigService } from 'src/config/chainConfig.service';
+import { ChainConfigService } from 'src/config/chainsConfig.service';
 import OrbiterAccount from './orbiterAccount';
 @Injectable()
 export class AccountFactoryService {

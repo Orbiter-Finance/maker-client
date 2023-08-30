@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import dayjs from 'dayjs';
 import { isAddress } from 'ethers6';
 import BigNumber from 'bignumber.js';
-import { ChainConfigService } from 'src/config/chainConfig.service';
+import { ChainConfigService } from 'src/config/chainsConfig.service';
 import { ConfigService } from '@nestjs/config';
 import { equals, groupBy, isEmpty, uniq } from 'src/utils';
 import { ChainLinkService } from 'src/service/chainlink.service';

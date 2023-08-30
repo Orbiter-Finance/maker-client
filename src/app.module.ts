@@ -3,11 +3,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TransferModule } from './transfer/transfer.module';
 import { ConfigModule } from '@nestjs/config';
-import { ChainConfigService } from './config/chainConfig.service';
+import { ChainConfigService } from './config/chainsConfig.service';
 import { GlobalModule } from './global/global.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MakerConfigRegister } from './config/makerConfig.service';
-import { ChainConfigRegister } from './config/chainConfig.service';
+import { ChainConfigRegister } from './config/chainsConfig.service';
 
 @Module({
   imports: [

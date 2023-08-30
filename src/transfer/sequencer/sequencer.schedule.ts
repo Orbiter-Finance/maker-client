@@ -1,9 +1,9 @@
-import { Token } from './../../config/chainConfig.service';
+import { Token } from '../../config/chainsConfig.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/sequelize';
 import { Mutex } from 'async-mutex';
-import { ChainConfigService } from 'src/config/chainConfig.service';
+import { ChainConfigService } from 'src/config/chainsConfig.service';
 import { TransfersModel, BridgeTransactionModel } from 'src/models';
 import { SequencerService } from './sequencer.service'
 import { ValidatorService } from '../validator/validator.service'
@@ -18,6 +18,7 @@ import { take } from 'lodash';
 import OrbiterAccount from 'src/account/orbiterAccount';
 import { TransactionSendBeforeError } from 'src/account/IAccount.interface';
 import { createLoggerByName } from 'src/lib/logger';
+import dayjs from 'dayjs';
 @Injectable()
 export class SequencerScheduleService {
     private readonly logger = createLoggerByName(SequencerService.name);
@@ -69,6 +70,9 @@ export class SequencerScheduleService {
                 version: "2-0",
                 id: {
                     [Op.gt]: store.lastId
+                },
+                sourceTime: {
+                    [Op.gte]: dayjs().subtract(24, 'hour').toISOString(),
                 }
             }
         });
