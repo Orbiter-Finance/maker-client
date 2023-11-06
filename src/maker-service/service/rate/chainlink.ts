@@ -1,7 +1,7 @@
 import { BigNumber } from 'bignumber.js';
 import { ethers } from "ethers";
 import Caching from '../../utils/caching';
-
+import { chains } from 'orbiter-chaincore';
 export default class ChainLink {
     private pairs: { [key: string]: string } = {
         'eth/usd': "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
@@ -76,7 +76,11 @@ export default class ChainLink {
             console.log(`ChainLink Not found pairs ${source}=>${target}`);
             return new BigNumber(0);
         }
-        const provider = new ethers.providers.JsonRpcProvider("https://eth-rpc.gateway.pokt.network");
+        const chainInfo = await chains.getChainInfo(1);
+        if  (!chainInfo) {
+            throw new Error('chainlink use mainnet rpc chainInfo not found');
+        }
+        const provider = new ethers.providers.JsonRpcProvider(chainInfo.rpc[0]);
         const priceFeed = new ethers.Contract(addr, this.aggregatorV3InterfaceABI, provider);
         // We get the data from the last round of the contract 
         const roundData = await priceFeed.latestRoundData();
